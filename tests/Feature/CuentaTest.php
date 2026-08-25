@@ -48,6 +48,9 @@ class CuentaTest extends TestCase
 
     public function test_un_mecanico_puede_crear_su_cuenta(): void
     {
+        // El registro no hace auto-login: la respuesta observable tiene que
+        // ser IDÉNTICA a la de un correo duplicado, para no filtrar qué
+        // emails ya están en el sistema.
         $this->post(route('registro.crear'), [
             'name' => 'Julián Mecánico',
             'telefono' => '313 422 3861',
@@ -55,14 +58,13 @@ class CuentaTest extends TestCase
             'password' => 'secreto123',
             'password_confirmation' => 'secreto123',
             'acepta' => 1,
-        ])->assertRedirect(route('cuenta'));
+        ])->assertRedirect(route('acceso'));
 
         $usuario = User::where('email', 'julian@taller.co')->firstOrFail();
 
-        // Entra como cliente: nunca al panel, por mucho que cambie la URL.
+        // Cliente, sí; sesión, no (aún tiene que iniciar sesión).
         $this->assertSame(Rol::Cliente, $usuario->rol);
-        $this->assertAuthenticatedAs($usuario);
-        $this->get('/panel')->assertForbidden();
+        $this->assertGuest();
     }
 
     public function test_sin_autorizacion_de_datos_no_hay_cuenta(): void
@@ -335,11 +337,39 @@ class CuentaTest extends TestCase
         $this->post(route('registro.crear'), [
             'name' => 'Ana', 'telefono' => '300', 'email' => 'ana@taller.co',
             'password' => 'secreto123', 'password_confirmation' => 'secreto123', 'acepta' => 1,
-        ])->assertRedirect(route('cuenta'));
+        ])->assertRedirect(route('acceso'));
 
         $ana = User::firstWhere('email', 'ana@taller.co');
         $this->assertNotNull($ana->acepto_en, 'Debe quedar la fecha de aceptación.');
         $this->assertSame((string) config('habeas.version'), $ana->politica_version);
+    }
+
+    /**
+     * H3 · Seguridad: la enumeración de correos por diferencia de `Location`.
+     * El registro con correo NUEVO y con correo DUPLICADO deben terminar en
+     * la misma URL y con el mismo flash — así un atacante no distingue.
+     */
+    public function test_registro_duplicado_y_exitoso_dan_la_misma_respuesta(): void
+    {
+        $this->cliente(['email' => 'ya-existo@taller.co']);
+
+        $exito = $this->post(route('registro.crear'), [
+            'name' => 'Nuevo', 'telefono' => '300', 'email' => 'nuevo@taller.co',
+            'password' => 'secreto123', 'password_confirmation' => 'secreto123', 'acepta' => 1,
+        ]);
+
+        $duplicado = $this->post(route('registro.crear'), [
+            'name' => 'Otro', 'telefono' => '300', 'email' => 'ya-existo@taller.co',
+            'password' => 'secreto123', 'password_confirmation' => 'secreto123', 'acepta' => 1,
+        ]);
+
+        $exito->assertRedirect(route('acceso'));
+        $duplicado->assertRedirect(route('acceso'));
+        $this->assertSame(
+            $exito->headers->get('Location'),
+            $duplicado->headers->get('Location'),
+            'El destino tiene que ser IDÉNTICO para no filtrar qué correos existen.',
+        );
     }
 
     public function test_el_cliente_puede_darse_de_baja_desde_mi_cuenta(): void

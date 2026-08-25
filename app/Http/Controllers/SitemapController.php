@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Categoria;
 use App\Models\Producto;
+use App\Models\SeoPagina;
 use App\Models\TipoParte;
+use App\Services\ImportadorCatalogo;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
 
@@ -25,7 +27,14 @@ class SitemapController extends Controller
     /** El índice: la única URL que hay que declarar en robots.txt. */
     public function indice(): Response
     {
-        $paginas = (int) ceil(max(1, Producto::publicados()->count()) / self::POR_PAGINA);
+        // El conteo cacheado por versión del catálogo: sin esto, cada uno de
+        // los 30 hits concurrentes del estrés re-ejecutaba `count()` sobre
+        // 29 K productos (50-116 ms por request).
+        $paginas = Cache::remember(
+            'sitemap.paginas.'.ImportadorCatalogo::version(),
+            3600,
+            fn () => (int) ceil(max(1, Producto::publicados()->count()) / self::POR_PAGINA),
+        );
 
         $mapas = ['secciones'];
 
@@ -42,7 +51,14 @@ class SitemapController extends Controller
 
     public function mapa(string $nombre): Response
     {
-        $urls = Cache::remember("sitemap.{$nombre}", 3600, fn () => $this->urlesDe($nombre));
+        // Caché versionada por contador de catálogo: si el equipo importa un
+        // Excel nuevo, `ImportadorCatalogo::olvidarCaches()` sube la versión
+        // y todo el sitemap se regenera sin borrar llaves a mano.
+        $urls = Cache::remember(
+            "sitemap.{$nombre}.".ImportadorCatalogo::version(),
+            3600,
+            fn () => $this->urlesDe($nombre),
+        );
 
         abort_if($urls === null, 404);
 
@@ -66,13 +82,33 @@ class SitemapController extends Controller
     /** @return array<int, array{loc: string, prioridad: string, frecuencia: string}> */
     private function secciones(): array
     {
-        $urls = [
-            ['loc' => route('inicio'), 'prioridad' => '1.0', 'frecuencia' => 'weekly'],
-            ['loc' => route('catalogo'), 'prioridad' => '0.9', 'frecuencia' => 'weekly'],
-            ['loc' => route('quienes-somos'), 'prioridad' => '0.5', 'frecuencia' => 'yearly'],
-            ['loc' => route('contacto'), 'prioridad' => '0.6', 'frecuencia' => 'yearly'],
-            ['loc' => route('mantenimientos'), 'prioridad' => '0.5', 'frecuencia' => 'yearly'],
+        // Los defaults del sitemap por sección. El panel «Configuración de
+        // página» puede sobreescribir cualquiera de estos por su fila en
+        // `seo_paginas`, o excluir la página del sitemap con `sitemap_incluir=0`.
+        $defaults = [
+            'inicio'         => ['prioridad' => '1.0', 'frecuencia' => 'weekly'],
+            'catalogo'       => ['prioridad' => '0.9', 'frecuencia' => 'weekly'],
+            'quienes-somos'  => ['prioridad' => '0.5', 'frecuencia' => 'yearly'],
+            'contacto'       => ['prioridad' => '0.6', 'frecuencia' => 'yearly'],
+            'mantenimientos' => ['prioridad' => '0.5', 'frecuencia' => 'yearly'],
         ];
+
+        // Un solo SELECT contra `seo_paginas`, keyBy ruta, para que la lista
+        // decida en O(1) sin ir a base fila por fila.
+        $seo = SeoPagina::query()->get()->keyBy('ruta');
+
+        $urls = [];
+        foreach ($defaults as $ruta => $por) {
+            $override = $seo->get($ruta);
+            if ($override && ! $override->sitemap_incluir) continue; // panel lo excluyó
+            $urls[] = [
+                'loc' => route($ruta),
+                'prioridad' => $override?->sitemap_prioridad !== null
+                    ? number_format((float) $override->sitemap_prioridad, 1)
+                    : $por['prioridad'],
+                'frecuencia' => $override?->sitemap_frecuencia ?: $por['frecuencia'],
+            ];
+        }
 
         foreach (Categoria::orderBy('nombre')->get() as $categoria) {
             $urls[] = ['loc' => route('categoria', $categoria), 'prioridad' => '0.8', 'frecuencia' => 'weekly'];

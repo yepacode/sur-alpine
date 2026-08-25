@@ -21,7 +21,10 @@ Route::get('/', [CatalogoController::class, 'inicio'])->name('inicio');
 // sitemap salga de APP_URL y no haya que acordarse de cambiarla al desplegar.
 Route::get('/robots.txt', fn () => response()
     ->view('robots')
-    ->header('Content-Type', 'text/plain; charset=UTF-8'))->name('robots');
+    ->header('Content-Type', 'text/plain; charset=UTF-8')
+    // Un día de caché en CDN/navegador: los rastreadores lo consultan de
+    // sobra sin exigir el archivo fresco a cada visita.
+    ->header('Cache-Control', 'public, max-age=86400'))->name('robots');
 
 // G · Convención https://llmstxt.org. Mapa del sitio para modelos de
 // lenguaje: qué somos, qué páginas hay, qué no ofrecemos.
@@ -29,7 +32,8 @@ Route::get('/llms.txt', function () {
     $categorias = \App\Models\Categoria::orderBy('nombre')->get();
     return response()
         ->view('llms', ['categorias' => $categorias])
-        ->header('Content-Type', 'text/plain; charset=UTF-8');
+        ->header('Content-Type', 'text/plain; charset=UTF-8')
+        ->header('Cache-Control', 'public, max-age=86400');
 })->name('llms');
 
 // El mapa del sitio: sin él Google sólo descubre el catálogo saltando de

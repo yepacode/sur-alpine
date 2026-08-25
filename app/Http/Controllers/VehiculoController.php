@@ -34,7 +34,11 @@ class VehiculoController extends Controller
 
         $activo->guardar(Vehiculo::findOrFail($datos['vehiculo_id']));
 
-        return back()->with('mensaje', 'Listo, ya estás viendo los repuestos de tu carro.');
+        // Redirige al catálogo filtrado por el vehículo activo: el buscador
+        // vive en la portada y con `back()` volvía justo ahí, así que el
+        // mecánico veía otra vez el hero y no encontraba sus repuestos.
+        return redirect()->route('catalogo')
+            ->with('mensaje', 'Listo, éstos son los repuestos de tu carro.');
     }
 
     public function olvidar(VehiculoActivo $activo): RedirectResponse

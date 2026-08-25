@@ -12,7 +12,10 @@
     $tituloFinal = $seo?->titulo ?: ($tituloBase.' · Importadora Sur Alpine');
     $descFinal = $seo?->descripcion ?: $descBase;
     $canonicalFinal = $seo?->canonical ?: url()->current();
-    $robotsFinal = $seo ? $seo->metaRobots().',max-image-preview:large' : 'index,follow,max-image-preview:large';
+    // `metaRobots()` ya incluye max-image-preview desde el panel; concatenar
+    // aquí `max-image-preview:large` duplicaba el token y contradecía a un
+    // admin que hubiera pedido `none`.
+    $robotsFinal = $seo ? $seo->metaRobots() : 'index,follow,max-image-preview:large';
 
     $ogTitulo = $seo?->og_titulo ?: $tituloFinal;
     $ogDesc = $seo?->og_descripcion ?: $descFinal;
@@ -41,7 +44,9 @@
          una pieza, esto es lo que decide si llega con foto y título o pelado. --}}
     <meta property="og:type" content="{{ $ogTipo }}">
     <meta property="og:site_name" content="Importadora Sur Alpine">
-    <meta property="og:locale" content="es_CO">
+    {{-- og:locale se emite abajo con el valor del panel (fallback es_CO). Antes
+         salía dos veces —una hardcoded aquí y otra desde el panel— y
+         Facebook tomaba la primera, ignorando el cambio del admin. --}}
     <meta property="og:title" content="{{ $ogTitulo }}">
     <meta property="og:description" content="{{ $ogDesc }}">
     <meta property="og:url" content="{{ url()->current() }}">
@@ -108,8 +113,26 @@
         <link rel="next" href="{{ $seo->rel_next }}">
     @endif
 
+    {{-- Schema.org por página: si el asesor eligió un `schema_tipo` en el
+         panel, se emite un JSON-LD ligero con los básicos. No reemplaza al
+         `<x-negocio-schema />` global; añade otro nodo con el tipo específico
+         de la página (AboutPage, ContactPage, Article, WebPage…). --}}
+    @if ($seo?->schema_tipo)
+        <script type="application/ld+json">{!! json_encode([
+            '@context' => 'https://schema.org',
+            '@type' => $seo->schema_tipo,
+            'name' => $tituloFinal,
+            'url' => $canonicalFinal,
+            'description' => $descFinal,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    @endif
+
     @if ($seo?->json_ld_extra)
-        <script type="application/ld+json">{!! $seo->json_ld_extra !!}</script>
+        {{-- H1 · Seguridad: aunque el campo es JSON-LD, el asesor podría
+             pegar `</script><script>alert(1)</script>` y ejecutar JS en el
+             visitante anónimo. Reemplazar `</` por `<\/` mantiene el JSON
+             válido para Google y cierra la fuga. `<` haría lo mismo. --}}
+        <script type="application/ld+json">{!! str_replace('</', '<\/', $seo->json_ld_extra) !!}</script>
     @endif
 
     {{-- Bloque libre del asesor. AVISO en el panel: se pinta tal cual, así

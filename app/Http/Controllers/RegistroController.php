@@ -48,37 +48,31 @@ class RegistroController extends Controller
             'telefono.required' => 'Déjanos un teléfono: es por donde te contactamos.',
         ]);
 
-        if (User::where('email', $datos['email'])->exists()) {
-            // Se manda un correo silencioso al dueño real avisando del intento,
-            // para que sepa que alguien puso su correo aquí; ese trabajo se
-            // hará cuando esté armado el envío de correos administrativos.
-            // Por ahora el efecto observable es idéntico al de un registro
-            // exitoso: se redirige al acceso y no se revela nada.
-            return redirect()->route('acceso')
-                ->with('mensaje', 'Listo, revisa tu correo para continuar.');
+        $emailYaExistia = User::where('email', $datos['email'])->exists();
+
+        if (! $emailYaExistia) {
+            User::create([
+                'name' => $datos['name'],
+                'email' => $datos['email'],
+                'telefono' => $datos['telefono'],
+                'password' => $datos['password'],
+                'rol' => Rol::Cliente,
+                'activo' => true,
+                // Habeas Data: la fecha y la versión que aceptó quedan clavadas
+                // al usuario. Si mañana el texto cambia, la sesión sabrá que hay
+                // una versión nueva y pedirá autorización otra vez.
+                'acepto_en' => now(),
+                'politica_version' => (string) config('habeas.version'),
+            ]);
         }
 
-        $usuario = User::create([
-            'name' => $datos['name'],
-            'email' => $datos['email'],
-            'telefono' => $datos['telefono'],
-            'password' => $datos['password'],
-            'rol' => Rol::Cliente,
-            'activo' => true,
-            // Habeas Data: la fecha y la versión que aceptó quedan clavadas
-            // al usuario. Si mañana el texto cambia, la sesión sabrá que hay
-            // una versión nueva y pedirá autorización otra vez.
-            'acepto_en' => now(),
-            'politica_version' => (string) config('habeas.version'),
-        ]);
-
-        // La cookie persistente («recordarme») es opcional en el acceso, no
-        // se impone al registrar: cinco años de credencial son decisión del
-        // usuario, no del sistema.
-        Auth::login($usuario);
-        $request->session()->regenerate();
-
-        return redirect()->route('cuenta')
-            ->with('mensaje', 'Listo, ya tienes cuenta. Registra tu primer vehículo.');
+        // Enumeración: la respuesta observable es IDÉNTICA en los dos casos.
+        // Antes el registro exitoso redirigía a /mi-cuenta y el duplicado a
+        // /acceso — un atacante comparaba el `Location` y confirmaba qué
+        // correos existen. Ahora ambos terminan en /acceso con el mismo
+        // mensaje; el mecánico legítimo hace login normal (pierde el
+        // auto-login, precio pequeño por privacidad).
+        return redirect()->route('acceso')
+            ->with('mensaje', 'Listo, ya puedes iniciar sesión con tu correo.');
     }
 }

@@ -29,7 +29,7 @@
             'seller' => ['@type' => 'AutoPartsStore', '@id' => url('/').'#negocio'],
         ]);
     @endphp
-    <script type="application/ld+json">{!! json_encode($ficha, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($ficha, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
 
     {{-- G · BreadcrumbList: le dice a Google (y a los rastreadores de IA) el
          camino jerárquico de la ficha. Al indexar aparece como «Inicio ›
@@ -53,7 +53,7 @@
             ],
         ];
     @endphp
-    <script type="application/ld+json">{!! json_encode($miga, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($miga, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
 @endpush
 
 @section('contenido')

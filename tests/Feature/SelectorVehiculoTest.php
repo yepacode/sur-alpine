@@ -72,11 +72,14 @@ class SelectorVehiculoTest extends TestCase
             ->assertJsonFragment(['ma' => 'CHEVROLET', 'mo' => 'AVEO', 'c' => '1600', 'd' => 2006, 'h' => 2013]);
     }
 
-    public function test_guardar_el_vehiculo_lo_deja_en_la_sesion(): void
+    public function test_guardar_el_vehiculo_lleva_al_catalogo_filtrado(): void
     {
+        // El buscador vive en la portada. Antes redirigía `back()` y el
+        // mecánico veía otra vez el hero pensando que no había pasado nada.
+        // Ahora va directo a /repuestos con el vehículo activo en sesión.
         $this->from('/')
             ->post('/mi-vehiculo', ['vehiculo_id' => $this->aveo->id])
-            ->assertRedirect('/')
+            ->assertRedirect(route('catalogo'))
             ->assertSessionHas('vehiculo_activo', $this->aveo->id);
     }
 

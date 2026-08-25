@@ -59,7 +59,13 @@
                      entero. --}}
                 <h1 class="mt-4 text-[2rem] font-extrabold leading-[0.98] text-white text-balance sm:mt-6 sm:text-[3.5rem] lg:text-[4rem]">
                     @php
-                        $titular = contenido('inicio.hero.titulo', "La pieza exacta\nde tu carro");
+                        // El H1 propio del panel de SEO manda sobre el
+                        // titular del hero. Si el asesor pone `titulo_h1`,
+                        // ese es el H1 que Google verá; si no, se usa el
+                        // contenido/text del hero (con salto de línea
+                        // opcional para partir el titular en dos).
+                        $h1 = seo_pagina('inicio')?->titulo_h1;
+                        $titular = $h1 ?: contenido('inicio.hero.titulo', "La pieza exacta\nde tu carro");
                         $partes = preg_split('/\r?\n/', $titular, 2);
                     @endphp
                     {{ $partes[0] }}
