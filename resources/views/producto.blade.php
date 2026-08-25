@@ -30,6 +30,30 @@
         ]);
     @endphp
     <script type="application/ld+json">{!! json_encode($ficha, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+
+    {{-- G · BreadcrumbList: le dice a Google (y a los rastreadores de IA) el
+         camino jerárquico de la ficha. Al indexar aparece como «Inicio ›
+         Motor Externo › Filtros de Aceite › Filtro AVEO», que se lee mucho
+         mejor en el resultado que la URL cruda. --}}
+    @php
+        $miga = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                ['@type' => 'ListItem', 'position' => 1, 'name' => 'Inicio', 'item' => url('/')],
+                ['@type' => 'ListItem', 'position' => 2,
+                 'name' => $producto->tipoParte->categoria->nombre,
+                 'item' => route('categoria', $producto->tipoParte->categoria)],
+                ['@type' => 'ListItem', 'position' => 3,
+                 'name' => $producto->tipoParte->nombre,
+                 'item' => route('tipo-parte', [$producto->tipoParte->categoria, $producto->tipoParte])],
+                ['@type' => 'ListItem', 'position' => 4,
+                 'name' => $producto->nombre,
+                 'item' => route('producto', $producto)],
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($miga, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
 @endpush
 
 @section('contenido')

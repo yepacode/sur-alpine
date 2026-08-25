@@ -2,6 +2,57 @@
 
 @section('titulo', $titulo)
 
+{{-- G · Datos estructurados del catálogo.
+     · BreadcrumbList: Inicio → Repuestos → Categoría → Tipo, según se vea.
+     · CollectionPage con ItemList: le dice a Google (y a los rastreadores
+       de IA) que la página es un LISTADO de productos, no una ficha suelta.
+     De aquí sale el «Menciona 12 productos» de los resultados enriquecidos. --}}
+@push('cabeza')
+    @php
+        $miga = [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => 'Inicio', 'item' => url('/')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => 'Repuestos', 'item' => route('catalogo')],
+        ];
+        if ($categoria ?? null) {
+            $miga[] = ['@type' => 'ListItem', 'position' => 3,
+                       'name' => $categoria->nombre,
+                       'item' => route('categoria', $categoria)];
+        }
+        if ($tipoParte ?? null) {
+            $miga[] = ['@type' => 'ListItem', 'position' => 4,
+                       'name' => $tipoParte->nombre,
+                       'item' => route('tipo-parte', [$categoria, $tipoParte])];
+        }
+        $breadcrumb = ['@context' => 'https://schema.org', '@type' => 'BreadcrumbList', 'itemListElement' => $miga];
+
+        // ItemList corto (primeros 20 productos), que es lo que Google
+        // muestra en las tarjetas enriquecidas.
+        $items = $productos->take(20)->values()->map(function ($p, $i) {
+            return [
+                '@type' => 'ListItem',
+                'position' => $i + 1,
+                'url' => route('producto', $p),
+                'name' => $p->nombre,
+            ];
+        })->all();
+        $coleccion = [
+            '@context' => 'https://schema.org',
+            '@type' => 'CollectionPage',
+            'name' => $titulo,
+            'url' => request()->url(),
+            'isPartOf' => ['@type' => 'WebSite', '@id' => url('/').'#sitio'],
+            'about' => ['@type' => 'AutoPartsStore', '@id' => url('/').'#negocio'],
+            'mainEntity' => [
+                '@type' => 'ItemList',
+                'numberOfItems' => $productos->total(),
+                'itemListElement' => $items,
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($breadcrumb, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+    <script type="application/ld+json">{!! json_encode($coleccion, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endpush
+
 @section('contenido')
     <div class="mx-auto max-w-7xl px-4 py-8">
 

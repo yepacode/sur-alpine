@@ -131,6 +131,57 @@ class BuscadoresTest extends TestCase
             ->assertSee('Disallow: /panel');
     }
 
+    // ── Fase G · SEO para IA ───────────────────────────────────────────────
+
+    public function test_robots_le_habla_a_los_rastreadores_de_ia(): void
+    {
+        // Sin esto, los AI Overviews de Google y las respuestas de ChatGPT o
+        // Perplexity no aprenden del catálogo, y la marca no aparece cuando
+        // alguien pregunta «dónde compro pastillas de freno en Bogotá».
+        $robots = $this->get('/robots.txt')->assertOk()->getContent();
+
+        $this->assertStringContainsString('User-agent: GPTBot', $robots);
+        $this->assertStringContainsString('User-agent: ClaudeBot', $robots);
+        $this->assertStringContainsString('User-agent: PerplexityBot', $robots);
+        $this->assertStringContainsString('User-agent: Google-Extended', $robots);
+    }
+
+    public function test_llms_txt_publica_el_mapa_del_sitio_para_ia(): void
+    {
+        // Convención https://llmstxt.org. Un solo GET con todo lo que un
+        // modelo generativo necesita para hablar del negocio.
+        $this->get('/llms.txt')
+            ->assertOk()
+            ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
+            ->assertSee('# Importadora Sur Alpine', false)
+            ->assertSee('Av. Caracas 19-21 sur', false)
+            ->assertSee('No venta en línea', false);
+    }
+
+    public function test_la_ficha_incluye_la_miga_como_breadcrumblist(): void
+    {
+        $producto = \App\Models\Producto::first();
+        $html = $this->get(route('producto', $producto))->assertOk()->getContent();
+
+        $tipos = collect($this->schemaDe($html))->pluck('@type');
+        $this->assertContains('BreadcrumbList', $tipos, 'La ficha debe declarar sus migas.');
+    }
+
+    public function test_el_catalogo_se_declara_como_collectionpage_con_itemlist(): void
+    {
+        $html = $this->get('/repuestos')->assertOk()->getContent();
+        $tipos = collect($this->schemaDe($html))->pluck('@type');
+        $this->assertContains('CollectionPage', $tipos, 'El catálogo debe declararse como página de colección.');
+        $this->assertContains('BreadcrumbList', $tipos);
+    }
+
+    public function test_quienes_somos_publica_un_faqpage(): void
+    {
+        $html = $this->get('/quienes-somos')->assertOk()->getContent();
+        $tipos = collect($this->schemaDe($html))->pluck('@type');
+        $this->assertContains('FAQPage', $tipos, 'Quiénes somos debe llevar las preguntas frecuentes como FAQPage.');
+    }
+
     /** @return array<int, array<string, mixed>> */
     private function schemaDe(string $html): array
     {

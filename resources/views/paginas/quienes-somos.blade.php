@@ -3,6 +3,51 @@
 @section('titulo', 'Quiénes somos')
 @section('descripcion', 'Importadora Sur Alpine distribuye repuestos y autopartes para vehículos livianos en Bogotá desde 1982, desde un solo punto en el Barrio Restrepo.')
 
+{{-- G · FAQPage. Cinco preguntas típicas del negocio con sus respuestas
+     en texto plano. Son las que un modelo generativo cita cuando alguien
+     pregunta «¿qué es Sur Alpine?» o «¿cómo se cotiza en Sur Alpine?». --}}
+@push('cabeza')
+    @php
+        $faq = [
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => [
+                [
+                    '@type' => 'Question',
+                    'name' => '¿Sur Alpine vende por internet?',
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' =>
+                        'No. El sitio es un catálogo por vehículo: el cliente arma la lista de las piezas que necesita y un asesor humano responde por teléfono o WhatsApp con precios y disponibilidad.'],
+                ],
+                [
+                    '@type' => 'Question',
+                    'name' => '¿Cómo cotizo un repuesto?',
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' =>
+                        'Elige tu vehículo en el buscador —marca, modelo, cilindraje y año—, agrega las piezas que necesitas a tu cotización y envíanos tus datos. Un asesor te llama con la información en menos de un día hábil.'],
+                ],
+                [
+                    '@type' => 'Question',
+                    'name' => '¿A qué vehículos les tienen repuestos?',
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' =>
+                        'Trabajamos 12 marcas de vehículos livianos: Chevrolet, Renault, Mazda, Nissan, Kia, Hyundai, Suzuki, Volkswagen, Peugeot, Ford, Toyota y Fiat, con más de 29.000 referencias en catálogo.'],
+                ],
+                [
+                    '@type' => 'Question',
+                    'name' => '¿Dónde queda el punto de atención?',
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' =>
+                        'Un solo punto de atención: Av. Caracas 19-21 sur, Barrio Restrepo, Bogotá D.C. Es el único sitio oficial: no tenemos sucursales.'],
+                ],
+                [
+                    '@type' => 'Question',
+                    'name' => '¿Cuánto tiempo llevan operando?',
+                    'acceptedAnswer' => ['@type' => 'Answer', 'text' =>
+                        'Desde 1982: 44 años surtiendo talleres, mecánicos y usuarios finales de Bogotá y del resto del país.'],
+                ],
+            ],
+        ];
+    @endphp
+    <script type="application/ld+json">{!! json_encode($faq, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endpush
+
 @section('contenido')
 
     {{-- Encabezado oscuro, con el mismo lenguaje del hero de la portada: los
