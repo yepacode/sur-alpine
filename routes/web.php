@@ -33,6 +33,7 @@ Route::get('/sitemap-{nombre}.xml', [SitemapController::class, 'mapa'])
 Route::view('/quienes-somos', 'paginas.quienes-somos')->name('quienes-somos');
 Route::view('/contactenos', 'paginas.contacto')->name('contacto');
 Route::view('/mantenimientos', 'paginas.mantenimientos')->name('mantenimientos');
+Route::view('/politica-datos', 'paginas.politica-datos')->name('politica-datos');
 
 Route::get('/repuestos', [CatalogoController::class, 'catalogo'])->name('catalogo');
 Route::get('/repuestos/{categoria}', [CatalogoController::class, 'categoria'])->name('categoria');
@@ -98,6 +99,9 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/mi-cuenta/vehiculos', [CuentaController::class, 'guardarVehiculo'])->name('cuenta.vehiculo.guardar');
     Route::post('/mi-cuenta/vehiculos/{vehiculo}/quitar', [CuentaController::class, 'quitarVehiculo'])->name('cuenta.vehiculo.quitar');
+
+    // Habeas Data · el titular puede cerrar su cuenta desde el sitio.
+    Route::post('/mi-cuenta/dar-de-baja', [CuentaController::class, 'darDeBaja'])->name('cuenta.baja');
 
     Route::get('/mi-cuenta/mantenimientos', [CuentaController::class, 'mantenimientos'])->name('cuenta.mantenimientos');
     Route::post('/mi-cuenta/mantenimientos', [CuentaController::class, 'guardarMantenimiento'])->name('cuenta.mantenimientos.guardar');

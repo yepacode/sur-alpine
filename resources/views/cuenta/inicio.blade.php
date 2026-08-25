@@ -169,5 +169,77 @@
                 </form>
             </div>
         </section>
+
+        {{-- Habeas Data · Cierre de cuenta. Va debajo de todo porque no es a lo
+             que el cliente entra, pero tiene que estar visible sin cavar. --}}
+        <section class="mt-14 rounded-2xl border border-alerta-200 bg-alerta-50/40 p-5 sm:p-7"
+                 x-data="{ abierto: false }">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h2 class="font-titulo text-lg font-semibold text-tinta-900">Cerrar mi cuenta</h2>
+                    <p class="mt-1 max-w-xl text-sm text-tinta-600">
+                        Puedes pedir el cierre de tu cuenta en cualquier momento. Se borran los
+                        vehículos y mantenimientos que hayas guardado. Las cotizaciones históricas
+                        se conservan por obligaciones tributarias, pero se desligan de tu cuenta.
+                        La <a class="underline" href="{{ route('politica-datos') }}">política de datos</a>
+                        explica el detalle.
+                    </p>
+                </div>
+                <button type="button" @click="abierto = true"
+                        class="shrink-0 rounded-lg border border-alerta-300 bg-white px-4 py-2 text-sm font-semibold text-alerta-700 transition hover:bg-alerta-100">
+                    Cerrar mi cuenta
+                </button>
+            </div>
+
+            <div x-show="abierto" x-cloak x-transition.opacity
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-noche/60 px-4"
+                 role="dialog" aria-modal="true" aria-labelledby="baja-titulo">
+                <div @click.outside="abierto = false"
+                     class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+                    <h3 id="baja-titulo" class="font-titulo text-lg font-semibold text-tinta-900">
+                        ¿Seguro que quieres cerrar tu cuenta?
+                    </h3>
+                    <p class="mt-2 text-sm text-tinta-600">
+                        La sesión se cierra al instante y no podrás volver a entrar con este correo.
+                    </p>
+
+                    <form method="POST" action="{{ route('cuenta.baja') }}" class="mt-4 space-y-3">
+                        @csrf
+
+                        <label for="baja-pass" class="block text-xs font-semibold uppercase tracking-wide text-tinta-500">Tu contraseña</label>
+                        <input id="baja-pass" name="password" type="password" required autocomplete="current-password"
+                               class="w-full rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
+
+                        <label class="flex items-start gap-2 text-sm text-tinta-700">
+                            <input type="checkbox" name="confirmo" value="1" required class="mt-0.5">
+                            <span>Confirmo que quiero cerrar mi cuenta.</span>
+                        </label>
+
+                        @error('password')
+                            <p class="text-xs text-alerta-600">{{ $message }}</p>
+                        @enderror
+                        @error('confirmo')
+                            <p class="text-xs text-alerta-600">{{ $message }}</p>
+                        @enderror
+
+                        <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                            <button type="button" @click="abierto = false"
+                                    class="rounded-lg border border-tinta-300 bg-white px-4 py-2 text-sm font-semibold text-tinta-700 hover:bg-tinta-100">
+                                Cancelar
+                            </button>
+                            <button type="submit"
+                                    class="rounded-lg bg-alerta-600 px-4 py-2 text-sm font-semibold text-white hover:bg-alerta-700">
+                                Cerrar mi cuenta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        {{-- Un enlace discreto a la política, para el pie del área. --}}
+        <p class="mt-4 text-center text-xs text-tinta-500">
+            <a href="{{ route('politica-datos') }}" class="underline">Política de tratamiento de datos</a>
+        </p>
     </div>
 @endsection

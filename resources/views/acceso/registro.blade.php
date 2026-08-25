@@ -65,7 +65,13 @@
             <label class="flex items-start gap-2 pt-2 text-sm text-tinta-600">
                 <input type="checkbox" name="acepta" value="1" @checked(old('acepta'))
                        class="mt-0.5 size-4 shrink-0 rounded border-tinta-300 text-marca-700">
-                Autorizo el tratamiento de mis datos para que Sur Alpine me contacte.
+                <span>
+                    Autorizo el tratamiento de mis datos para que Sur Alpine me contacte, en los
+                    términos de la
+                    <a href="{{ route('politica-datos') }}" target="_blank" rel="noopener"
+                       class="font-semibold text-marca-700 hover:underline">política de tratamiento de datos</a>
+                    (Ley 1581 de 2012).
+                </span>
             </label>
 
             <button type="submit"

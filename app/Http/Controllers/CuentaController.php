@@ -7,6 +7,7 @@ use App\Models\Vehiculo;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * El área del cliente: sus vehículos y sus mantenimientos.
@@ -145,5 +146,46 @@ class CuentaController extends Controller
     private function soloSuyo(Request $request, Mantenimiento $mantenimiento): void
     {
         abort_unless($mantenimiento->user_id === $request->user()->id, 403);
+    }
+
+    /**
+     * Habeas Data · La baja de cuenta que pide el titular.
+     *
+     * Se hace en dos verbos para que quede en la vista un formulario POST con
+     * su casilla de confirmación: sin esa casilla marcada no procede. El
+     * usuario queda desactivado (el middleware `cuenta.activa` lo saca al
+     * momento del próximo request) y sus vehículos y mantenimientos se
+     * borran; se conservan las cotizaciones históricas porque las exige el
+     * régimen tributario, pero el `user_id` se pone en `null` para no
+     * asociarlas con la cuenta cerrada.
+     */
+    public function darDeBaja(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'confirmo' => ['accepted'],
+            'password' => ['required', 'current_password'],
+        ], [
+            'confirmo.accepted' => 'Necesitamos que confirmes que quieres cerrar tu cuenta.',
+            'password.current_password' => 'La contraseña no coincide con la de tu cuenta.',
+        ]);
+
+        $usuario = $request->user();
+
+        $usuario->cotizaciones()->update(['user_id' => null]);
+        $usuario->mantenimientos()->delete();
+        $usuario->vehiculosGuardados()->detach();
+
+        $usuario->forceFill([
+            'activo' => false,
+            'baja_solicitada_en' => now(),
+            'remember_token' => null,
+        ])->save();
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('inicio')
+            ->with('mensaje', 'Cerramos tu cuenta. Gracias por haber estado.');
     }
 }

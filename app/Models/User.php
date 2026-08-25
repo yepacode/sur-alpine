@@ -17,6 +17,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'rol', 'telefono', 'activo',
+        'acepto_en', 'politica_version', 'baja_solicitada_en',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -28,6 +29,8 @@ class User extends Authenticatable
             'password' => 'hashed',
             'rol' => Rol::class,
             'activo' => 'boolean',
+            'acepto_en' => 'datetime',
+            'baja_solicitada_en' => 'datetime',
         ];
     }
 

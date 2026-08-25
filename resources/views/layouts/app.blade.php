@@ -118,9 +118,12 @@
         </div>
     </div>
     <div class="border-t border-marca-700">
-        <p class="mx-auto max-w-7xl px-4 py-4 text-xs text-marca-200">
-            © {{ date('Y') }} Importadora Sur Alpine S.A. Todos los derechos reservados.
-        </p>
+        <div class="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4 text-xs text-marca-200 sm:flex-row sm:items-center sm:justify-between">
+            <p>© {{ date('Y') }} Importadora Sur Alpine S.A. Todos los derechos reservados.</p>
+            <p>
+                <a href="{{ route('politica-datos') }}" class="hover:underline">Política de tratamiento de datos</a>
+            </p>
+        </div>
     </div>
 </footer>
 

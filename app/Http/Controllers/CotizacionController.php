@@ -108,6 +108,19 @@ class CotizacionController extends Controller
         ]);
 
         $cotizacion = DB::transaction(function () use ($datos, $request) {
+            // Habeas Data: si el que cotiza tiene sesión y todavía no había
+            // aceptado los términos (o aceptó una versión vieja), la fecha
+            // y la versión vigente quedan clavadas en su usuario.
+            if ($usuario = $request->user()) {
+                $versionActual = (string) config('habeas.version');
+                if ($usuario->politica_version !== $versionActual) {
+                    $usuario->forceFill([
+                        'acepto_en' => now(),
+                        'politica_version' => $versionActual,
+                    ])->save();
+                }
+            }
+
             $cotizacion = Cotizacion::create([
                 'consecutivo' => Cotizacion::siguienteConsecutivo(),
                 'user_id' => $request->user()?->id,

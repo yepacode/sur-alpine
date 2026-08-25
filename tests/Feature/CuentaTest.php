@@ -325,4 +325,88 @@ class CuentaTest extends TestCase
         $this->assertSame('ABC123', $guardado->pivot->placa, 'La placa tiene que sobrevivir.');
         $this->assertSame('El de la empresa', $guardado->pivot->alias);
     }
+
+    // ── Habeas Data ────────────────────────────────────────────────────────
+
+    public function test_al_registrarse_queda_clavada_la_version_y_fecha_de_aceptacion(): void
+    {
+        // Antes no había forma de responder al oficial de datos con qué
+        // versión aceptó cada persona: ahora queda en el usuario.
+        $this->post(route('registro.crear'), [
+            'name' => 'Ana', 'telefono' => '300', 'email' => 'ana@taller.co',
+            'password' => 'secreto123', 'password_confirmation' => 'secreto123', 'acepta' => 1,
+        ])->assertRedirect(route('cuenta'));
+
+        $ana = User::firstWhere('email', 'ana@taller.co');
+        $this->assertNotNull($ana->acepto_en, 'Debe quedar la fecha de aceptación.');
+        $this->assertSame((string) config('habeas.version'), $ana->politica_version);
+    }
+
+    public function test_el_cliente_puede_darse_de_baja_desde_mi_cuenta(): void
+    {
+        $cliente = $this->cliente();
+        $vehiculo = $this->vehiculo();
+        $cliente->vehiculosGuardados()->attach($vehiculo->id, ['placa' => 'XYZ 987']);
+
+        $mant = new Mantenimiento([
+            'placa' => 'XYZ 987', 'tipo' => 'Aceite', 'fecha' => now()->subMonth()->toDateString(),
+            'kilometraje' => 12000, 'periodicidad_tipo' => 'meses', 'periodicidad_valor' => 6,
+        ]);
+        $mant->user_id = $cliente->id;
+        $mant->calcularProximo()->save();
+
+        $this->actingAs($cliente)
+            ->post(route('cuenta.baja'), [
+                'confirmo' => 1,
+                'password' => 'secreto123',
+            ])
+            ->assertRedirect(route('inicio'));
+
+        $cliente->refresh();
+        $this->assertFalse($cliente->activo, 'La cuenta queda desactivada.');
+        $this->assertNotNull($cliente->baja_solicitada_en, 'Queda registrada la fecha.');
+        $this->assertSame(0, $cliente->mantenimientos()->count(), 'Sus mantenimientos se borran.');
+        $this->assertSame(0, $cliente->vehiculosGuardados()->count(), 'Sus vehículos se desligan.');
+        $this->assertGuest();
+    }
+
+    public function test_la_baja_pide_contrasena_actual(): void
+    {
+        // Sin contraseña, la baja no procede: si alguien deja abierta la
+        // sesión en un teléfono ajeno, no se pierde la cuenta con un clic.
+        $cliente = $this->cliente();
+
+        $this->actingAs($cliente)
+            ->post(route('cuenta.baja'), [
+                'confirmo' => 1,
+                'password' => 'esta-no-es-mi-clave',
+            ])
+            ->assertSessionHasErrors('password');
+
+        $this->assertTrue($cliente->refresh()->activo, 'La cuenta sigue activa.');
+    }
+
+    public function test_una_cuenta_desactivada_pierde_la_sesion_al_siguiente_request(): void
+    {
+        // Si el admin desactiva a un empleado, la sesión abierta cae en el
+        // próximo request: no queda un panel accesible en el navegador.
+        $cliente = $this->cliente();
+        $this->actingAs($cliente);
+
+        $this->get(route('cuenta'))->assertOk();
+
+        $cliente->forceFill(['activo' => false])->save();
+
+        $this->get(route('cuenta'))
+            ->assertRedirect(route('acceso'));
+        $this->assertGuest();
+    }
+
+    public function test_la_pagina_de_politica_de_datos_esta_publicada(): void
+    {
+        $this->get('/politica-datos')
+            ->assertOk()
+            ->assertSee('Ley 1581', false)
+            ->assertSee('Sur Alpine', false);
+    }
 }

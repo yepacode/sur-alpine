@@ -65,6 +65,11 @@ class RegistroController extends Controller
             'password' => $datos['password'],
             'rol' => Rol::Cliente,
             'activo' => true,
+            // Habeas Data: la fecha y la versión que aceptó quedan clavadas
+            // al usuario. Si mañana el texto cambia, la sesión sabrá que hay
+            // una versión nueva y pedirá autorización otra vez.
+            'acepto_en' => now(),
+            'politica_version' => (string) config('habeas.version'),
         ]);
 
         // La cookie persistente («recordarme») es opcional en el acceso, no
