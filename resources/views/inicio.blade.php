@@ -122,12 +122,19 @@
                         {{-- Sin controles y sin sonido: es ambiente, no un video
                              que alguien vino a ver. Quien pidió menos movimiento
                              lo recibe quieto, en su primer fotograma. --}}
+                        {{-- E2/E3 · Sin `#t=0.5`: Chrome descargaba el primer
+                             tramo del archivo para pintar ese fotograma como
+                             poster, y eran cientos de KB antes de arrancar.
+                             Ahora `preload="none"` no baja nada, y `autoplay
+                             muted` empieza la carga sólo cuando la tarjeta
+                             está pintada. Quien pidió menos movimiento no lo
+                             ve arrancar. --}}
                         <video class="absolute inset-0 size-full object-cover opacity-45"
-                               autoplay muted loop playsinline preload="metadata"
+                               autoplay muted loop playsinline preload="none"
                                aria-hidden="true" tabindex="-1"
                                x-data
                                x-init="if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { $el.removeAttribute('autoplay'); $el.pause() }">
-                            <source src="{{ $video }}#t=0.5" type="video/mp4">
+                            <source src="{{ $video }}" type="video/mp4">
                         </video>
                         <span class="absolute inset-0 bg-gradient-to-r from-noche via-noche/70 to-noche/20" aria-hidden="true"></span>
                     @endif
@@ -449,9 +456,13 @@
                  página, no una función. Así el espacio siempre muestra algo
                  real —el local— y el mapa llega cuando se pide.
 
-                 El video pesa 9 MB, así que sólo se carga su metadato: el
-                 `#t=1.2` hace que el navegador pinte ese fotograma de portada
-                 sin bajarse el archivo entero ni necesitar una imagen aparte. --}}
+                 El video pesa 9 MB. E3 · Antes usábamos `#t=1.2` para que
+                 Chrome pintara el fotograma como poster, pero eso hacía que
+                 el navegador se descargara todo el rango 0-1,2 s del archivo
+                 antes de que nadie pulsara play —cientos de KB de red por
+                 nada. Ahora `preload="none"` no descarga nada y el `poster`
+                 es un SVG diminuto pintado en línea. Los MB del video sólo
+                 se piden si alguien le da al play. --}}
             <div x-ref="marco" class="flex flex-col gap-px bg-noche sm:flex-row">
 
                 <template x-if="mapa">
@@ -473,12 +484,28 @@
                          no se lea como un agujero. --}}
                     <span class="aurora pointer-events-none absolute size-72 rounded-full bg-marca-500/25 blur-[70px]" aria-hidden="true"></span>
 
+                    @php
+                        // Poster SVG en línea: gradiente de marca + rótulo. Pesa
+                        // menos de un kB y evita cualquier descarga de red hasta
+                        // que la persona pulse el play.
+                        $poster = 'data:image/svg+xml;utf8,'.rawurlencode(
+                            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 640">'
+                            .'<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">'
+                            .'<stop offset="0" stop-color="#0a2f6b"/><stop offset="1" stop-color="#080d1a"/>'
+                            .'</linearGradient></defs>'
+                            .'<rect width="360" height="640" fill="url(#g)"/>'
+                            .'<text x="180" y="315" fill="#82adf4" font-family="Archivo, sans-serif" font-size="18" font-weight="700" letter-spacing="3" text-anchor="middle">EL LOCAL</text>'
+                            .'<text x="180" y="345" fill="#eef4fe" font-family="Archivo, sans-serif" font-size="22" font-weight="800" text-anchor="middle">Barrio Restrepo</text>'
+                            .'</svg>'
+                        );
+                    @endphp
                     <div class="relative aspect-[9/16] w-full max-w-[240px] overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10">
                         <video x-ref="video" class="size-full object-cover"
-                               preload="metadata" muted loop playsinline
+                               preload="none" muted loop playsinline
+                               poster="{{ $poster }}"
                                @play="andando = true" @pause="andando = false"
                                aria-label="Recorrido por el local de Sur Alpine en el Barrio Restrepo">
-                            <source src="/video/local-restrepo.mp4#t=1.2" type="video/mp4">
+                            <source src="/video/local-restrepo.mp4" type="video/mp4">
                         </video>
 
                         <button type="button" x-show="!andando" @click="$refs.video.play()"

@@ -27,14 +27,15 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <meta name="theme-color" content="#0a2f6b">
 
-    {{-- Tipografía: Archivo para titulares, Barlow para texto y controles.
-         Con `preconnect` el navegador abre la conexión mientras aún parsea el
-         head, y con `display=swap` el texto se lee desde el primer instante
-         aunque la fuente llegue tarde. --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+    {{-- E1 · Tipografía alojada en el propio dominio. Los siete `.woff2`
+         (Archivo 600/700/800, Barlow 400/500/600/700, subconjunto latin)
+         viven en `public/fonts/`. Antes venía de `fonts.googleapis.com`,
+         que forzaba una conexión TLS aparte, un `preconnect` sólo para
+         eso, y arrastraba cookies de Google en cada visita. `preload` sobre
+         los dos pesos que aparecen primero acelera el LCP. --}}
+    <link rel="preload" href="/fonts/archivo-800.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/barlow-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="/fonts/fonts.css">
 
     <x-negocio-schema />
 

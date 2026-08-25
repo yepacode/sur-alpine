@@ -1,0 +1,68 @@
+/*
+ * Tipografía alojada en el propio dominio.
+ *
+ * Antes venía de `fonts.googleapis.com`, y eso dejaba tres cosas mal:
+ *   · una conexión TLS extra que atrasa el primer texto pintado;
+ *   · un `preconnect` en la cabecera que servía sólo para eso;
+ *   · las cookies de Google terminan en cada visitante (habeas data no la
+ *     ama, y en caché de proxy compartida no se agrega el `Cache-Control`
+ *     que se espera).
+ *
+ * Los `.woff2` son el subconjunto `latin` que devuelve Google Fonts para
+ * navegadores modernos —el que carga hoy en Chrome/Firefox/Safari. Con esto
+ * se cubre todo el español y el francés que pueda aparecer en un vehículo.
+ *
+ * `font-display: swap` mantiene el texto legible aunque una fuente tarde en
+ * llegar; los pesos cargan según se pidan en `font-weight`.
+ */
+
+@font-face {
+    font-family: 'Archivo';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/archivo-600.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Archivo';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/archivo-700.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Archivo';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url('/fonts/archivo-800.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Barlow';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('/fonts/barlow-400.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Barlow';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('/fonts/barlow-500.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Barlow';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('/fonts/barlow-600.woff2') format('woff2');
+}
+@font-face {
+    font-family: 'Barlow';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/barlow-700.woff2') format('woff2');
+}
