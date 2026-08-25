@@ -29,9 +29,12 @@
 
         <div class="flex flex-wrap items-end justify-between gap-4 border-b border-tinta-200 pb-4">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">{{ $titulo }}</h1>
-                <p class="mt-1 text-sm text-tinta-500">
-                    @if (request('q'))
+                <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">
+                    {{ $categoria?->nombre ?? 'Catálogo' }}
+                </p>
+                <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">{{ $titulo }}</h1>
+                <p class="mt-1.5 text-[15px] text-tinta-500">
+                    @if (is_string(request('q')) && request('q') !== '')
                         <span class="tabular-nums">@numero($productos->total())</span>
                         {{ Str::plural('resultado', $productos->total()) }} para
                         <span class="font-medium text-tinta-700">«{{ request('q') }}»</span>
@@ -43,8 +46,13 @@
             </div>
 
             <form method="get" class="flex items-center gap-2">
+                {{-- Sólo escalares: si alguien pide `?q[]=freno` el valor llega
+                     como arreglo y `{{ }}` reventaría en `htmlspecialchars`, con un
+                     500 en las tres URLs con más peso SEO del sitio. --}}
                 @foreach (request()->except(['orden', 'page']) as $campo => $valor)
-                    <input type="hidden" name="{{ $campo }}" value="{{ $valor }}">
+                    @if (is_scalar($valor))
+                        <input type="hidden" name="{{ $campo }}" value="{{ $valor }}">
+                    @endif
                 @endforeach
                 <label for="orden" class="text-sm text-tinta-500">Ordenar</label>
                 <select id="orden" name="orden" onchange="this.form.submit()"
@@ -59,8 +67,8 @@
         <div class="mt-8 grid gap-8 lg:grid-cols-[16rem_1fr]">
 
             <aside class="lg:self-start">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-tinta-500">Tu vehículo</h2>
-                <div class="mt-3 rounded-xl border border-tinta-200 bg-white p-4">
+                <h2 class="font-titulo text-[11px] font-bold uppercase tracking-[0.16em] text-tinta-500">Tu vehículo</h2>
+                <div class="mt-3 rounded-2xl border border-tinta-200 bg-white p-5">
                     @if ($vehiculoActivo ?? null)
                         <p class="text-sm font-semibold">{{ $vehiculoActivo->nombre_completo }}</p>
                         <form method="post" action="{{ route('vehiculo.olvidar') }}" class="mt-2">
@@ -80,7 +88,7 @@
                     @endif
                 </div>
 
-                <h2 class="mt-8 text-xs font-bold uppercase tracking-wider text-tinta-500">Filtrar por parte</h2>
+                <h2 class="mt-8 font-titulo text-[11px] font-bold uppercase tracking-[0.16em] text-tinta-500">Filtrar por parte</h2>
 
                 @if ($tiposParte->isNotEmpty())
                     <p class="mt-3 text-sm">
@@ -128,7 +136,7 @@
 
             <div>
                 @if ($productos->isEmpty())
-                    <div class="rounded-xl border border-dashed border-tinta-300 bg-white p-12 text-center">
+                    <div class="rounded-2xl border border-dashed border-tinta-300 bg-white p-12 text-center" data-revelar>
                         <p class="text-lg font-semibold">No encontramos repuestos con esa búsqueda</p>
                         <p class="mt-2 text-sm text-tinta-500">
                             Prueba con el nombre de la pieza, por ejemplo «pastillas freno» o «filtro aceite».
@@ -141,24 +149,31 @@
                 @else
                     <ul class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         @foreach ($productos as $producto)
-                            <li class="flex flex-col rounded-xl border border-tinta-200 bg-white p-4 transition hover:border-marca-300 hover:shadow-sm">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-marca-600">
-                                    {{ $producto->tipoParte->categoria->nombre }}
-                                </p>
-                                <h3 class="mt-1 font-semibold leading-snug">
-                                    <a href="{{ route('producto', $producto) }}" class="hover:underline">
-                                        {{ $producto->nombre }}
-                                    </a>
-                                </h3>
-                                <p class="mt-2 text-sm text-tinta-500">
-                                    {{ $producto->vehiculo->modelo->marca->nombre }}
-                                    {{ $producto->vehiculo->modelo->nombre }}
-                                    {{ $producto->vehiculo->cilindraje }}
-                                    <span class="tabular-nums">{{ $producto->vehiculo->anio_inicio }}-{{ $producto->vehiculo->anio_fin }}</span>
-                                </p>
+                            {{-- La tarjeta entera es el enlace: en un celular
+                                 acertarle a un botón de 4 mm con guantes puestos
+                                 no es razonable. El botón se queda como señal
+                                 visual de que hay algo que pulsar. --}}
+                            <li data-revelar class="group relative">
                                 <a href="{{ route('producto', $producto) }}"
-                                   class="mt-4 inline-block self-start rounded-lg bg-alerta-500 px-4 py-2 text-sm font-semibold text-white hover:bg-alerta-600">
-                                    Ver y cotizar
+                                   class="con-luz flex h-full flex-col rounded-2xl border border-tinta-200 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-marca-300 hover:shadow-lg">
+                                    <p class="font-titulo text-[11px] font-bold uppercase tracking-[0.14em] text-marca-600">
+                                        {{ $producto->tipoParte->categoria->nombre }}
+                                    </p>
+                                    <h3 class="mt-1.5 font-titulo text-[17px] font-bold leading-snug text-tinta-900 group-hover:text-marca-700">
+                                        {{ $producto->nombre }}
+                                    </h3>
+                                    <p class="mt-2 text-sm text-tinta-500">
+                                        {{ $producto->vehiculo->modelo->marca->nombre }}
+                                        {{ $producto->vehiculo->modelo->nombre }}
+                                        {{ $producto->vehiculo->cilindraje }}
+                                        <span class="cifra">{{ $producto->vehiculo->anio_inicio }}-{{ $producto->vehiculo->anio_fin }}</span>
+                                    </p>
+                                    <span class="mt-5 inline-flex items-center gap-1.5 self-start rounded-xl bg-alerta-500 px-4 py-2.5 font-titulo text-xs font-bold uppercase tracking-[0.06em] text-white transition group-hover:bg-alerta-600">
+                                        Ver y cotizar
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" class="size-3.5 transition group-hover:translate-x-0.5" aria-hidden="true">
+                                            <path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </span>
                                 </a>
                             </li>
                         @endforeach

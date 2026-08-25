@@ -230,5 +230,85 @@ Alpine.data('buscadorSugerencias', (urlSugerencias) => ({
     },
 }));
 
+/**
+ * Las secciones aparecen al entrar en pantalla.
+ *
+ * La clase `js-revelar` se pone desde aquí y no en el HTML a propósito: es la
+ * que esconde los bloques antes de tiempo, y si el JavaScript no llega —o el
+ * navegador no soporta IntersectionObserver— nunca se aplica y la página se ve
+ * completa. Una animación rota no puede costarle el contenido a nadie.
+ */
+function revelarAlEntrar() {
+    const menosMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const bloques = document.querySelectorAll('[data-revelar]');
+
+    if (! bloques.length || ! ('IntersectionObserver' in window) || menosMovimiento) return;
+
+    document.documentElement.classList.add('js-revelar');
+
+    const observador = new IntersectionObserver(
+        (entradas) => {
+            entradas.forEach((entrada) => {
+                if (! entrada.isIntersecting) return;
+                entrada.target.classList.add('visible');
+                observador.unobserve(entrada.target);
+            });
+        },
+        // Un poco antes de que asome: así termina de aparecer justo cuando la
+        // persona llega, y no se ve el salto.
+        { rootMargin: '0px 0px -12% 0px', threshold: 0.05 },
+    );
+
+    bloques.forEach((bloque) => observador.observe(bloque));
+}
+
+/**
+ * El contador del catálogo: 29.272 sube desde cero la primera vez que se ve.
+ *
+ * La cifra es el argumento de venta del sitio, así que merece que se note. El
+ * HTML ya trae el número escrito: esto sólo lo anima, y si no corre, ahí sigue.
+ */
+function animarCifras() {
+    const cifras = document.querySelectorAll('[data-contar]');
+    const menosMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (! cifras.length || ! ('IntersectionObserver' in window) || menosMovimiento) return;
+
+    const formato = new Intl.NumberFormat('es-CO');
+
+    const observador = new IntersectionObserver((entradas) => {
+        entradas.forEach((entrada) => {
+            if (! entrada.isIntersecting) return;
+
+            const nodo = entrada.target;
+            const destino = Number(nodo.dataset.contar);
+            observador.unobserve(nodo);
+
+            if (! Number.isFinite(destino) || destino <= 0) return;
+
+            const duracion = 1100;
+            const arranque = performance.now();
+
+            const paso = (ahora) => {
+                const avance = Math.min((ahora - arranque) / duracion, 1);
+                // Desacelera al final: llegar de golpe se siente mecánico.
+                const suave = 1 - Math.pow(1 - avance, 3);
+                nodo.textContent = formato.format(Math.round(destino * suave));
+                if (avance < 1) requestAnimationFrame(paso);
+            };
+
+            nodo.textContent = '0';
+            requestAnimationFrame(paso);
+        });
+    }, { threshold: 0.4 });
+
+    cifras.forEach((cifra) => observador.observe(cifra));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    revelarAlEntrar();
+    animarCifras();
+});
+
 window.Alpine = Alpine;
 Alpine.start();

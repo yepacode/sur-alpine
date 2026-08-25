@@ -5,8 +5,22 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/*
+ * Dos familias, las dos con raíz en la señalización de transporte, que es de
+ * donde viene el aire de un negocio de autopartes:
+ *
+ *   Archivo  → titulares. Grotesca industrial, apretada, con carácter.
+ *   Barlow   → texto y controles. Nace de la señalética de carretera; es la
+ *              que hace que un formulario largo no canse.
+ *
+ * El `<link>` que las trae vive en `layouts/app.blade.php`, no aquí: un
+ * `@import` remoto dentro de este archivo lo borra el compilador —comprobado—
+ * y además obligaría al navegador a esperar a que el CSS llegue para recién
+ * empezar a pedir las fuentes.
+ */
 @theme {
-    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Barlow', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-titulo: 'Archivo', 'Barlow', ui-sans-serif, system-ui, sans-serif;
 
     /* Marca Sur Alpine: el azul vivo de la barra y el rojo del logo. */
     --color-marca-50: #eef4fe;
@@ -37,7 +51,124 @@
     --color-tinta-500: #5b6473;
     --color-tinta-600: #4d5563;
     --color-tinta-700: #363d49;
+    --color-tinta-800: #232935;
     --color-tinta-900: #171b22;
+
+    /* Un negro con carga de azul para el hero: el negro puro se ve barato al
+       lado del azul de marca, y este deja respirar al degradado. */
+    --color-noche: #080d1a;
+}
+
+@layer base {
+    /* Los titulares llevan la grotesca, apretada. Va aquí y no clase por clase
+       para que cualquier `h1`-`h4` nuevo herede el mismo carácter. */
+    h1, h2, h3, h4 {
+        font-family: var(--font-titulo);
+        letter-spacing: -0.02em;
+    }
+
+    /* Las cifras alineadas en columna piden ancho fijo: los contadores del
+       catálogo y los kilometrajes del historial se leen mejor así. */
+    .cifra {
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MOVIMIENTO
+
+   Todo lo de aquí abajo existe para que el sitio se sienta vivo sin estorbar.
+   Tres reglas que no se rompen:
+
+     · nada se mueve más de 600 ms — un taller no está para esperar animaciones;
+     · nada se mueve al azar: cada gesto responde a algo que hizo la persona,
+       o a que la sección entró en pantalla;
+     · quien pidió menos movimiento no ve NINGUNO de estos efectos, y el
+       contenido queda igual de completo (ver el bloque del final).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* La aurora del hero: dos manchas de color que respiran muy despacio. Es lo
+   que hace que el fondo oscuro no se lea como un rectángulo muerto. */
+@keyframes aurora {
+    0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.55; }
+    33%      { transform: translate3d(6%, -4%, 0) scale(1.15); opacity: 0.8; }
+    66%      { transform: translate3d(-5%, 3%, 0) scale(0.95); opacity: 0.45; }
+}
+
+.aurora {
+    animation: aurora 18s ease-in-out infinite;
+    will-change: transform, opacity;
+}
+.aurora-lenta { animation-duration: 26s; animation-direction: reverse; }
+
+/* La luz que viaja: un destello que asoma por la izquierda y cruza la tarjeta
+   al pasar el cursor. Un solo gesto, y la tarjeta deja de ser un rectángulo. */
+@keyframes luz-viaja {
+    from { transform: translateX(-120%) skewX(-18deg); }
+    to   { transform: translateX(320%)  skewX(-18deg); }
+}
+
+.con-luz { position: relative; overflow: hidden; }
+.con-luz::after {
+    content: '';
+    position: absolute;
+    inset-block: 0;
+    left: 0;
+    width: 35%;
+    background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.55), transparent);
+    transform: translateX(-120%) skewX(-18deg);
+    pointer-events: none;
+    opacity: 0;
+}
+.con-luz:hover::after,
+.con-luz:focus-visible::after {
+    opacity: 1;
+    animation: luz-viaja 850ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Sobre fondo oscuro el destello blanco quema: allí va azul de marca. */
+.con-luz-azul::after {
+    background: linear-gradient(100deg, transparent, rgb(130 173 244 / 0.35), transparent);
+}
+
+/* Aparición al entrar en pantalla. El estado inicial sólo se aplica cuando el
+   JavaScript confirma que puede observar la sección: si no, el contenido se ve
+   desde el primer momento en vez de quedarse invisible para siempre. */
+[data-revelar] { opacity: 1; }
+
+.js-revelar [data-revelar] {
+    opacity: 0;
+    transform: translateY(22px);
+    transition: opacity 550ms cubic-bezier(0.22, 0.61, 0.36, 1),
+                transform 550ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.js-revelar [data-revelar].visible {
+    opacity: 1;
+    transform: none;
+}
+
+/* Escalonado: las tarjetas de una rejilla no entran todas de golpe. */
+.js-revelar [data-revelar][data-retraso="1"] { transition-delay: 70ms; }
+.js-revelar [data-revelar][data-retraso="2"] { transition-delay: 140ms; }
+.js-revelar [data-revelar][data-retraso="3"] { transition-delay: 210ms; }
+.js-revelar [data-revelar][data-retraso="4"] { transition-delay: 280ms; }
+
+/* La cinta de marcas: rueda sola, sin fin, y se detiene al pasar el cursor
+   para poder leer un logo. */
+@keyframes cinta {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+}
+
+.cinta { animation: cinta 42s linear infinite; }
+.cinta-marco:hover .cinta,
+.cinta-marco:focus-within .cinta { animation-play-state: paused; }
+
+/* Los bordes que se desvanecen a los lados de la cinta: sin esto los logos
+   aparecen y desaparecen de golpe contra el borde. */
+.cinta-marco {
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
 
 @layer base {
@@ -67,12 +198,25 @@
     }
 }
 
+/* Quien pidió menos movimiento no ve ninguno de los efectos de arriba —y ve
+   el contenido completo, que es lo que de verdad importa: una animación que
+   no corre no puede dejar un bloque invisible. */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
     *::after {
         animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
+    }
+
+    .aurora { animation: none; opacity: 0.6; }
+    .cinta { animation: none; }
+    .con-luz::after { display: none; }
+
+    .js-revelar [data-revelar] {
+        opacity: 1 !important;
+        transform: none !important;
     }
 }

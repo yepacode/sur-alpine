@@ -68,17 +68,21 @@ class CatalogoTest extends TestCase
     }
 
     /**
-     * En la portada el cliente sólo exhibe las categorías de las que tiene
-     * foto. Una tarjeta vacía se ve peor que una categoría de menos.
+     * B7 · La portada muestra TODAS las categorías —también las que aún no
+     * tienen foto. Antes se filtraba `whereNotNull('imagen')` y eso escondía
+     * Carrocería y Transmisión, 2.234 piezas sin puerta de entrada visible.
+     * La que no tiene foto cae en un tratamiento tipográfico (ver la vista).
      */
-    public function test_la_portada_solo_muestra_categorias_con_foto(): void
+    public function test_la_portada_muestra_todas_las_categorias_con_o_sin_foto(): void
     {
         $this->frenos->update(['imagen' => '/img/categorias/frenos.webp']);
+        // La otra categoría del setUp («Motor Externo») queda sin `imagen`.
 
         $categorias = $this->get('/')->assertOk()->viewData('categorias');
 
-        $this->assertCount(1, $categorias);
-        $this->assertSame('Frenos', $categorias->first()->nombre);
+        $this->assertCount(2, $categorias);
+        $this->assertContains('Frenos', $categorias->pluck('nombre')->all());
+        $this->assertContains('Motor Externo', $categorias->pluck('nombre')->all());
     }
 
     /**

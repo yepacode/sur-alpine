@@ -67,17 +67,24 @@ class Mantenimiento extends Model
 
         $dias = today()->diffInDays($this->proximo_fecha, false);
 
+        // El singular importa: «Vencido hace 1 días» y «En 1 días» delataban
+        // la plantilla. Con `proximo_fecha` casteado a `date` los días son
+        // enteros, así que no hace falta el guardián `=== 0.0`: `< 1` cubre
+        // el caso de hoy y cualquier fracción imposible que aparezca mañana.
         return match (true) {
-            $dias < 0 => 'Vencido hace '.abs((int) $dias).' días',
-            $dias === 0.0 || $dias < 1 => 'Hoy',
-            $dias <= 30 => 'En '.(int) $dias.' días',
+            $dias < 0 => 'Vencido hace '.abs((int) $dias).' '.(abs((int) $dias) === 1 ? 'día' : 'días'),
+            $dias < 1 => 'Hoy',
+            $dias <= 30 => 'En '.(int) $dias.' '.((int) $dias === 1 ? 'día' : 'días'),
             default => 'El '.$this->proximo_fecha->translatedFormat('d M Y'),
         };
     }
 
     public function getVencidoAttribute(): bool
     {
-        return $this->proximo_fecha !== null && $this->proximo_fecha->isPast();
+        // `->isPast()` mira contra ahora, y `proximo_fecha` casteado a `date`
+        // es medianoche: a las 00:00:01 el mantenimiento de HOY salía como
+        // vencido. `->lt(today())` es el corte correcto.
+        return $this->proximo_fecha !== null && $this->proximo_fecha->lt(today());
     }
 
     public function usuario(): BelongsTo

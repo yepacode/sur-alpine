@@ -56,7 +56,7 @@
 
         <div class="grid gap-8 lg:grid-cols-2">
 
-            <div class="flex aspect-4/3 items-center justify-center rounded-xl border border-tinta-200 bg-white p-8">
+            <div class="flex aspect-4/3 items-center justify-center rounded-2xl border border-tinta-200 bg-white p-8 shadow-sm">
                 @if ($producto->imagen_mostrable)
                     {{-- Sin `width`/`height`: la caja ya reserva el espacio con su
                          proporción fija, y la foto puede venir de la categoría
@@ -73,10 +73,10 @@
             </div>
 
             <div>
-                <p class="text-sm font-semibold uppercase tracking-wide text-marca-600">
+                <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">
                     {{ $producto->tipoParte->categoria->nombre }}
                 </p>
-                <h1 class="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{{ $producto->nombre }}</h1>
+                <h1 class="mt-2 text-[1.75rem] font-extrabold leading-tight sm:text-4xl">{{ $producto->nombre }}</h1>
 
                 <dl class="mt-6 divide-y divide-tinta-200 border-y border-tinta-200 text-sm">
                     <div class="flex justify-between gap-4 py-3">
@@ -93,7 +93,7 @@
                     </div>
                 </dl>
 
-                <div class="mt-6 rounded-xl bg-marca-50 p-5">
+                <div class="mt-7 rounded-2xl bg-marca-50 p-6 ring-1 ring-marca-100">
                     <p class="text-sm text-marca-900">
                         <strong>Arma tu solicitud</strong> con los repuestos que necesitas y un asesor
                         te contacta para confirmarte disponibilidad.
@@ -110,7 +110,7 @@
                                    class="mt-1 w-24 rounded-lg border border-marca-200 bg-white px-3 py-2.5 text-center text-sm tabular-nums">
                         </div>
                         <button type="submit"
-                                class="flex-1 rounded-lg bg-alerta-500 px-5 py-3 font-semibold text-white hover:bg-alerta-600">
+                                class="con-luz flex-1 rounded-xl bg-alerta-500 px-5 py-3.5 font-titulo text-sm font-bold uppercase tracking-[0.06em] text-white shadow-lg shadow-alerta-500/25 transition hover:bg-alerta-600">
                             Agregar a mi cotización
                         </button>
                     </form>
@@ -127,16 +127,19 @@
 
         @if ($relacionados->isNotEmpty())
             <section class="mt-16">
-                <h2 class="text-lg font-bold tracking-tight">
+                <h2 class="font-titulo text-xl font-bold">
                     Otras piezas de {{ $producto->tipoParte->categoria->nombre }} para este carro
                 </h2>
                 <ul class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     @foreach ($relacionados as $otro)
-                        <li class="rounded-xl border border-tinta-200 bg-white p-4 transition hover:border-marca-300">
-                            <h3 class="text-sm font-semibold leading-snug">
-                                <a href="{{ route('producto', $otro) }}" class="hover:underline">{{ $otro->nombre }}</a>
-                            </h3>
-                            <p class="mt-1 text-xs text-tinta-500">{{ $otro->tipoParte->nombre }}</p>
+                        <li data-revelar>
+                            <a href="{{ route('producto', $otro) }}"
+                               class="con-luz group flex h-full flex-col rounded-2xl border border-tinta-200 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-marca-300 hover:shadow-lg">
+                                <h3 class="font-titulo text-[15px] font-bold leading-snug text-tinta-900 group-hover:text-marca-700">
+                                    {{ $otro->nombre }}
+                                </h3>
+                                <p class="mt-1.5 text-xs text-tinta-500">{{ $otro->tipoParte->nombre }}</p>
+                            </a>
                         </li>
                     @endforeach
                 </ul>

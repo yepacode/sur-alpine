@@ -160,7 +160,7 @@ class PanelTest extends TestCase
             ->post(route('panel.solicitudes.reenviar', $solicitud))
             ->assertRedirect();
 
-        Mail::assertQueued(SolicitudCotizacion::class);
+        Mail::assertSent(SolicitudCotizacion::class);
 
         $this->assertNotNull($solicitud->fresh()->correo_enviado_en);
         $this->assertNull($solicitud->fresh()->error_envio);

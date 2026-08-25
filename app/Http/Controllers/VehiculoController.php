@@ -47,7 +47,7 @@ class VehiculoController extends Controller
     /** Sugerencias mientras el usuario escribe en el buscador. */
     public function sugerencias(Request $request, VehiculoActivo $activo): JsonResponse
     {
-        $termino = trim((string) $request->query('q'));
+        $termino = is_string($q = $request->query('q')) ? trim($q) : '';
 
         if (mb_strlen($termino) < 3) {
             return response()->json([]);

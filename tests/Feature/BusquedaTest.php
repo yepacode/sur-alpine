@@ -72,9 +72,11 @@ class BusquedaTest extends TestCase
         // una búsqueda vacía sino un error de sintaxis.
         $this->assertSame('+freno*', $this->expresionDe('freno ()'));
 
-        // La barra no es operador de MySQL, así que la referencia se respeta:
-        // el separador de palabras lo pone el motor al indexar.
-        $this->assertSame('+W712/52*', $this->expresionDe('W712/52 >'));
+        // La lista blanca sólo deja pasar letras, números y `_`: la barra se
+        // cae. Sigue encontrando la referencia por el prefijo (`W71252*`
+        // encuentra «W712/52» porque MySQL indexa el token «W71252» — la
+        // barra es separador de palabras en el índice fulltext).
+        $this->assertSame('+W71252*', $this->expresionDe('W712/52 >'));
     }
 
     /** Una sola letra no aporta y MySQL la ignora igual: no se manda. */
@@ -152,7 +154,7 @@ class BusquedaTest extends TestCase
     private function expresionEsperadaEnSqlite(string $termino): string
     {
         return collect(preg_split('/\s+/u', trim($termino)))
-            ->map(fn ($palabra) => preg_replace('/[+\-><()~*"@]+/', '', $palabra))
+            ->map(fn ($palabra) => preg_replace('/[^\p{L}\p{N}_]+/u', '', $palabra))
             ->filter(fn ($palabra) => mb_strlen($palabra) > 1)
             ->map(fn ($palabra) => '+'.$palabra.'*')
             ->implode(' ');
@@ -172,5 +174,40 @@ class BusquedaTest extends TestCase
         } catch (\Throwable) {
             return false;
         }
+    }
+
+    /**
+     * Cinco caídas públicas que un rastreador podía provocar sin credenciales.
+     * Todas devolvían 500 antes de la fase A: si vuelven a caer, es aquí.
+     */
+    public function test_el_catalogo_y_las_sugerencias_aguantan_entradas_hostiles(): void
+    {
+        // Arreglo en lugar de cadena en `?q=`
+        $this->get(route('catalogo').'?q[]=freno')->assertOk();
+        $this->get(route('sugerencias').'?q[]=freno')->assertOk();
+
+        // Otro parámetro-arreglo cualquiera (venía del @foreach del filtro)
+        $this->get(route('catalogo').'?foo[]=1&foo[]=2')->assertOk();
+        $this->get(route('categoria', 'motor-externo').'?a[]=x')->assertOk();
+
+        // El `%` colándose por lista negra en la expresión booleana
+        $this->get(route('catalogo').'?q=%25%25%25')->assertOk();
+        $this->get(route('catalogo').'?q=freno %25%25')->assertOk();
+        $this->get(route('sugerencias').'?q=%25%25%25')->assertOk();
+    }
+
+    /**
+     * Los comodines de LIKE tienen que quedar escapados: `?q=%` no puede
+     * devolver el catálogo entero como si no hubiera filtro.
+     */
+    public function test_los_comodines_de_like_se_escapan(): void
+    {
+        // Producto que sí existe: la prueba `setUp` crea uno con «Filtro Aceite»
+        $con = $this->get(route('catalogo').'?q=filtro')->getContent();
+        $sin = $this->get(route('catalogo').'?q=%25')->getContent();
+
+        // El comodín no debe traer resultados (nadie tiene «%» en el nombre)
+        $this->assertStringContainsString('Filtro Aceite', $con);
+        $this->assertStringNotContainsString('Filtro Aceite', $sin);
     }
 }

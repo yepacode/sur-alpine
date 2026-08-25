@@ -251,4 +251,68 @@ class CuentaTest extends TestCase
         $this->get(route('cuenta'))->assertRedirect(route('acceso'));
         $this->get(route('cuenta.mantenimientos'))->assertRedirect(route('acceso'));
     }
+
+    /**
+     * B5 · El mantenimiento que toca hoy no puede salir como vencido: la píldora
+     * roja diciendo «Hoy» era el escenario que hacía dudar del sitio entero.
+     */
+    public function test_el_que_toca_hoy_no_sale_como_vencido(): void
+    {
+        $cliente = $this->cliente();
+
+        $hoy = Mantenimiento::create([
+            'user_id' => $cliente->id, 'placa' => 'ABC123', 'tipo' => 'Aceite',
+            'fecha' => today()->subMonths(6), 'kilometraje' => 40000,
+            'periodicidad_tipo' => 'meses', 'periodicidad_valor' => 6,
+        ])->calcularProximo();
+        $hoy->save();
+
+        $this->assertSame(today()->toDateString(), $hoy->fresh()->proximo_fecha->toDateString());
+        $this->assertSame('Hoy', $hoy->fresh()->aviso);
+        $this->assertFalse($hoy->fresh()->vencido, 'Lo que toca hoy NO está vencido.');
+    }
+
+    /**
+     * B6 · Los mantenimientos por kilometraje no tienen `proximo_fecha` y
+     * antes se caían del listado de «Próximos» —el mecánico que lleva el carro
+     * por kilómetros no veía nada en su tablero.
+     */
+    public function test_los_proximos_incluyen_los_de_kilometraje(): void
+    {
+        $cliente = $this->cliente();
+
+        $km = Mantenimiento::create([
+            'user_id' => $cliente->id, 'placa' => 'ABC123', 'tipo' => 'Kit de distribución',
+            'fecha' => today(), 'kilometraje' => 48000,
+            'periodicidad_tipo' => 'kilometraje', 'periodicidad_valor' => 60000,
+        ])->calcularProximo();
+        $km->save();
+
+        $this->actingAs($cliente)->get(route('cuenta'))
+            ->assertOk()
+            ->assertSee('Kit de distribución');
+    }
+
+    /**
+     * B9 · Reguardar el vehículo sólo para cambiar el alias no puede borrar
+     * la placa: es el vínculo con el historial, que se filtra por placa.
+     */
+    public function test_reguardar_un_vehiculo_no_borra_la_placa(): void
+    {
+        $cliente = $this->cliente();
+        $vehiculo = $this->vehiculo();
+
+        $this->actingAs($cliente)->post(route('cuenta.vehiculo.guardar'), [
+            'vehiculo_id' => $vehiculo->id, 'placa' => 'ABC123', 'alias' => 'El primero',
+        ]);
+
+        // Ahora sólo se cambia el alias, dejando el campo de placa vacío.
+        $this->actingAs($cliente)->post(route('cuenta.vehiculo.guardar'), [
+            'vehiculo_id' => $vehiculo->id, 'placa' => '', 'alias' => 'El de la empresa',
+        ]);
+
+        $guardado = $cliente->vehiculosGuardados()->first();
+        $this->assertSame('ABC123', $guardado->pivot->placa, 'La placa tiene que sobrevivir.');
+        $this->assertSame('El de la empresa', $guardado->pivot->alias);
+    }
 }

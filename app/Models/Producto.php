@@ -65,27 +65,36 @@ class Producto extends Model
             return $query;
         }
 
+        // `%` y `_` son comodines de LIKE: si no se escapan, `?q=%` devuelve
+        // el catálogo entero como si no hubiera filtro.
+        $like = '%'.addcslashes($termino, "%_\\").'%';
+
         if ($query->getConnection()->getDriverName() !== 'mysql') {
             return $query->where(fn (Builder $q) => $q
-                ->where('nombre', 'like', "%{$termino}%")
-                ->orWhere('referencia', 'like', "%{$termino}%"));
+                ->where('nombre', 'like', $like)
+                ->orWhere('referencia', 'like', $like));
         }
 
         // Cada palabra suma y admite prefijo: "filtro ace" encuentra
         // "Filtro Aceite" sin obligar al usuario a escribirlo completo.
         //
-        // Se limpia ANTES de medir: "freno ()" tiene dos "palabras" de dos
-        // caracteres, y si se mide primero, el paréntesis pasa el filtro, se
-        // queda en nada al limpiarlo y produce un "+*" suelto — que no es una
-        // búsqueda vacía sino un error de sintaxis de MySQL.
+        // Lista blanca —sólo letras, números y guion bajo— en vez de lista
+        // negra de operadores. Con la lista negra se colaban caracteres
+        // legales como `%`, que MySQL rechaza dentro de un término fulltext:
+        // `%%%` producía `+%%%*` y devolvía HTTP 500 en el catálogo.
+        //
+        // Se limpia ANTES de medir la longitud: "freno ()" tiene dos "palabras"
+        // de dos caracteres, y si se mide primero, el paréntesis pasa el filtro,
+        // se queda en nada al limpiarlo y produce un "+*" suelto —tampoco es
+        // una búsqueda vacía, es error de sintaxis.
         $expresion = collect(preg_split('/\s+/u', $termino))
-            ->map(fn ($palabra) => preg_replace('/[+\-><()~*"@]+/', '', $palabra))
+            ->map(fn ($palabra) => preg_replace('/[^\p{L}\p{N}_]+/u', '', $palabra))
             ->filter(fn ($palabra) => mb_strlen($palabra) > 1)
             ->map(fn ($palabra) => '+'.$palabra.'*')
             ->implode(' ');
 
         return $expresion === ''
-            ? $query->where('nombre', 'like', "%{$termino}%")
+            ? $query->where('nombre', 'like', $like)
             : $query->whereFullText(['nombre', 'referencia'], $expresion, ['mode' => 'boolean']);
     }
 

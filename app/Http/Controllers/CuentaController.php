@@ -24,9 +24,16 @@ class CuentaController extends Controller
         return view('cuenta.inicio', [
             'vehiculos' => $usuario->vehiculosGuardados()->with('modelo.marca')->get(),
             // Lo que toca pronto va primero: es a lo que el mecánico entra.
+            // Incluye los de kilometraje. Antes se filtraban con
+            // `whereNotNull('proximo_fecha')` y los de km guardan `null` ahí,
+            // así que quien lleva el carro por kilómetros —lo normal en un
+            // taller— nunca veía nada en su tablero.
             'proximos' => $usuario->mantenimientos()
-                ->whereNotNull('proximo_fecha')
-                ->orderBy('proximo_fecha')
+                ->where(fn ($q) => $q
+                    ->whereNotNull('proximo_fecha')
+                    ->orWhereNotNull('proximo_kilometraje'))
+                ->orderByRaw("COALESCE(proximo_fecha, '9999-12-31')")
+                ->orderBy('proximo_kilometraje')
                 ->limit(5)
                 ->get(),
             'totalMantenimientos' => $usuario->mantenimientos()->count(),
@@ -42,11 +49,16 @@ class CuentaController extends Controller
             'alias' => ['nullable', 'string', 'max:60'],
         ]);
 
+        // Sólo se mandan las llaves que llegaron: `syncWithoutDetaching`
+        // con `null` sobrescribe, y el mecánico que reguardaba su carro sólo
+        // para ponerle un alias perdía la placa guardada.
+        $pivote = array_filter([
+            'placa' => filled($datos['placa'] ?? null) ? mb_strtoupper($datos['placa']) : null,
+            'alias' => $datos['alias'] ?? null,
+        ], fn ($v) => filled($v));
+
         $request->user()->vehiculosGuardados()->syncWithoutDetaching([
-            $datos['vehiculo_id'] => [
-                'placa' => $datos['placa'] ? mb_strtoupper($datos['placa']) : null,
-                'alias' => $datos['alias'] ?? null,
-            ],
+            $datos['vehiculo_id'] => $pivote,
         ]);
 
         return back()->with('mensaje', 'Vehículo guardado en tu cuenta.');

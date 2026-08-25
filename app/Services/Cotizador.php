@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
  */
 class Cotizador
 {
-    private const LLAVE = 'cotizacion.items';
+    public const LLAVE = 'cotizacion.items';
 
     private const MAXIMO_ITEMS = 200;
 

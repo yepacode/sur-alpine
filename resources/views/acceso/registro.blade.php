@@ -5,7 +5,8 @@
 
 @section('contenido')
     <div class="mx-auto max-w-md px-4 py-12">
-        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Crear mi cuenta</h1>
+        <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">Bienvenido</p>
+        <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">Crear mi cuenta</h1>
         <p class="mt-2 text-tinta-600">
             Para llevar el historial de mantenimiento de tus carros. Es gratis y toma un minuto.
         </p>
@@ -68,7 +69,7 @@
             </label>
 
             <button type="submit"
-                    class="w-full rounded-lg bg-alerta-500 px-6 py-3 font-semibold text-white transition hover:bg-alerta-600">
+                    class="con-luz w-full rounded-xl bg-alerta-500 px-6 py-3.5 font-titulo text-sm font-bold uppercase tracking-[0.06em] text-white shadow-lg shadow-alerta-500/25 transition hover:bg-alerta-600">
                 Crear mi cuenta
             </button>
         </form>

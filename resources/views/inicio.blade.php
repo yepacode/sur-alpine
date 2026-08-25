@@ -10,10 +10,20 @@
          abajo, donde sigue siendo suyo pero no secuestra la puerta de entrada. --}}
     <section class="relative overflow-hidden bg-tinta-900">
 
-        {{-- Capas de profundidad: azul de marca, resplandor y filigrana. --}}
-        <div class="absolute inset-0 bg-gradient-to-br from-marca-900 via-tinta-900 to-black" aria-hidden="true"></div>
-        <div class="absolute -left-40 top-1/2 size-[38rem] -translate-y-1/2 rounded-full bg-marca-600/25 blur-3xl" aria-hidden="true"></div>
-        <div class="absolute -right-20 bottom-0 size-[30rem] rounded-full bg-alerta-500/10 blur-3xl" aria-hidden="true"></div>
+        {{-- Capas de profundidad. Las dos manchas de color respiran muy
+             despacio: es lo que hace que el fondo no se lea como un rectángulo
+             muerto, sin robarle un gramo de atención al buscador. --}}
+        <div class="absolute inset-0 bg-gradient-to-br from-marca-900 via-tinta-900 to-noche" aria-hidden="true"></div>
+        <div class="aurora absolute -left-40 top-1/2 size-[42rem] -translate-y-1/2 rounded-full bg-marca-500/30 blur-[100px]" aria-hidden="true"></div>
+        <div class="aurora aurora-lenta absolute -right-24 bottom-0 size-[34rem] rounded-full bg-alerta-500/20 blur-[90px]" aria-hidden="true"></div>
+
+        {{-- Rejilla técnica, como el papel milimetrado de un plano de taller.
+             Al 4% no se ve: se siente. --}}
+        <div class="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:56px_56px]" aria-hidden="true"></div>
+
+        {{-- Un filo de luz en el borde inferior: separa el hero de lo que sigue
+             sin necesidad de una línea dura. --}}
+        <div class="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-marca-400/50 to-transparent" aria-hidden="true"></div>
 
         {{-- El asesor: es su propia foto, y da la escala humana que faltaba.
 
@@ -32,28 +42,43 @@
                  aria-hidden="true">
         </picture>
 
-        <div class="relative mx-auto max-w-7xl px-4 pb-8 pt-8 sm:pb-14 sm:pt-20">
+        <div class="relative mx-auto max-w-7xl px-4 pb-10 pt-8 sm:pb-20 sm:pt-20">
             <div class="max-w-2xl">
-                <p class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] sm:px-4 sm:py-1.5 sm:text-xs font-semibold uppercase tracking-[0.18em] text-marca-100 ring-1 ring-white/15">
+                <p class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5 font-titulo text-[11px] font-bold uppercase tracking-[0.16em] text-white ring-1 ring-white/25 sm:px-4 sm:text-xs">
                     <span class="size-1.5 rounded-full bg-alerta-500"></span>
                     {{ now()->year - 1982 }} años · único sitio oficial
                 </p>
 
-                <h1 class="mt-4 text-[1.75rem] font-extrabold sm:mt-6 leading-[1.08] tracking-tight text-white text-balance sm:text-5xl">
-                    Tu socio de confianza en
-                    <span class="text-marca-300">autopartes</span> en Bogotá
+                {{-- El titular es la promesa del negocio, no el nombre de la
+                     empresa: lo que el mecánico quiere saber es si aquí está su
+                     pieza. La escala sube porque antes competía de tú a tú con
+                     el párrafo de abajo. --}}
+                <h1 class="mt-4 text-[2rem] font-extrabold leading-[0.98] text-white text-balance sm:mt-6 sm:text-[3.5rem] lg:text-[4rem]">
+                    La pieza exacta<br>
+                    <span class="text-marca-300">de tu carro</span>
                 </h1>
 
                 {{-- Con carro elegido la cifra ya no es del catálogo entero, así
                      que decirlo "para 12 marcas" sería mentir por partida doble. --}}
-                <p class="mt-3 max-w-xl text-marca-100 sm:mt-5 sm:text-lg">
+                {{-- La cifra es el argumento de venta, no un dato al paso: sube
+                     desde cero la primera vez que se ve. Si el JavaScript no
+                     corre, el número ya está escrito en el HTML. --}}
+                <p class="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 sm:mt-6">
+                    <span class="cifra font-titulo text-4xl font-extrabold text-white sm:text-5xl"
+                          data-contar="{{ $totalProductos }}">@numero($totalProductos)</span>
+                    <span class="text-lg text-marca-100 sm:text-xl">
+                        @if ($vehiculoActivo)
+                            repuestos para tu {{ $vehiculoActivo->nombre_completo }}
+                        @else
+                            repuestos para {{ $marcas->count() }} marcas
+                        @endif
+                    </span>
+                </p>
+
+                <p class="mt-2 max-w-lg text-marca-200">
                     @if ($vehiculoActivo)
-                        <span class="font-semibold text-white tabular-nums">@numero($totalProductos)</span>
-                        repuestos para tu <span class="font-semibold text-white">{{ $vehiculoActivo->nombre_completo }}</span>.
                         Todo lo que ves abajo le sirve.
                     @else
-                        <span class="font-semibold text-white tabular-nums">@numero($totalProductos)</span>
-                        repuestos para {{ $marcas->count() }} marcas de vehículo.
                         Dinos qué carro tienes y te mostramos sólo lo que le sirve.
                     @endif
                 </p>
@@ -73,23 +98,61 @@
         </div>
     @endif
 
-    {{-- 2 · Confianza. Lo que los diferencia y hoy no se ve por ningún lado. --}}
+    {{-- 2 · Confianza. Lo que los diferencia y hoy no se ve por ningún lado.
+
+         La tercera tarjeta lleva el video de envíos de fondo: son 5 segundos y
+         382 KB —lo que pesa una foto—, así que puede correr solo sin castigar a
+         nadie. Rompe la fila de tarjetas blancas a propósito: los envíos son lo
+         que menos se cree de un negocio con un solo local. --}}
     <section class="mx-auto max-w-7xl px-4 pt-12">
         <ul class="grid gap-6 sm:grid-cols-3">
             @foreach ([
-                [now()->year - 1982 .' años', 'importando autopartes', 'M12 2 4 6v6c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6l-8-4Z'],
-                ['Un solo punto', $contacto->direccion().', Restrepo', 'M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z'],
-                ['Envíos', 'a ciudades y municipios del país', 'M3 7h11v8H3zM14 10h4l3 3v2h-7z'],
-            ] as [$titulo, $texto, $trazo])
-                <li class="flex items-center gap-4 rounded-xl bg-white px-5 py-4 shadow-sm ring-1 ring-black/5">
-                    <span class="grid size-11 shrink-0 place-items-center rounded-lg bg-alerta-500/10 text-alerta-500">
+                [now()->year - 1982 .' años', 'importando autopartes', 'M12 2 4 6v6c0 5 3.4 9.4 8 10 4.6-.6 8-5 8-10V6l-8-4Z', null],
+                ['Un solo punto', $contacto->direccion().', Restrepo', 'M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z', null],
+                ['Envíos', 'a ciudades y municipios del país', 'M3 7h11v8H3zM14 10h4l3 3v2h-7z', '/video/envios.mp4'],
+            ] as $i => [$titulo, $texto, $trazo, $video])
+                <li data-revelar data-retraso="{{ $i + 1 }}"
+                    @class([
+                        'con-luz relative flex items-center gap-4 overflow-hidden rounded-2xl px-6 py-5 shadow-sm ring-1 transition duration-300 hover:-translate-y-1 hover:shadow-lg',
+                        'bg-white ring-black/5' => ! $video,
+                        'bg-noche ring-white/10' => $video,
+                    ])>
+
+                    @if ($video)
+                        {{-- Sin controles y sin sonido: es ambiente, no un video
+                             que alguien vino a ver. Quien pidió menos movimiento
+                             lo recibe quieto, en su primer fotograma. --}}
+                        <video class="absolute inset-0 size-full object-cover opacity-45"
+                               autoplay muted loop playsinline preload="metadata"
+                               aria-hidden="true" tabindex="-1"
+                               x-data
+                               x-init="if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { $el.removeAttribute('autoplay'); $el.pause() }">
+                            <source src="{{ $video }}#t=0.5" type="video/mp4">
+                        </video>
+                        <span class="absolute inset-0 bg-gradient-to-r from-noche via-noche/70 to-noche/20" aria-hidden="true"></span>
+                    @endif
+
+                    <span @class([
+                        'relative grid size-12 shrink-0 place-items-center rounded-xl',
+                        'bg-alerta-500/10 text-alerta-500' => ! $video,
+                        'bg-white/15 text-white ring-1 ring-white/20' => $video,
+                    ])>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" class="size-6" aria-hidden="true">
                             <path d="{{ $trazo }}" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </span>
-                    <p class="text-sm leading-snug">
-                        <strong class="block text-base text-tinta-900">{{ $titulo }}</strong>
-                        <span class="text-tinta-500">{{ $texto }}</span>
+
+                    <p class="relative leading-snug">
+                        <strong @class([
+                            'block font-titulo text-lg font-bold',
+                            'text-tinta-900' => ! $video,
+                            'text-white' => $video,
+                        ])>{{ $titulo }}</strong>
+                        <span @class([
+                            'text-[15px]',
+                            'text-tinta-500' => ! $video,
+                            'text-marca-100' => $video,
+                        ])>{{ $texto }}</span>
                     </p>
                 </li>
             @endforeach
@@ -98,11 +161,12 @@
 
     {{-- 3 · Categorías: las diez que el cliente exhibe, no cuatro. Un mecánico
          escanea buscando su sistema; un clic de más le cuesta. --}}
-    <section id="categorias" class="mx-auto max-w-7xl px-4 py-14">
+    <section id="categorias" class="mx-auto max-w-7xl px-4 py-16" data-revelar>
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
-                <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">Categorías de autopartes</h2>
-                <p class="mt-1 text-tinta-500">
+                <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">El catálogo</p>
+                <h2 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">Categorías de autopartes</h2>
+                <p class="mt-1.5 text-[15px] text-tinta-500">
                     <span class="tabular-nums">@numero($totalProductos)</span> repuestos
                     @if ($vehiculoActivo)
                         para tu {{ $vehiculoActivo->nombre_completo }}.
@@ -119,20 +183,33 @@
         <ul class="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
             @foreach ($categorias as $categoria)
                 <li>
+                    {{-- Sin foto no se esconde la categoría —eso escondía 2.234
+                         piezas de Carrocería y Transmisión sin puerta de entrada—:
+                         cae en un tratamiento tipográfico con la inicial grande y
+                         un tinte de marca, coherente con el resto de la rejilla. --}}
                     <a href="{{ route('categoria', $categoria) }}"
-                       class="group flex h-full flex-col rounded-xl bg-white p-3 shadow-sm ring-1 ring-black/5 transition hover:-translate-y-1 hover:shadow-lg">
-                        <div class="grid flex-1 place-items-center overflow-hidden rounded-lg">
-                            <img src="{{ $categoria->imagen }}" alt=""
-                                 @if ($categoria->imagen_srcset)
-                                     srcset="{{ $categoria->imagen_srcset }}"
-                                     sizes="(min-width: 1024px) 240px, 45vw"
-                                 @endif
-                                 width="640" height="640" loading="lazy" decoding="async"
-                                 class="w-full scale-105 object-contain transition duration-300 group-hover:scale-110">
-                        </div>
+                       class="con-luz group flex h-full flex-col rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5 transition duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:ring-marca-200">
+                        @if ($categoria->imagen)
+                            <div class="grid flex-1 place-items-center overflow-hidden rounded-lg">
+                                <img src="{{ $categoria->imagen }}" alt=""
+                                     @if ($categoria->imagen_srcset)
+                                         srcset="{{ $categoria->imagen_srcset }}"
+                                         sizes="(min-width: 1024px) 240px, 45vw"
+                                     @endif
+                                     width="640" height="640" loading="lazy" decoding="async"
+                                     class="w-full scale-105 object-contain transition duration-500 ease-out group-hover:scale-[1.18]">
+                            </div>
+                        @else
+                            <div class="grid aspect-square flex-1 place-items-center overflow-hidden rounded-lg bg-gradient-to-br from-marca-50 to-marca-100">
+                                <span aria-hidden="true"
+                                      class="font-titulo text-[4rem] font-extrabold leading-none text-marca-800/25 transition duration-500 group-hover:scale-110 group-hover:text-marca-800/40">
+                                    {{ mb_substr($categoria->nombre, 0, 1) }}
+                                </span>
+                            </div>
+                        @endif
                         <div class="mt-3 flex items-baseline justify-between gap-2 px-1">
-                            <h3 class="font-semibold text-tinta-900 group-hover:text-marca-700">{{ $categoria->nombre }}</h3>
-                            <span class="shrink-0 text-xs tabular-nums text-tinta-400">@numero($categoria->productos_count)</span>
+                            <h3 class="font-titulo text-[15px] font-bold leading-tight text-tinta-900 group-hover:text-marca-700">{{ $categoria->nombre }}</h3>
+                            <span class="cifra shrink-0 text-xs font-semibold text-tinta-400">@numero($categoria->productos_count)</span>
                         </div>
                     </a>
                 </li>
@@ -143,7 +220,7 @@
     {{-- 4 · Mantenimientos. En la maqueta esto era un tablero con datos falsos;
          aquí es lo que de verdad es: la invitación a registrarse. El tablero
          real vive dentro de la cuenta. --}}
-    <section class="mx-auto max-w-7xl px-4 py-4">
+    <section class="mx-auto max-w-7xl px-4 py-4" data-revelar>
         <div class="grid items-center gap-8 overflow-hidden rounded-2xl bg-marca-800 p-8 text-white lg:grid-cols-2 lg:p-12">
             <div>
                 <p class="text-sm font-semibold uppercase tracking-widest text-marca-300">Nuestros servicios</p>
@@ -206,7 +283,8 @@
         <section class="mx-auto max-w-7xl px-4 py-14"
                  x-data="{ desplazar(dir) { const p = this.$refs.pista; p.scrollBy({ left: dir * p.clientWidth * 0.8, behavior: 'smooth' }) } }">
             <div class="flex flex-wrap items-end justify-between gap-4">
-                <h2 class="text-2xl font-bold tracking-tight sm:text-3xl">
+                <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">Lo que más sale</p>
+                <h2 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">
                     Productos destacados
                     @if ($vehiculoActivo ?? null)
                         <span class="block text-base font-normal text-tinta-500">para tu {{ $vehiculoActivo->nombre_completo }}</span>
@@ -279,27 +357,51 @@
         </section>
     @endif
 
-    {{-- 6 · Marcas --}}
+    {{-- 6 · Marcas.
+
+         En rejilla estática parecían una hoja de cálculo. En cinta se leen como
+         lo que son: el respaldo de dieciséis fabricantes. Rueda sola y se
+         detiene al pasar el cursor o al llegar con el teclado, para poder mirar
+         un logo con calma. --}}
     @if ($proveedores)
-        <section class="mx-auto max-w-7xl px-4 py-10">
-            <h2 class="text-sm font-bold uppercase tracking-wider text-tinta-500">Nuestras marcas</h2>
-            <ul class="mt-6 grid grid-cols-3 items-center gap-6 sm:grid-cols-4 lg:grid-cols-8">
-                @foreach ($proveedores as $proveedor)
-                    <li>
-                        <img src="{{ $proveedor['src'] }}" alt="{{ $proveedor['nombre'] }}"
-                             width="140" height="70" loading="lazy" decoding="async"
-                             class="mx-auto h-12 w-auto object-contain opacity-60 transition hover:opacity-100">
-                    </li>
-                @endforeach
-            </ul>
+        <section class="mx-auto max-w-7xl px-4 py-12" data-revelar>
+            <div class="flex items-center gap-3">
+                <h2 class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-tinta-500">
+                    Trabajamos con
+                </h2>
+                <span class="h-px flex-1 bg-tinta-200" aria-hidden="true"></span>
+            </div>
+
+            <div class="cinta-marco mt-7 overflow-hidden">
+                {{-- La lista va duplicada: es lo que hace que el giro no tenga
+                     costura. La copia se esconde del lector de pantalla. --}}
+                <ul class="cinta flex w-max items-center gap-12">
+                    @foreach ($proveedores as $proveedor)
+                        <li class="shrink-0">
+                            <img src="{{ $proveedor['src'] }}" alt="{{ $proveedor['nombre'] }}"
+                                 width="140" height="70" loading="lazy" decoding="async"
+                                 class="h-11 w-auto object-contain opacity-55 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0">
+                        </li>
+                    @endforeach
+                    @foreach ($proveedores as $proveedor)
+                        <li class="shrink-0" aria-hidden="true">
+                            <img src="{{ $proveedor['src'] }}" alt="" width="140" height="70"
+                                 loading="lazy" decoding="async"
+                                 class="h-11 w-auto object-contain opacity-55 grayscale transition duration-300 hover:opacity-100 hover:grayscale-0">
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
         </section>
     @endif
 
     {{-- 7 · Dónde estamos --}}
-    <section class="mx-auto max-w-7xl px-4 py-14">
+    <section class="mx-auto max-w-7xl px-4 py-14" data-revelar
+             x-data="{ mapa: false, abrirMapa() { this.mapa = true; $nextTick(() => $refs.marco?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })) } }">
         <div class="grid items-stretch gap-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 lg:grid-cols-[1fr_1.2fr]">
             <div class="p-8 lg:p-10">
-                <h2 class="text-2xl font-bold tracking-tight">Visítanos en Restrepo</h2>
+                <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">Dónde estamos</p>
+                <h2 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-3xl">Visítanos en Restrepo</h2>
                 <p class="mt-4 text-tinta-600">
                     Un solo punto de atención en Bogotá, con asesores que te ayudan a encontrar
                     la pieza exacta que necesita tu vehículo.
@@ -320,25 +422,84 @@
                     @endforeach
                 </ul>
 
-                <a href="{{ $contacto->mapaUrl() }}" target="_blank" rel="noopener"
-                   class="mt-7 inline-block rounded-lg bg-marca-600 px-6 py-3 font-semibold text-white transition hover:bg-marca-700">
-                    Cómo llegar
-                </a>
+                {{-- «Cómo llegar» abre el mapa aquí mismo en vez de mandar a
+                     Google: sacar a alguien del sitio para enseñarle dónde
+                     queda la tienda es perder la visita. El enlace externo
+                     queda como salida secundaria, para quien va manejando. --}}
+                <div class="mt-8 flex flex-wrap items-center gap-3">
+                    <button type="button" @click="abrirMapa()"
+                            class="con-luz inline-flex items-center gap-2 rounded-xl bg-marca-700 px-6 py-3.5 font-titulo text-sm font-bold uppercase tracking-[0.06em] text-white shadow-lg shadow-marca-700/25 transition hover:bg-marca-800">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" class="size-4.5" aria-hidden="true">
+                            <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>
+                        </svg>
+                        <span x-text="mapa ? 'Mapa abierto' : 'Cómo llegar'">Cómo llegar</span>
+                    </button>
+
+                    <a href="{{ $contacto->mapaUrl() }}" target="_blank" rel="noopener"
+                       class="text-sm font-semibold text-marca-700 underline-offset-4 hover:underline">
+                        Abrir en Google Maps ↗
+                    </a>
+                </div>
             </div>
 
-            {{-- El mapa carga sólo si alguien lo pide: el iframe de Google es
-                 de lo más pesado de una página, y casi nadie lo usa. --}}
-            <div x-data="{ cargado: false }" class="relative min-h-64 bg-tinta-100">
-                <template x-if="cargado">
-                    <iframe title="Ubicación de Importadora Sur Alpine"
-                            src="https://www.google.com/maps?q={{ urlencode($contacto->direccionCompleta()) }}&output=embed"
-                            loading="lazy" referrerpolicy="no-referrer-when-downgrade"
-                            class="size-full border-0"></iframe>
+            {{-- El local, en video. El mapa NO está: aparece al lado cuando
+                 alguien pulsa «Cómo llegar».
+
+                 Un recuadro gris esperando a que lo pulsen es un hueco en la
+                 página, no una función. Así el espacio siempre muestra algo
+                 real —el local— y el mapa llega cuando se pide.
+
+                 El video pesa 9 MB, así que sólo se carga su metadato: el
+                 `#t=1.2` hace que el navegador pinte ese fotograma de portada
+                 sin bajarse el archivo entero ni necesitar una imagen aparte. --}}
+            <div x-ref="marco" class="flex flex-col gap-px bg-noche sm:flex-row">
+
+                <template x-if="mapa">
+                    <div class="min-h-72 flex-1 sm:min-h-0">
+                        <iframe title="Ubicación de Importadora Sur Alpine"
+                                src="https://www.google.com/maps?q={{ urlencode($contacto->direccionCompleta()) }}&output=embed"
+                                loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                                class="size-full border-0"></iframe>
+                    </div>
                 </template>
-                <button type="button" x-show="!cargado" @click="cargado = true"
-                        class="absolute inset-0 grid place-items-center text-marca-700 transition hover:bg-tinta-200/50">
-                    <span class="rounded-lg bg-white px-5 py-3 font-semibold shadow-sm">Ver el mapa</span>
-                </button>
+
+                {{-- Vertical porque así se grabó: recortarlo a apaisado sería
+                     quedarse con la mitad del local. --}}
+                <div x-data="{ andando: false }"
+                     class="relative flex flex-1 items-center justify-center overflow-hidden p-5 sm:flex-none"
+                     :class="mapa ? 'sm:w-[240px] lg:w-[260px]' : 'sm:w-full'">
+
+                    {{-- Un resplandor detrás del video, para que el panel negro
+                         no se lea como un agujero. --}}
+                    <span class="aurora pointer-events-none absolute size-72 rounded-full bg-marca-500/25 blur-[70px]" aria-hidden="true"></span>
+
+                    <div class="relative aspect-[9/16] w-full max-w-[240px] overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10">
+                        <video x-ref="video" class="size-full object-cover"
+                               preload="metadata" muted loop playsinline
+                               @play="andando = true" @pause="andando = false"
+                               aria-label="Recorrido por el local de Sur Alpine en el Barrio Restrepo">
+                            <source src="/video/local-restrepo.mp4#t=1.2" type="video/mp4">
+                        </video>
+
+                        <button type="button" x-show="!andando" @click="$refs.video.play()"
+                                class="group absolute inset-0 grid place-items-center bg-noche/30 transition hover:bg-noche/10">
+                            <span class="grid size-16 place-items-center rounded-full bg-white/95 text-alerta-600 shadow-xl transition group-hover:scale-110">
+                                <svg viewBox="0 0 24 24" fill="currentColor" class="size-7 translate-x-0.5" aria-hidden="true">
+                                    <path d="M7 4.5v15l12-7.5z"/>
+                                </svg>
+                            </span>
+                            <span class="sr-only">Reproducir el recorrido por el local</span>
+                        </button>
+
+                        <button type="button" x-show="andando" x-cloak @click="$refs.video.pause()"
+                                class="absolute bottom-3 right-3 grid size-9 place-items-center rounded-full bg-noche/60 text-white backdrop-blur transition hover:bg-noche/80">
+                            <svg viewBox="0 0 24 24" fill="currentColor" class="size-3.5" aria-hidden="true">
+                                <rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>
+                            </svg>
+                            <span class="sr-only">Pausar el video</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </section>

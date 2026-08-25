@@ -1,6 +1,9 @@
 @php
+    // «Vehículos» apuntaba al mismo sitio que «Catálogo»: dos entradas
+    // contiguas para el mismo destino, una con fondo y otra sin él. Sobraba, y
+    // de paso devuelve el ancho que la cabecera necesitaba para caber en una
+    // sola fila.
     $enlaces = [
-        ['texto' => 'Vehículos', 'ruta' => 'catalogo'],
         ['texto' => 'Mantenimientos', 'ruta' => 'mantenimientos'],
         ['texto' => 'Visítanos en Restrepo', 'ruta' => 'contacto'],
         ['texto' => 'Sobre nosotros', 'ruta' => 'quienes-somos'],
@@ -11,10 +14,20 @@
         class="sticky top-0 z-40 border-b border-tinta-200/80 bg-white/95 backdrop-blur">
     <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3">
 
-        <a href="{{ route('inicio') }}" class="shrink-0" aria-label="Sur Alpine, inicio">
-            <img src="/img/logo/logo-en-png-sur-alpine.webp" alt="Importadora Sur Alpine"
+        {{-- El logo con su nombre al lado: solo, a 45 px de ancho, no se lee
+             como la marca de una importadora de 44 años. --}}
+        <a href="{{ route('inicio') }}" class="flex shrink-0 items-center gap-3" aria-label="Sur Alpine, inicio">
+            <img src="/img/logo/logo-en-png-sur-alpine.webp" alt=""
                  width="280" height="351" fetchpriority="high" decoding="async"
-                 class="h-12 w-auto sm:h-14">
+                 class="h-11 w-auto sm:h-14">
+            <span class="hidden leading-none sm:block">
+                <span class="block font-titulo text-[15px] font-extrabold uppercase tracking-[0.02em] text-marca-900">
+                    Importadora
+                </span>
+                <span class="block font-titulo text-[19px] font-extrabold uppercase tracking-[0.14em] text-alerta-600">
+                    Sur Alpine
+                </span>
+            </span>
         </a>
 
         {{-- Buscador y cotización a la derecha, siempre a la vista. --}}
@@ -23,7 +36,7 @@
                   x-data="buscadorSugerencias('{{ route('sugerencias') }}')" @click.outside="cerrar()">
                 <label for="buscar" class="sr-only">Buscar repuesto o referencia</label>
                 <div class="relative">
-                    <input id="buscar" type="search" name="q" value="{{ request('q') }}" autocomplete="off"
+                    <input id="buscar" type="search" name="q" value="{{ is_string(request('q')) ? request('q') : '' }}" autocomplete="off"
                            x-model="termino" @input="escribir()" @focus="escribir()" placeholder="Buscar repuesto…"
                            class="w-full rounded-lg border border-tinta-200 bg-tinta-50 py-2 pl-3 pr-10 text-sm outline-none transition placeholder:text-tinta-400 focus:border-marca-500 focus:bg-white">
                     <button type="submit" aria-label="Buscar"
@@ -73,21 +86,25 @@
             </button>
         </div>
 
+        {{-- La navegación deja de gritar: antes eran seis enlaces en mayúsculas
+             del mismo peso peleando entre sí. Ahora el catálogo es el único con
+             fondo —es a donde queremos que vayan— y el resto acompaña, con la
+             página actual marcada por una línea roja y no por otro color. --}}
         <nav class="order-last hidden w-full items-center gap-1 lg:order-2 lg:flex lg:w-auto" aria-label="Principal">
             <a href="{{ route('catalogo') }}"
                @class([
-                   'rounded-lg px-4 py-2 text-sm font-bold uppercase tracking-wide transition',
-                   'bg-marca-600 text-white hover:bg-marca-700' => ! request()->routeIs('inicio'),
-                   'bg-marca-600 text-white' => request()->routeIs('inicio'),
+                   'rounded-lg px-4 py-2.5 font-titulo text-sm font-bold uppercase tracking-[0.06em] transition',
+                   'bg-marca-700 text-white shadow-sm hover:bg-marca-800' => true,
                ])>
-                Catálogo de productos
+                Catálogo
             </a>
 
             @foreach ($enlaces as $enlace)
                 <a href="{{ route($enlace['ruta']) }}"
                    @class([
-                       'rounded-lg px-3 py-2 text-sm font-semibold uppercase tracking-wide transition',
-                       'text-marca-700' => request()->routeIs($enlace['ruta']),
+                       'relative rounded-lg px-3 py-2.5 text-[15px] font-medium transition',
+                       'text-marca-800 after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:rounded-full after:bg-alerta-500'
+                            => request()->routeIs($enlace['ruta']),
                        'text-tinta-600 hover:bg-tinta-100 hover:text-tinta-900' => ! request()->routeIs($enlace['ruta']),
                    ])>
                     {{ $enlace['texto'] }}

@@ -8,6 +8,7 @@ use App\Services\Cotizador;
 use App\Services\VehiculoActivo;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -23,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Paginador propio en español: `resources/views/vendor/pagination/tailwind.blade.php`.
+        Paginator::useTailwind();
+
         // Formato colombiano: 29.272, no 29,272.
         Blade::directive('numero', fn (string $expresion) => "<?php echo number_format($expresion, 0, ',', '.'); ?>");
 

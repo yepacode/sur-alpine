@@ -9,7 +9,8 @@
             ← Mi cuenta
         </a>
 
-        <h1 class="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">Historial de mantenimientos</h1>
+        <p class="mt-4 font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">Mi cuenta</p>
+        <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">Historial de mantenimientos</h1>
 
         @if ($errors->any())
             <div role="alert" class="mt-6 rounded-lg border border-alerta-500 bg-alerta-500/5 p-4 text-sm text-alerta-700">
@@ -23,7 +24,7 @@
 
         {{-- Anotar uno nuevo. Va arriba porque es a lo que se entra. --}}
         <section x-data="{ abierto: {{ $errors->any() || $mantenimientos->isEmpty() ? 'true' : 'false' }} }"
-                 class="mt-6 rounded-xl border border-tinta-200 bg-white">
+                 class="mt-6 rounded-2xl border border-tinta-200 bg-white shadow-sm">
             <button type="button" @click="abierto = !abierto" :aria-expanded="abierto" aria-controls="form-mantenimiento"
                     class="flex w-full items-center justify-between gap-3 px-5 py-4 text-left">
                 <span class="font-bold">Anotar un mantenimiento</span>
@@ -150,7 +151,7 @@
         @else
             <ul class="mt-6 space-y-3">
                 @foreach ($mantenimientos as $mantenimiento)
-                    <li class="rounded-xl border border-tinta-200 bg-white p-5">
+                    <li data-revelar class="con-luz rounded-2xl border border-tinta-200 bg-white p-5 shadow-sm transition duration-300 hover:shadow-md">
                         <div class="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
                             <div class="min-w-48 flex-1">
                                 <p class="font-semibold">{{ $mantenimiento->tipo }}</p>

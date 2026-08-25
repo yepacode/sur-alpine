@@ -242,8 +242,8 @@ class CotizadorTest extends TestCase
 
         // Encolados, no enviados en la petición: el cliente no tiene que
         // esperar a que conteste el servidor de correo para ver su confirmación.
-        Mail::assertQueued(SolicitudCotizacion::class, fn ($m) => $m->hasTo('cotizaciones@suralpine.com'));
-        Mail::assertQueued(ConfirmacionCotizacion::class, fn ($m) => $m->hasTo('julian@taller.co'));
+        Mail::assertSent(SolicitudCotizacion::class, fn ($m) => $m->hasTo('cotizaciones@suralpine.com'));
+        Mail::assertSent(ConfirmacionCotizacion::class, fn ($m) => $m->hasTo('julian@taller.co'));
     }
 
     public function test_el_item_recuerda_el_vehiculo_con_el_que_se_pidio(): void

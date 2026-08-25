@@ -7,7 +7,8 @@
 
         <div class="flex flex-wrap items-end justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">
+                <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">Mi cuenta</p>
+                <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">
                     Hola, {{ auth()->user()->primer_nombre }}
                 </h1>
                 <p class="mt-1 text-tinta-600">
@@ -25,7 +26,7 @@
         {{-- Lo que toca pronto va arriba: es a lo que entra un mecánico. --}}
         <section class="mt-8">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 class="text-lg font-bold">Próximos mantenimientos</h2>
+                <h2 class="font-titulo text-xl font-bold">Próximos mantenimientos</h2>
                 <a href="{{ route('cuenta.mantenimientos') }}" class="text-sm font-semibold text-marca-700 hover:underline">
                     Ver todo el historial ({{ $totalMantenimientos }}) →
                 </a>
@@ -43,7 +44,7 @@
                     </a>
                 </div>
             @else
-                <ul class="mt-4 divide-y divide-tinta-200 overflow-hidden rounded-xl border border-tinta-200 bg-white">
+                <ul data-revelar class="mt-4 divide-y divide-tinta-200 overflow-hidden rounded-2xl border border-tinta-200 bg-white shadow-sm">
                     @foreach ($proximos as $mantenimiento)
                         <li class="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-4">
                             <div class="min-w-48 flex-1">
@@ -68,7 +69,7 @@
 
         {{-- Mis vehículos --}}
         <section class="mt-10">
-            <h2 class="text-lg font-bold">Mis vehículos</h2>
+            <h2 class="font-titulo text-xl font-bold">Mis vehículos</h2>
 
             @if ($vehiculos->isEmpty())
                 <p class="mt-2 text-sm text-tinta-600">
@@ -101,7 +102,7 @@
                 </ul>
             @endif
 
-            <div class="mt-5 rounded-xl border border-tinta-200 bg-white p-5">
+            <div class="mt-5 rounded-2xl border border-tinta-200 bg-white p-6 shadow-sm">
                 <h3 class="text-sm font-bold uppercase tracking-wide text-tinta-700">Agregar un vehículo</h3>
 
                 <form method="post" action="{{ route('cuenta.vehiculo.guardar') }}"

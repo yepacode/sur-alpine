@@ -86,7 +86,7 @@ class SolicitudController extends Controller
     private function consulta(Request $request)
     {
         return Cotizacion::query()
-            ->when($request->query('q'), function ($q, $termino) {
+            ->when(is_string($q = $request->query('q')) ? $q : '', function ($q, $termino) {
                 $q->where(fn ($sub) => $sub
                     ->where('consecutivo', 'like', "%{$termino}%")
                     ->orWhere('nombre', 'like', "%{$termino}%")

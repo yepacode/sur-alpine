@@ -48,7 +48,6 @@ class CatalogoController extends Controller
         $id = $this->vehiculoActivo->id();
 
         return Cache::remember('inicio.categorias.'.ImportadorCatalogo::version().'.'.$id, 3600, fn () => Categoria::query()
-            ->whereNotNull('imagen')
             ->withCount(['productos' => $this->filtroVehiculo()])
             ->orderBy('orden')
             ->orderBy('nombre')
@@ -206,7 +205,7 @@ class CatalogoController extends Controller
         $consulta = Producto::publicados()
             ->with(['tipoParte.categoria', 'vehiculo.modelo.marca'])
             ->paraVehiculo($this->vehiculoActivo->id())
-            ->buscar($request->query('q'));
+            ->buscar(is_string($q = $request->query('q')) ? $q : '');
 
         if ($tipoParte) {
             $consulta->where('tipo_parte_id', $tipoParte->id);
@@ -225,20 +224,34 @@ class CatalogoController extends Controller
         // mismo listado, y ninguna coincidía con lo que se veía en pantalla.
         $productos = $consulta->paginate(self::POR_PAGINA)->withQueryString();
 
+        // Los conteos del filtro lateral son la consulta más cara del sitio
+        // —una subconsulta correlacionada por categoría sobre 29.272 productos,
+        // 340-530 ms medidos— y sólo cambia cuando el equipo toca el catálogo.
+        // La misma estrategia que la portada, con la misma versión de caché.
+        $id = $this->vehiculoActivo->id() ?? 0;
+
         return view('catalogo', [
             'titulo' => $titulo,
             'productos' => $productos,
             'categoria' => $categoria,
             'tipoParte' => $tipoParte,
-            'categorias' => Categoria::query()
-                ->withCount(['productos' => $this->filtroVehiculo()])
-                ->orderBy('nombre')
-                ->get(),
-            'tiposParte' => $categoria
-                ? TipoParte::where('categoria_id', $categoria->id)
+            'categorias' => Cache::remember(
+                'catalogo.categorias.'.ImportadorCatalogo::version().'.'.$id,
+                3600,
+                fn () => Categoria::query()
                     ->withCount(['productos' => $this->filtroVehiculo()])
                     ->orderBy('nombre')
                     ->get()
+            ),
+            'tiposParte' => $categoria
+                ? Cache::remember(
+                    'catalogo.tipos.'.ImportadorCatalogo::version().'.'.$categoria->id.'.'.$id,
+                    3600,
+                    fn () => TipoParte::where('categoria_id', $categoria->id)
+                        ->withCount(['productos' => $this->filtroVehiculo()])
+                        ->orderBy('nombre')
+                        ->get()
+                )
                 : collect(),
         ]);
     }

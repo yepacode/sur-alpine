@@ -27,6 +27,15 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <meta name="theme-color" content="#0a2f6b">
 
+    {{-- Tipografía: Archivo para titulares, Barlow para texto y controles.
+         Con `preconnect` el navegador abre la conexión mientras aún parsea el
+         head, y con `display=swap` el texto se lee desde el primer instante
+         aunque la fuente llegue tarde. --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+
     <x-negocio-schema />
 
     @stack('cabeza')

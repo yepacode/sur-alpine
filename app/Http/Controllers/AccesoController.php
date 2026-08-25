@@ -49,9 +49,17 @@ class AccesoController extends Controller
 
     public function salir(Request $request): RedirectResponse
     {
+        // El carrito sobrevive al cierre de sesión: un cliente que sale para
+        // entrar con otra cuenta no puede perder la lista que venía armando.
+        $carrito = $request->session()->get(\App\Services\Cotizador::LLAVE);
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($carrito) {
+            $request->session()->put(\App\Services\Cotizador::LLAVE, $carrito);
+        }
 
         return redirect()->route('inicio')->with('mensaje', 'Cerraste sesión.');
     }

@@ -30,7 +30,7 @@ class CatalogoController extends Controller
                 ->with('modelo.marca')
                 ->withCount('productos')
                 ->when($request->query('marca'), fn ($q, $marca) => $q->where('marcas.slug', $marca))
-                ->when($request->query('q'), fn ($q, $termino) => $q
+                ->when(is_string($q = $request->query('q')) ? $q : '', fn ($q, $termino) => $q
                     ->where(fn ($sub) => $sub
                         ->where('modelos.nombre', 'like', "%{$termino}%")
                         ->orWhere('marcas.nombre', 'like', "%{$termino}%")))
@@ -78,16 +78,37 @@ class CatalogoController extends Controller
         ]);
 
         $elegidos = collect($datos['tipos'] ?? [])->map(fn ($id) => (int) $id);
-        $actuales = Producto::where('vehiculo_id', $vehiculo->id)->pluck('id', 'tipo_parte_id');
+        $actualesPorTipo = Producto::where('vehiculo_id', $vehiculo->id)->get()->keyBy('tipo_parte_id');
 
-        $porCrear = $elegidos->reject(fn ($id) => $actuales->has($id));
-        $porQuitar = $actuales->reject(fn ($_, $tipoId) => $elegidos->contains($tipoId));
+        $porCrear = $elegidos->reject(fn ($id) => $actualesPorTipo->has($id));
+        $desmarcadas = $actualesPorTipo->reject(fn ($_, $tipoId) => $elegidos->contains($tipoId));
+
+        // Un desmarcado por error borraba en silencio referencias, imágenes y
+        // descripciones que el equipo había cargado a mano —trabajo que no se
+        // recupera reencendiendo la casilla, porque `armar()` crea otra pieza
+        // en blanco. Cuando la desmarcada tiene datos propios, se pide una
+        // confirmación explícita en el segundo paso.
+        $conDatos = $desmarcadas->filter(fn ($p) => filled($p->referencia) || filled($p->imagen) || filled($p->descripcion));
+
+        if ($conDatos->isNotEmpty() && ! $request->boolean('confirmar_retiro')) {
+            return back()->withInput()->with('confirmar_retiro', [
+                'vehiculo' => $vehiculo->nombre_completo,
+                'piezas' => $conDatos->values()->map(fn ($p) => [
+                    'nombre' => $p->nombre,
+                    'referencia' => $p->referencia,
+                    'tiene_imagen' => filled($p->imagen),
+                    'tiene_descripcion' => filled($p->descripcion),
+                ])->all(),
+            ]);
+        }
+
+        $porQuitar = $desmarcadas->pluck('id');
 
         DB::transaction(function () use ($vehiculo, $porCrear, $porQuitar) {
             if ($porQuitar->isNotEmpty()) {
                 // Las solicitudes históricas no se rompen: el ítem guarda el
                 // nombre congelado y la llave foránea queda en nulo.
-                Producto::whereIn('id', $porQuitar->values())->delete();
+                Producto::whereIn('id', $porQuitar)->delete();
             }
 
             foreach (TipoParte::with('categoria')->whereIn('id', $porCrear)->get() as $tipo) {
@@ -98,11 +119,11 @@ class CatalogoController extends Controller
         ImportadorCatalogo::olvidarCaches();
 
         return back()->with('mensaje', sprintf(
-            'Guardado: %d %s y %d %s en %s.',
+            'Guardado: %d %s, %d %s en %s.',
             $porCrear->count(),
             Str::plural('pieza agregada', $porCrear->count()),
             $porQuitar->count(),
-            Str::plural('quitada', $porQuitar->count()),
+            Str::plural('retirada', $porQuitar->count()),
             $vehiculo->nombre_completo
         ));
     }
@@ -203,12 +224,23 @@ class CatalogoController extends Controller
             $datos['imagen'] = '/storage/'.$request->file('imagen')->store('productos', 'public');
         }
 
+        // Sólo invalidamos la caché de la portada si cambió lo que la portada
+        // ve: la casilla «publicado» o la foto. Editar sólo la descripción o
+        // la referencia no toca contadores ni destacados, y no vale la pena
+        // tirar las 225 llaves versionadas por eso.
+        $cambioVisibilidad = $producto->publicado !== $request->boolean('publicado');
+        $cambioImagen = isset($datos['imagen']);
+
         $producto->update([
             'referencia' => $datos['referencia'] ?? null,
             'descripcion' => $datos['descripcion'] ?? null,
             'publicado' => $request->boolean('publicado'),
             'imagen' => $datos['imagen'] ?? $producto->imagen,
         ]);
+
+        if ($cambioVisibilidad || $cambioImagen) {
+            ImportadorCatalogo::olvidarCaches();
+        }
 
         return back()->with('mensaje', 'Ficha actualizada.');
     }

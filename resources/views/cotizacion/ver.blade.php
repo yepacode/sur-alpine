@@ -5,10 +5,11 @@
 @section('contenido')
     <div class="mx-auto max-w-5xl px-4 py-8">
 
-        <h1 class="text-2xl font-bold tracking-tight sm:text-3xl">Mi cotización</h1>
+        <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">Tu solicitud</p>
+        <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">Mi cotización</h1>
 
         @if ($porVehiculo->isEmpty())
-            <div class="mt-8 rounded-xl border border-dashed border-tinta-300 bg-white p-12 text-center">
+            <div class="mt-8 rounded-2xl border border-dashed border-tinta-300 bg-white p-12 text-center">
                 <p class="text-lg font-semibold">Todavía no has agregado repuestos</p>
                 <p class="mx-auto mt-2 max-w-md text-sm text-tinta-500">
                     Busca las piezas que necesitas y agrégalas. Puedes pedir para varios carros
@@ -32,7 +33,7 @@
                 @foreach ($porVehiculo as $nombreVehiculo => $items)
                     @php $vehiculo = $items->first()->producto->vehiculo; @endphp
 
-                    <section class="overflow-hidden rounded-xl border border-tinta-200 bg-white">
+                    <section data-revelar class="overflow-hidden rounded-2xl border border-tinta-200 bg-white shadow-sm">
                         <header class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-tinta-200 bg-tinta-50 px-5 py-3">
                             <h2 class="font-semibold">{{ $nombreVehiculo }}</h2>
                             <span class="rounded-full bg-marca-100 px-2.5 py-0.5 text-xs font-semibold tabular-nums text-marca-700">

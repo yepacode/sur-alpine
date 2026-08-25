@@ -15,6 +15,52 @@
           @change="contar()">
         @csrf
 
+        {{-- Segundo paso: si el guardado desmarcaba piezas con referencia,
+             imagen o descripción, no las borramos en silencio. Aquí las
+             mostramos y pedimos confirmación explícita. --}}
+        @if (session('confirmar_retiro'))
+            @php $aviso = session('confirmar_retiro'); @endphp
+            <div role="alert" class="mt-6 rounded-2xl border-2 border-alerta-500/40 bg-alerta-500/5 p-6">
+                <p class="font-titulo text-lg font-bold text-alerta-800">
+                    Estás a punto de retirar {{ count($aviso['piezas']) }}
+                    {{ Str::plural('pieza', count($aviso['piezas'])) }} de {{ $aviso['vehiculo'] }}
+                </p>
+                <p class="mt-2 text-sm text-tinta-700">
+                    Estas fichas tienen datos que el equipo cargó a mano —
+                    referencia, foto o descripción— y se perderán al retirarlas.
+                    Volver a marcar la casilla <strong>no las recupera</strong>: crea otra ficha en blanco.
+                </p>
+                <ul class="mt-4 space-y-2 text-sm">
+                    @foreach ($aviso['piezas'] as $p)
+                        <li class="flex flex-wrap items-baseline gap-2 rounded-lg bg-white/70 px-3 py-2">
+                            <span class="font-semibold">{{ $p['nombre'] }}</span>
+                            @if ($p['referencia'])
+                                <span class="cifra rounded bg-marca-100 px-2 py-0.5 text-xs font-medium text-marca-800">
+                                    Ref. {{ $p['referencia'] }}
+                                </span>
+                            @endif
+                            @if ($p['tiene_imagen'])
+                                <span class="text-xs text-tinta-600">· con foto</span>
+                            @endif
+                            @if ($p['tiene_descripcion'])
+                                <span class="text-xs text-tinta-600">· con descripción</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+                <div class="mt-5 flex flex-wrap items-center gap-3">
+                    <button type="submit" name="confirmar_retiro" value="1"
+                            class="rounded-xl bg-alerta-500 px-6 py-3 font-titulo text-sm font-bold uppercase tracking-[0.06em] text-white hover:bg-alerta-600">
+                        Sí, retirarlas
+                    </button>
+                    <a href="{{ route('panel.catalogo.editar', $vehiculo) }}"
+                       class="text-sm font-semibold text-marca-700 underline-offset-4 hover:underline">
+                        No, cancelar
+                    </a>
+                </div>
+            </div>
+        @endif
+
         <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold tracking-tight">{{ $vehiculo->nombre_completo }}</h1>
@@ -60,7 +106,7 @@
                             <li>
                                 <label class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-tinta-50">
                                     <input type="checkbox" name="tipos[]" value="{{ $tipo->id }}"
-                                           @checked($marcados->has($tipo->id))
+                                           @checked(old('tipos', $marcados->keys()->all()) && in_array($tipo->id, (array) old('tipos', $marcados->keys()->all()), true))
                                            class="size-4 shrink-0 rounded border-tinta-300 text-marca-700">
                                     <span>{{ $tipo->nombre }}</span>
                                 </label>

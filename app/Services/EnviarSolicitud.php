@@ -29,11 +29,13 @@ class EnviarSolicitud
         }
 
         try {
-            // Encolado: con un SMTP lento el cliente se quedaba mirando el
-            // botón "Enviar" hasta que el servidor de correo contestara. Si no
-            // hay trabajador de cola corriendo, `QUEUE_CONNECTION=sync` lo
-            // manda en el acto igual que antes.
-            Mail::to($destinos)->queue(new SolicitudCotizacion($cotizacion));
+            // Envío síncrono: `Mail::queue()` sin un trabajador de cola vivo
+            // en producción deja el mensaje en la tabla `jobs` y aquí abajo
+            // marcamos `correo_enviado_en = now()` — el panel promete
+            // "entregado" cuando el correo ni salió. Prometer eso es peor que
+            // hacer esperar dos segundos al cliente; cuando haya `queue:work`
+            // corriendo, esto vuelve a `->queue()`.
+            Mail::to($destinos)->send(new SolicitudCotizacion($cotizacion));
 
             $cotizacion->update([
                 'correo_enviado_en' => now(),
@@ -48,7 +50,7 @@ class EnviarSolicitud
         // La confirmación al cliente es cortesía: si falla, la solicitud ya
         // llegó al equipo y no hay que marcarla como perdida.
         try {
-            Mail::to($cotizacion->email)->queue(new ConfirmacionCotizacion($cotizacion));
+            Mail::to($cotizacion->email)->send(new ConfirmacionCotizacion($cotizacion));
         } catch (\Throwable $e) {
             Log::warning('No se pudo confirmar la cotización al solicitante', [
                 'consecutivo' => $cotizacion->consecutivo,

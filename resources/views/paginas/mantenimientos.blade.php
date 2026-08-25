@@ -5,7 +5,8 @@
 
 @section('contenido')
     <div class="mx-auto max-w-3xl px-4 py-16">
-        <h1 class="text-3xl font-bold tracking-tight">Historial de mantenimientos</h1>
+        <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">Para mecánicos</p>
+        <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">Historial de mantenimientos</h1>
         <p class="mt-4 text-lg text-tinta-600">
             Registra qué le hiciste a tu carro y cuándo. Nosotros calculamos cuándo toca
             el próximo cambio y te avisamos.
@@ -17,12 +18,12 @@
                 ['Anota cada servicio', 'Kilometraje, fecha, qué se cambió y tus notas.'],
                 ['Te avisamos', 'Según los kilómetros o el tiempo que definas para cada mantenimiento.'],
             ] as $i => [$titulo, $texto])
-                <li class="flex gap-4 rounded-xl bg-white p-5 shadow-sm ring-1 ring-black/5">
-                    <span class="grid size-9 shrink-0 place-items-center rounded-lg bg-alerta-500/10 font-bold tabular-nums text-alerta-500">
+                <li data-revelar data-retraso="{{ $i + 1 }}" class="con-luz flex gap-4 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-black/5 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+                    <span class="grid size-11 shrink-0 place-items-center rounded-xl bg-alerta-500/10 font-titulo text-lg font-extrabold tabular-nums text-alerta-500">
                         {{ $i + 1 }}
                     </span>
                     <p>
-                        <strong class="block">{{ $titulo }}</strong>
+                        <strong class="block font-titulo text-[17px] font-bold">{{ $titulo }}</strong>
                         <span class="text-sm text-tinta-600">{{ $texto }}</span>
                     </p>
                 </li>
