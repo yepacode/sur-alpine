@@ -115,7 +115,10 @@
             </form>
         </div>
 
-        <div class="mt-8 grid gap-8 lg:grid-cols-[16rem_1fr]">
+        {{-- Responsive: en tablet (≥ md) ya cabe el sidebar al lado. Antes
+             se apilaba hasta 1024 px y en tablet el usuario veía primero
+             todo el filtro y tenía que bajar mucho para llegar a las piezas. --}}
+        <div class="mt-8 grid gap-6 md:grid-cols-[14rem_1fr] md:gap-8 lg:grid-cols-[16rem_1fr]">
 
             <aside class="lg:self-start">
                 <h2 class="font-titulo text-[11px] font-bold uppercase tracking-[0.16em] text-tinta-500">Tu vehículo</h2>

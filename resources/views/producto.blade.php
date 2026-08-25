@@ -78,7 +78,7 @@
             </ol>
         </nav>
 
-        <div class="grid gap-8 lg:grid-cols-2">
+        <div class="grid gap-6 md:grid-cols-2 md:gap-8">
 
             <div class="flex aspect-4/3 items-center justify-center rounded-2xl border border-tinta-200 bg-white p-8 shadow-sm">
                 @if ($producto->imagen_mostrable)

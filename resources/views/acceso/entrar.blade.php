@@ -10,7 +10,7 @@
         <div class="aurora aurora-lenta absolute -right-24 -bottom-32 size-[26rem] rounded-full bg-alerta-500/20 blur-[100px]" aria-hidden="true"></div>
         <div class="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,white_1px,transparent_1px),linear-gradient(to_bottom,white_1px,transparent_1px)] [background-size:56px_56px]" aria-hidden="true"></div>
 
-        <div class="relative mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:py-20 lg:grid-cols-[1.05fr_1fr] lg:items-center lg:gap-16">
+        <div class="relative mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:py-20 md:grid-cols-[1.05fr_1fr] md:items-center md:gap-16">
 
             {{-- Columna izquierda: mensaje que le da a la página aire de marca
                  en vez de ser una caja con dos campos. --}}
