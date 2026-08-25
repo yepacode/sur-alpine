@@ -46,16 +46,26 @@
             <div class="max-w-2xl">
                 <p class="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5 font-titulo text-[11px] font-bold uppercase tracking-[0.16em] text-white ring-1 ring-white/25 sm:px-4 sm:text-xs">
                     <span class="size-1.5 rounded-full bg-alerta-500"></span>
-                    {{ now()->year - 1982 }} años · único sitio oficial
+                    {{ contenido('inicio.hero.chip', (now()->year - 1982).' años · único sitio oficial') }}
                 </p>
 
                 {{-- El titular es la promesa del negocio, no el nombre de la
                      empresa: lo que el mecánico quiere saber es si aquí está su
                      pieza. La escala sube porque antes competía de tú a tú con
-                     el párrafo de abajo. --}}
+                     el párrafo de abajo. F · Editable desde el panel: si el
+                     asesor lo cambia, el `<span>` de la segunda línea se
+                     conserva sólo cuando el titular contiene un `\n` — la
+                     forma tradicional de partirlo en dos —; si no, se pinta
+                     entero. --}}
                 <h1 class="mt-4 text-[2rem] font-extrabold leading-[0.98] text-white text-balance sm:mt-6 sm:text-[3.5rem] lg:text-[4rem]">
-                    La pieza exacta<br>
-                    <span class="text-marca-300">de tu carro</span>
+                    @php
+                        $titular = contenido('inicio.hero.titulo', "La pieza exacta\nde tu carro");
+                        $partes = preg_split('/\r?\n/', $titular, 2);
+                    @endphp
+                    {{ $partes[0] }}
+                    @if (isset($partes[1]))
+                        <br><span class="text-marca-300">{{ $partes[1] }}</span>
+                    @endif
                 </h1>
 
                 {{-- Con carro elegido la cifra ya no es del catálogo entero, así
@@ -79,7 +89,7 @@
                     @if ($vehiculoActivo)
                         Todo lo que ves abajo le sirve.
                     @else
-                        Dinos qué carro tienes y te mostramos sólo lo que le sirve.
+                        {{ contenido('inicio.hero.bajada', 'Dinos qué carro tienes y te mostramos sólo lo que le sirve.') }}
                     @endif
                 </p>
             </div>
@@ -439,12 +449,13 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" class="size-4.5" aria-hidden="true">
                             <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/>
                         </svg>
-                        <span x-text="mapa ? 'Mapa abierto' : 'Cómo llegar'">Cómo llegar</span>
+                    @php $comoLlegar = contenido('contacto.mapa.boton', 'Cómo llegar'); @endphp
+                        <span x-text="mapa ? 'Mapa abierto' : @js($comoLlegar)">{{ $comoLlegar }}</span>
                     </button>
 
                     <a href="{{ $contacto->mapaUrl() }}" target="_blank" rel="noopener"
                        class="text-sm font-semibold text-marca-700 underline-offset-4 hover:underline">
-                        Abrir en Google Maps ↗
+                        {{ contenido('contacto.mapa.enlace', 'Abrir en Google Maps') }} ↗
                     </a>
                 </div>
             </div>

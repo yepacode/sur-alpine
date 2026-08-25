@@ -1,26 +1,122 @@
 <!DOCTYPE html>
 <html lang="es" class="h-full">
+@php
+    // F · Todo lo que el panel «Configuración de página» pueda haber tocado.
+    // Si no hay fila para la ruta actual, `seo_pagina()` devuelve null y se
+    // usan los `@yield` originales del blade.
+    $seo = seo_pagina();
+    $tituloBase = trim($__env->yieldContent('titulo', 'Repuestos y autopartes'));
+    $descBase = trim($__env->yieldContent('descripcion', 'Importadora Sur Alpine: repuestos y autopartes para vehículos livianos. Encuentra la pieza exacta de tu carro y pide tu cotización.'));
+    $imgBase = trim($__env->yieldContent('og-imagen', url('/img/logo/logo-en-png-sur-alpine.webp')));
+
+    $tituloFinal = $seo?->titulo ?: ($tituloBase.' · Importadora Sur Alpine');
+    $descFinal = $seo?->descripcion ?: $descBase;
+    $canonicalFinal = $seo?->canonical ?: url()->current();
+    $robotsFinal = $seo ? $seo->metaRobots().',max-image-preview:large' : 'index,follow,max-image-preview:large';
+
+    $ogTitulo = $seo?->og_titulo ?: $tituloFinal;
+    $ogDesc = $seo?->og_descripcion ?: $descFinal;
+    $ogImg = $seo?->og_imagen ?: $imgBase;
+    $ogAlt = $seo?->og_imagen_alt ?: 'Importadora Sur Alpine';
+    $ogTipo = $seo?->og_tipo ?: 'website';
+
+    $twCard = $seo?->twitter_card ?: 'summary_large_image';
+    $twTitulo = $seo?->twitter_titulo ?: $ogTitulo;
+    $twDesc = $seo?->twitter_descripcion ?: $ogDesc;
+    $twImg = $seo?->twitter_imagen ?: $ogImg;
+@endphp
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@yield('titulo', 'Repuestos y autopartes') · Importadora Sur Alpine</title>
-    <meta name="description" content="@yield('descripcion', 'Importadora Sur Alpine: repuestos y autopartes para vehículos livianos. Encuentra la pieza exacta de tu carro y pide tu cotización.')">
+    <title>{{ $tituloFinal }}</title>
+    <meta name="description" content="{{ $descFinal }}">
+    @if ($seo?->palabras_clave)
+        <meta name="keywords" content="{{ $seo->palabras_clave }}">
+    @endif
 
-    {{-- Canónica: el catálogo genera variantes con `?q=` y `?page=`, y sin esto
-         Google las indexa como páginas distintas de la misma cosa. --}}
-    <link rel="canonical" href="@yield('canonica', url()->current())">
-    <meta name="robots" content="index, follow, max-image-preview:large">
+    <link rel="canonical" href="{{ $canonicalFinal }}">
+    <meta name="robots" content="{{ $robotsFinal }}">
 
     {{-- Este negocio se mueve por WhatsApp: cuando un asesor pasa el enlace de
          una pieza, esto es lo que decide si llega con foto y título o pelado. --}}
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="{{ $ogTipo }}">
     <meta property="og:site_name" content="Importadora Sur Alpine">
     <meta property="og:locale" content="es_CO">
-    <meta property="og:title" content="@yield('titulo', 'Repuestos y autopartes') · Importadora Sur Alpine">
-    <meta property="og:description" content="@yield('descripcion', 'Importadora Sur Alpine: repuestos y autopartes para vehículos livianos.')">
+    <meta property="og:title" content="{{ $ogTitulo }}">
+    <meta property="og:description" content="{{ $ogDesc }}">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:image" content="@yield('og-imagen', url('/img/logo/logo-en-png-sur-alpine.webp'))">
-    <meta name="twitter:card" content="summary_large_image">
+    <meta property="og:image" content="{{ $ogImg }}">
+    <meta property="og:image:alt" content="{{ $ogAlt }}">
+
+    <meta name="twitter:card" content="{{ $twCard }}">
+    <meta name="twitter:title" content="{{ $twTitulo }}">
+    <meta name="twitter:description" content="{{ $twDesc }}">
+    <meta name="twitter:image" content="{{ $twImg }}">
+    @if ($seo?->twitter_sitio)
+        <meta name="twitter:site" content="{{ $seo->twitter_sitio }}">
+    @endif
+    @if ($seo?->twitter_creador)
+        <meta name="twitter:creator" content="{{ $seo->twitter_creador }}">
+    @endif
+
+    {{-- OG locale + alternates + dimensiones de imagen (Facebook las usa
+         para decidir qué card mostrar sin descargar la imagen dos veces). --}}
+    <meta property="og:locale" content="{{ $seo?->og_locale ?: 'es_CO' }}">
+    @if ($seo?->og_locale_alternate)
+        @foreach (preg_split('/[\s,]+/', $seo->og_locale_alternate, -1, PREG_SPLIT_NO_EMPTY) as $loc)
+            <meta property="og:locale:alternate" content="{{ $loc }}">
+        @endforeach
+    @endif
+    @if ($seo?->og_imagen_ancho)
+        <meta property="og:image:width" content="{{ $seo->og_imagen_ancho }}">
+    @endif
+    @if ($seo?->og_imagen_alto)
+        <meta property="og:image:height" content="{{ $seo->og_imagen_alto }}">
+    @endif
+
+    {{-- article:* — sólo salen si el schema tipo es Article y hay datos. --}}
+    @if ($seo?->article_publicado_en)
+        <meta property="article:published_time" content="{{ $seo->article_publicado_en->toIso8601String() }}">
+    @endif
+    @if ($seo?->article_modificado_en)
+        <meta property="article:modified_time" content="{{ $seo->article_modificado_en->toIso8601String() }}">
+    @endif
+    @if ($seo?->article_seccion)
+        <meta property="article:section" content="{{ $seo->article_seccion }}">
+    @endif
+    @if ($seo?->article_autor)
+        <meta property="article:author" content="{{ $seo->article_autor }}">
+    @endif
+    @if ($seo?->article_etiquetas)
+        @foreach (preg_split('/\s*,\s*/', $seo->article_etiquetas, -1, PREG_SPLIT_NO_EMPTY) as $tag)
+            <meta property="article:tag" content="{{ $tag }}">
+        @endforeach
+    @endif
+
+    {{-- Idiomas alternativos (hreflang). --}}
+    @if ($seo?->hreflang)
+        @foreach ($seo->hreflang as $alt)
+            <link rel="alternate" hreflang="{{ $alt['lang'] }}" href="{{ $alt['href'] }}">
+        @endforeach
+    @endif
+
+    {{-- Paginación seriada. Google todavía respeta rel="next" cuando lo ve. --}}
+    @if ($seo?->rel_prev)
+        <link rel="prev" href="{{ $seo->rel_prev }}">
+    @endif
+    @if ($seo?->rel_next)
+        <link rel="next" href="{{ $seo->rel_next }}">
+    @endif
+
+    @if ($seo?->json_ld_extra)
+        <script type="application/ld+json">{!! $seo->json_ld_extra !!}</script>
+    @endif
+
+    {{-- Bloque libre del asesor. AVISO en el panel: se pinta tal cual, así
+         que puede meter un pixel de Meta o un GTM sin tocar código. --}}
+    @if ($seo?->head_extra)
+        {!! $seo->head_extra !!}
+    @endif
 
     <link rel="icon" href="/favicon.ico" sizes="32x32">
     <link rel="icon" href="/img/logo/logo-en-png-sur-alpine.webp" type="image/webp">

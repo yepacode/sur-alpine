@@ -21,9 +21,9 @@
             </svg>
         </span>
         <h2 class="font-titulo text-base font-bold uppercase tracking-[0.06em] text-tinta-900 sm:text-lg">
-            Busca por tu vehículo
+            {{ contenido('buscador.titulo', 'Busca por tu vehículo') }}
         </h2>
-        <span class="text-sm text-tinta-500">y te mostramos sólo lo que le sirve</span>
+        <span class="text-sm text-tinta-500">{{ contenido('buscador.subtitulo', 'y te mostramos sólo lo que le sirve') }}</span>
     </div>
 
     <form method="post" action="{{ route('vehiculo.guardar') }}" class="px-5 py-5 sm:px-7 sm:py-6">
@@ -88,7 +88,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" class="size-4 shrink-0" aria-hidden="true">
                     <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5" stroke-linecap="round"/>
                 </svg>
-                Buscar
+                {{ contenido('buscador.boton', 'Buscar') }}
             </button>
         </div>
 

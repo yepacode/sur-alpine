@@ -20,6 +20,10 @@ class AppServiceProvider extends ServiceProvider
         // con una consulta, no con una por cada vista que lo necesite.
         $this->app->scoped(VehiculoActivo::class);
         $this->app->scoped(Contacto::class);
+
+        // Helpers globales (F · CRUD de textos y SEO editables). Se cargan
+        // aquí y no en `composer.json` para no depender de `dump-autoload`.
+        require_once base_path('app/helpers.php');
     }
 
     public function boot(): void

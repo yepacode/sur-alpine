@@ -15,6 +15,7 @@
         ['ruta' => 'panel.tablero', 'texto' => 'Tablero', 'rol' => \App\Enums\Rol::Vendedor],
         ['ruta' => 'panel.solicitudes', 'texto' => 'Solicitudes', 'rol' => \App\Enums\Rol::Vendedor],
         ['ruta' => 'panel.catalogo', 'texto' => 'Catálogo', 'rol' => \App\Enums\Rol::Asesor],
+        ['ruta' => 'panel.pagina', 'texto' => 'Configuración de página', 'rol' => \App\Enums\Rol::Asesor],
         ['ruta' => 'panel.usuarios', 'texto' => 'Usuarios', 'rol' => \App\Enums\Rol::Admin],
         ['ruta' => 'panel.configuracion', 'texto' => 'Configuración', 'rol' => \App\Enums\Rol::Admin],
     ];

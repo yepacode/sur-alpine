@@ -155,6 +155,21 @@ Route::prefix('panel')->name('panel.')->middleware(['auth', 'rol:vendedor'])->gr
             Route::post('/catalogo-importar', 'previsualizar')->name('catalogo.previsualizar');
             Route::post('/catalogo-importar/confirmar', 'confirmar')->name('catalogo.confirmar');
         });
+
+        // F1 · Categorías: nombre, orden y foto editables desde el panel.
+        Route::controller(\App\Http\Controllers\Panel\CategoriaController::class)->group(function () {
+            Route::get('/categorias', 'index')->name('categorias');
+            Route::get('/categorias/{categoria}', 'editar')->name('categorias.editar');
+            Route::post('/categorias/{categoria}', 'guardar')->name('categorias.guardar');
+        });
+
+        // F · Configuración de página: un solo panel con hero, buscador,
+        // cabecera, cotización, contacto, quiénes somos, mantenimientos y
+        // política. Adentro de cada sección: textos, botones y SEO completo.
+        Route::controller(\App\Http\Controllers\Panel\ConfiguracionPaginaController::class)->group(function () {
+            Route::get('/pagina', 'index')->name('pagina');
+            Route::post('/pagina', 'guardar')->name('pagina.guardar');
+        });
     });
 
     Route::middleware('rol:admin')->group(function () {

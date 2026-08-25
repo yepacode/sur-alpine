@@ -4,9 +4,9 @@
     // de paso devuelve el ancho que la cabecera necesitaba para caber en una
     // sola fila.
     $enlaces = [
-        ['texto' => 'Mantenimientos', 'ruta' => 'mantenimientos'],
-        ['texto' => 'Visítanos en Restrepo', 'ruta' => 'contacto'],
-        ['texto' => 'Sobre nosotros', 'ruta' => 'quienes-somos'],
+        ['texto' => contenido('menu.mantenimientos', 'Mantenimientos'), 'ruta' => 'mantenimientos'],
+        ['texto' => contenido('menu.visitanos', 'Visítanos en Restrepo'), 'ruta' => 'contacto'],
+        ['texto' => contenido('menu.sobre', 'Sobre nosotros'), 'ruta' => 'quienes-somos'],
     ];
 @endphp
 
@@ -70,7 +70,7 @@
                     <path d="M3 4h2l2.2 10.4a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L20 7H6" stroke-linecap="round" stroke-linejoin="round"/>
                     <circle cx="10" cy="20" r="1.3" fill="currentColor"/><circle cx="17" cy="20" r="1.3" fill="currentColor"/>
                 </svg>
-                <span class="hidden sm:inline">Mi cotización</span>
+                <span class="hidden sm:inline">{{ contenido('menu.cotizar', 'Mi cotización') }}</span>
                 {{-- El contador se actualiza solo cuando se agrega sin recargar. --}}
                 <span class="tabular-nums" x-data="{ n: {{ $itemsCotizacion ?? 0 }} }"
                       @cotizacion-actualizada.window="n = $event.detail.total">(<span x-text="n">{{ $itemsCotizacion ?? 0 }}</span>)</span>
@@ -96,7 +96,7 @@
                    'rounded-lg px-4 py-2.5 font-titulo text-sm font-bold uppercase tracking-[0.06em] transition',
                    'bg-marca-700 text-white shadow-sm hover:bg-marca-800' => true,
                ])>
-                Catálogo
+                {{ contenido('menu.catalogo', 'Catálogo') }}
             </a>
 
             @foreach ($enlaces as $enlace)

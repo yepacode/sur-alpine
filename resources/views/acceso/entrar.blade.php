@@ -98,7 +98,7 @@
 
                         <button type="submit"
                                 class="con-luz w-full rounded-xl bg-alerta-500 px-6 py-3.5 font-titulo text-sm font-bold uppercase tracking-[0.06em] text-white shadow-lg shadow-alerta-500/25 transition hover:bg-alerta-600">
-                            Entrar
+                            {{ contenido('acceso.entrar.boton', 'Entrar') }}
                         </button>
                     </form>
 
