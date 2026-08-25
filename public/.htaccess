@@ -1,0 +1,55 @@
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    # Handle Authorization Header
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Handle X-XSRF-Token Header
+    RewriteCond %{HTTP:x-xsrf-token} .
+    RewriteRule .* - [E=HTTP_X_XSRF_TOKEN:%{HTTP:X-XSRF-Token}]
+
+    # Redirect Trailing Slashes If Not A Folder...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    # Send Requests To Front Controller...
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Compresión. Es la mitad del peso de la portada y no cuesta nada: el HTML
+# baja de 79 a 10 KB, el CSS de 56 a 10 y el JSON de vehículos de 23 a 4,5.
+# Las imágenes ya vienen en WebP, así que comprimirlas otra vez sólo gasta CPU.
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+    AddOutputFilterByType DEFLATE application/javascript application/json
+    AddOutputFilterByType DEFLATE application/xml application/rss+xml
+    AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# Caducidad de los estáticos.
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # Los assets de Vite llevan el hash del contenido en el nombre
+    # (app-BZibRJkF.css), así que un cambio genera un nombre nuevo: se pueden
+    # guardar un año sin riesgo de servir una versión vieja.
+    <FilesMatch "-[A-Za-z0-9_-]{8,}\.(js|css)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+
+    # Las imágenes no llevan hash: si el cliente sube un banner nuevo con el
+    # mismo nombre, un mes es lo que puede tardar en verse. Suficiente.
+    ExpiresByType image/webp "access plus 30 days"
+    ExpiresByType image/png "access plus 30 days"
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/x-icon "access plus 30 days"
+    ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
