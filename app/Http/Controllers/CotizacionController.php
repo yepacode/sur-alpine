@@ -25,6 +25,10 @@ class CotizacionController extends Controller
      */
     public function agregar(Request $request, Producto $producto): RedirectResponse|JsonResponse
     {
+        // Una pieza despublicada no puede meterse al carrito: llegaría al correo
+        // del equipo como una solicitud imposible.
+        abort_unless($producto->publicado, 404);
+
         $cantidad = (int) $request->input('cantidad', 1);
 
         $this->cotizador->agregar($producto, max(1, $cantidad));

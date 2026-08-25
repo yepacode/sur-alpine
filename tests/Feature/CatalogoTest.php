@@ -187,4 +187,18 @@ class CatalogoTest extends TestCase
             );
         }
     }
+
+    /**
+     * C6 · Una pieza despublicada no se ve por su URL directa: 404 tanto en la
+     * ficha como al intentar agregarla al carrito, aunque el enlace se conozca.
+     */
+    public function test_una_pieza_despublicada_da_404_en_ficha_y_en_agregar(): void
+    {
+        $this->pastillas->update(['publicado' => false]);
+
+        $this->get('/repuesto/'.$this->pastillas->slug)->assertNotFound();
+
+        $this->post('/mi-cotizacion/agregar/'.$this->pastillas->id, ['cantidad' => 1])
+            ->assertNotFound();
+    }
 }

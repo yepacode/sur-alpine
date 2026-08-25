@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'rol' => \App\Http\Middleware\RequiereRol::class,
         ]);
 
+        // Corta la sesión de una cuenta desactivada, incluida la cookie
+        // persistente de «recordarme». Va DESPUÉS de StartSession y
+        // Authenticate, en el grupo web.
+        $middleware->appendToGroup('web', \App\Http\Middleware\CuentaActiva::class);
+
         $middleware->redirectGuestsTo(fn () => route('acceso'));
     })
     ->withExceptions(function (Exceptions $exceptions): void {

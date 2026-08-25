@@ -62,9 +62,17 @@ class SolicitudController extends Controller
                 'Vehículo', 'Repuesto', 'Cantidad', 'Notas', 'Correo enviado',
             ], ';');
 
+            // Inyección de fórmulas: un cliente anónimo pone `=cmd|'/C calc.exe'!A1`
+            // en su nombre, el vendedor abre el CSV en Excel y ejecuta el
+            // comando. Prefijar con `'` toda celda que arranque por `= + - @`
+            // (o tab/CR) hace que Excel la trate como texto y no como fórmula.
+            $blindar = fn ($v) => is_string($v) && $v !== '' && str_contains("=+-@	", $v[0])
+                ? "'".$v
+                : $v;
+
             foreach ($solicitudes as $solicitud) {
                 foreach ($solicitud->items as $item) {
-                    fputcsv($salida, [
+                    fputcsv($salida, array_map($blindar, [
                         $solicitud->consecutivo,
                         $solicitud->created_at->format('d/m/Y H:i'),
                         $solicitud->nombre_completo,
@@ -75,7 +83,7 @@ class SolicitudController extends Controller
                         $item->cantidad,
                         $solicitud->notas,
                         $solicitud->seEnvio() ? 'Sí' : 'No',
-                    ], ';');
+                    ]), ';');
                 }
             }
 

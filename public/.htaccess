@@ -35,15 +35,22 @@
 </IfModule>
 
 # Caducidad de los estáticos.
-<IfModule mod_expires.c>
-    ExpiresActive On
-
+#
+# La directiva `Header` NO la aporta `mod_expires`, la aporta `mod_headers`.
+# Cuando estaba dentro del bloque de expires, si el hosting tenía uno y no
+# el otro, Apache abortaba con «Invalid command 'Header'». Ahora cada
+# directiva vive dentro del módulo que la define.
+<IfModule mod_headers.c>
     # Los assets de Vite llevan el hash del contenido en el nombre
     # (app-BZibRJkF.css), así que un cambio genera un nombre nuevo: se pueden
     # guardar un año sin riesgo de servir una versión vieja.
     <FilesMatch "-[A-Za-z0-9_-]{8,}\.(js|css)$">
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
+</IfModule>
+
+<IfModule mod_expires.c>
+    ExpiresActive On
 
     # Las imágenes no llevan hash: si el cliente sube un banner nuevo con el
     # mismo nombre, un mes es lo que puede tardar en verse. Suficiente.
@@ -51,5 +58,20 @@
     ExpiresByType image/png "access plus 30 days"
     ExpiresByType image/jpeg "access plus 30 days"
     ExpiresByType image/x-icon "access plus 30 days"
+
+    # E5 del plan · Los videos también necesitan caducar; sin esto se
+    # revalidan en cada visita y arrastrar la barra de reproducción los
+    # descarga entero de nuevo.
+    ExpiresByType video/mp4 "access plus 30 days"
+
     ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
+
+# Cabeceras de seguridad básicas (B4 del hallazgo del auditor).
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "geolocation=(), camera=(), microphone=()"
+    # Evita clickjacking sobre el formulario de cotización.
+    Header set X-Frame-Options "SAMEORIGIN"
 </IfModule>

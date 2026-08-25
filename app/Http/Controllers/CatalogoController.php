@@ -176,6 +176,11 @@ class CatalogoController extends Controller
 
     public function producto(Producto $producto): View
     {
+        // Una pieza despublicada no se ve por la URL pública, ni siquiera pegando
+        // el enlace directo. Antes respondía 200 tal cual, y quedaba en el
+        // sitemap la primera hora tras despublicar.
+        abort_unless($producto->publicado, 404);
+
         $producto->load(['tipoParte.categoria', 'vehiculo.modelo.marca']);
 
         // Lo que un mecánico busca después: las otras piezas del mismo sistema

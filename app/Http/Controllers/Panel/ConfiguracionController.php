@@ -74,18 +74,32 @@ class ConfiguracionController extends Controller
             return back()->with('mensaje', 'Configura primero al menos un correo válido.');
         }
 
-        $muestra = Cotizacion::with('items')->latest('id')->first();
-
-        if (! $muestra) {
-            return back()->with('mensaje', 'Todavía no hay ninguna solicitud para usar de muestra.');
-        }
+        // Cotización FICTICIA, armada en memoria: antes se usaba `Cotizacion::latest()`
+        // y un admin podía mandarse a sí mismo el nombre, teléfono y lista de
+        // repuestos del último cliente real. La prueba se manda al correo del
+        // usuario autenticado, no al de destinos, para que quede en su bandeja.
+        $muestra = new Cotizacion([
+            'consecutivo' => 'SA-PRUEBA',
+            'nombre' => 'Cliente',
+            'apellidos' => 'de prueba',
+            'telefono' => '000 000 0000',
+            'email' => $request->user()->email,
+            'notas' => 'Correo de prueba enviado desde la configuración del panel.',
+        ]);
+        $muestra->setRelation('items', collect([
+            new \App\Models\CotizacionItem([
+                'producto_nombre' => 'Filtro Aceite AVEO 1600 CHEVROLET',
+                'vehiculo_nombre' => 'CHEVROLET AVEO 1600 (2006-2013)',
+                'cantidad' => 1,
+            ]),
+        ]));
 
         try {
-            Mail::to($destinos[0])->send(new ConfirmacionCotizacion($muestra));
+            Mail::to($request->user()->email)->send(new ConfirmacionCotizacion($muestra));
         } catch (\Throwable $e) {
             return back()->with('mensaje', 'No salió el correo de prueba: '.$e->getMessage());
         }
 
-        return back()->with('mensaje', "Mandamos un correo de prueba a {$destinos[0]}.");
+        return back()->with('mensaje', "Mandamos un correo de prueba a {$request->user()->email}.");
     }
 }

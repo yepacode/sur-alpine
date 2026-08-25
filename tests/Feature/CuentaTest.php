@@ -88,14 +88,24 @@ class CuentaTest extends TestCase
         $this->assertDatabaseCount('users', 0);
     }
 
-    public function test_no_se_puede_repetir_el_correo(): void
+    public function test_repetir_el_correo_no_enumera_cuentas_existentes(): void
     {
+        // Antes el formulario respondía «ya hay una cuenta con ese correo», y
+        // eso servía para averiguar qué correos existen en el sistema. Hoy
+        // devuelve la misma pantalla que un registro exitoso: no se crea el
+        // duplicado, y no se dice por qué.
         $this->cliente();
+
+        $antes = \App\Models\User::count();
 
         $this->post(route('registro.crear'), [
             'name' => 'Otro', 'telefono' => '300', 'email' => 'julian@taller.co',
             'password' => 'secreto123', 'password_confirmation' => 'secreto123', 'acepta' => 1,
-        ])->assertSessionHasErrors('email');
+        ])
+            ->assertRedirect(route('acceso'))
+            ->assertSessionMissing('errors');
+
+        $this->assertSame($antes, \App\Models\User::count());
     }
 
     // ── Vehículos guardados ─────────────────────────────────────────────────

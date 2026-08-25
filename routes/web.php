@@ -77,7 +77,7 @@ Route::controller(CotizacionController::class)->group(function () {
 
 Route::middleware('guest')->group(function () {
     Route::get('/acceso', [AccesoController::class, 'formulario'])->name('acceso');
-    Route::post('/acceso', [AccesoController::class, 'entrar'])->name('entrar');
+    Route::post('/acceso', [AccesoController::class, 'entrar'])->middleware('throttle:20,1')->name('entrar');
 
     Route::get('/registro', [RegistroController::class, 'formulario'])->name('registro');
 
