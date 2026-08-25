@@ -109,32 +109,33 @@
                       x-data="selectorVehiculo('{{ route('vehiculos.arbol') }}')" class="mt-4">
                     @csrf
                     @php $campo = 'w-full rounded-lg border border-tinta-300 px-3 py-2.5 text-sm disabled:bg-tinta-100 disabled:text-tinta-400'; @endphp
+                    @php $selector = "{$campo} selector"; @endphp
 
                     <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <div>
                             <label for="cta-marca" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-tinta-500">Marca</label>
-                            <select id="cta-marca" x-model="marca" @change="cambiarMarca()" :disabled="cargando || error" class="{{ $campo }}">
+                            <select id="cta-marca" x-model="marca" @change="cambiarMarca()" :disabled="cargando || error" class="{{ $selector }}">
                                 <option value="">Elige la marca</option>
                                 <template x-for="m in marcas" :key="m"><option :value="m" x-text="m"></option></template>
                             </select>
                         </div>
                         <div>
                             <label for="cta-modelo" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-tinta-500">Modelo</label>
-                            <select id="cta-modelo" x-model="modelo" @change="cambiarModelo()" :disabled="!marca" class="{{ $campo }}">
+                            <select id="cta-modelo" x-model="modelo" @change="cambiarModelo()" :disabled="!marca" class="{{ $selector }}">
                                 <option value="">Elige el modelo</option>
                                 <template x-for="m in modelos" :key="m"><option :value="m" x-text="m"></option></template>
                             </select>
                         </div>
                         <div>
                             <label for="cta-cc" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-tinta-500">Cilindraje</label>
-                            <select id="cta-cc" x-model="cilindraje" @change="cambiarCilindraje()" :disabled="!modelo" class="{{ $campo }}">
+                            <select id="cta-cc" x-model="cilindraje" @change="cambiarCilindraje()" :disabled="!modelo" class="{{ $selector }}">
                                 <option value="">Elige el cilindraje</option>
                                 <template x-for="c in cilindrajes" :key="c"><option :value="c" x-text="c"></option></template>
                             </select>
                         </div>
                         <div>
                             <label for="cta-anio" class="mb-1 block text-xs font-semibold uppercase tracking-wide text-tinta-500">Año</label>
-                            <select id="cta-anio" x-model="anio" :disabled="!cilindraje" class="{{ $campo }} tabular-nums">
+                            <select id="cta-anio" x-model="anio" :disabled="!cilindraje" class="{{ $selector }} tabular-nums">
                                 <option value="">Elige el año</option>
                                 <template x-for="a in anios" :key="a"><option :value="a" x-text="a"></option></template>
                             </select>

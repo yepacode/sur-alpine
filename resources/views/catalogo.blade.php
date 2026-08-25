@@ -56,7 +56,7 @@
                 @endforeach
                 <label for="orden" class="text-sm text-tinta-500">Ordenar</label>
                 <select id="orden" name="orden" onchange="this.form.submit()"
-                        class="rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
+                        class="selector rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
                     <option value="a-z" @selected(request('orden', 'a-z') === 'a-z')>Nombre A-Z</option>
                     <option value="z-a" @selected(request('orden') === 'z-a')>Nombre Z-A</option>
                     <option value="recientes" @selected(request('orden') === 'recientes')>Más recientes</option>

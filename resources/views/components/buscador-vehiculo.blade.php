@@ -30,7 +30,10 @@
         @csrf
 
         @php
-            $ranura = 'w-full appearance-none rounded-xl border-2 border-tinta-200 bg-white px-3.5 py-3 text-[15px] font-medium text-tinta-900 transition hover:border-tinta-300 focus:border-marca-600 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-600 disabled:cursor-not-allowed disabled:border-tinta-200 disabled:bg-tinta-50 disabled:text-tinta-400 [background-image:none]';
+            // D1 · La clase `.selector` (definida en app.css) pinta la flecha
+            // como SVG de fondo. Antes el buscador ocultaba la nativa y no
+            // ponía nada, así que no quedaba señal de que fuera un desplegable.
+            $ranura = 'selector w-full rounded-xl border-2 border-tinta-200 bg-white px-3.5 py-3 text-[15px] font-medium text-tinta-900 transition hover:border-tinta-300 focus:border-marca-600 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-600 disabled:cursor-not-allowed disabled:border-tinta-200 disabled:bg-tinta-50 disabled:text-tinta-400';
             $rotulo = 'mb-1.5 block font-titulo text-[11px] font-bold uppercase tracking-[0.14em] text-tinta-500';
         @endphp
 
