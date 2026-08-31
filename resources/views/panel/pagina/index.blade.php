@@ -1,20 +1,37 @@
 @extends('panel.layout')
 
-@section('titulo', 'Configuración de página')
+{{-- El título y el h1 dicen lo MISMO que el menú: el cliente hace clic
+     en «Textos e imágenes» y tiene que aterrizar en «Textos e imágenes». --}}
+@section('titulo', 'Textos e imágenes')
 
 @section('contenido')
     <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight">Configuración de página</h1>
+            <h1 class="text-2xl font-bold tracking-tight">Textos e imágenes</h1>
             <p class="mt-1 max-w-2xl text-sm text-tinta-500">
-                El sitio por bloques: hero, buscador, cabecera, cotización, contacto, quiénes somos…
-                Adentro de cada uno: los textos y botones que salen ahí, la configuración de la sección
-                y su SEO (título y descripción para Google y modelos de IA).
+                El sitio por bloques: buscador, cabecera, cotización, contacto, quiénes somos…
+                Adentro de cada uno: los textos, botones y fotos que salen ahí, y su SEO
+                (título y descripción para Google y modelos de IA).
             </p>
         </div>
     </div>
 
-    <form method="post" action="{{ route('panel.pagina.guardar') }}" class="mt-6 space-y-4">
+    {{-- Era la única vista del panel sin bloque de errores. El controlador sí
+         los devuelve —una foto que GD no sabe leer, por ejemplo— pero la
+         página recargaba igual y en silencio: el cliente sube un HEIC del
+         iPhone, no pasa nada, y concluye que el panel está roto. --}}
+    @if ($errors->any())
+        <div role="alert" class="mt-6 rounded-lg border border-alerta-500 bg-alerta-500/5 p-4 text-sm text-alerta-700">
+            <p class="font-semibold">No pudimos guardar todo:</p>
+            <ul class="mt-1 list-disc pl-5">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <form method="post" action="{{ route('panel.pagina.guardar') }}" enctype="multipart/form-data" class="mt-6 space-y-4">
         @csrf
 
         @foreach ($secciones as $slug => $s)
@@ -22,7 +39,16 @@
                 $seoRow = isset($s['seo']) ? ($seo[$s['seo']['ruta']] ?? null) : null;
             @endphp
 
-            <details class="group rounded-xl border border-tinta-200 bg-white open:border-marca-300 open:shadow-sm">
+            {{-- La sección con el error queda abierta.
+                 Antes un error cerraba las dieciséis: el cliente leía «no
+                 pudimos guardar todo» y no tenía forma de saber en cuál de
+                 ellas estaba el problema. --}}
+            @php
+                $tieneError = collect($s['textos'])
+                    ->contains(fn ($t) => $errors->has('imagenes.'.($textos[$t['clave']]->id ?? 0)));
+            @endphp
+
+            <details @if ($tieneError) open @endif class="group rounded-xl border border-tinta-200 bg-white open:border-marca-300 open:shadow-sm">
                 <summary class="flex cursor-pointer items-center justify-between gap-4 px-5 py-4 marker:hidden [&::-webkit-details-marker]:hidden">
                     <div>
                         <h2 class="font-titulo text-base font-semibold text-tinta-900">{{ $s['titulo'] }}</h2>
@@ -30,7 +56,8 @@
                     </div>
                     <div class="flex items-center gap-3 text-xs text-tinta-500">
                         <span class="hidden rounded-full bg-tinta-100 px-2 py-1 font-semibold uppercase tracking-wide text-tinta-500 sm:inline">
-                            {{ count($s['textos']) }} textos
+                            {{-- «1 textos» delataba la plantilla. --}}
+                            {{ count($s['textos']) }} {{ count($s['textos']) === 1 ? 'campo' : 'campos' }}
                             @if ($seoRow) · SEO @endif
                         </span>
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
@@ -59,14 +86,39 @@
                                                 <span class="ml-1 rounded bg-alerta-50 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-alerta-700">Botón</span>
                                             @endif
                                         </label>
-                                        @if ($fila->valor_ejemplo)
+                                        @if ($fila->valor_ejemplo && $fila->tipo !== 'imagen')
                                             <p class="mt-1 text-xs text-tinta-500">
                                                 Original: <span class="italic">"{{ $fila->valor_ejemplo }}"</span>
                                             </p>
                                         @endif
                                     </div>
                                     <div>
-                                        @if ($fila->tipo === 'parrafo')
+                                        @if ($fila->tipo === 'imagen')
+                                            {{-- La foto actual y el botón para cambiarla. El
+                                                 archivo se convierte solo a WebP en los anchos
+                                                 que esa pieza necesita; dejarlo vacío no borra
+                                                 la que ya está. --}}
+                                            <div class="flex flex-wrap items-center gap-4">
+                                                @if ($fila->vista_previa)
+                                                    <img src="{{ $fila->vista_previa }}" alt="" loading="lazy" decoding="async"
+                                                         class="h-20 w-32 rounded border border-tinta-200 bg-tinta-100 object-cover">
+                                                @else
+                                                    <span class="grid h-20 w-32 place-items-center rounded border border-dashed border-tinta-300 text-xs text-tinta-500">
+                                                        sin foto
+                                                    </span>
+                                                @endif
+                                                <div class="min-w-48 flex-1">
+                                                    <input id="t-{{ $fila->id }}" type="file"
+                                                           name="imagenes[{{ $fila->id }}]"
+                                                           accept="image/webp,image/jpeg,image/png"
+                                                           class="w-full rounded-lg border border-tinta-300 px-3 py-2 text-sm file:mr-3 file:rounded file:border-0 file:bg-marca-50 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-marca-700">
+                                                    <p class="mt-1 text-xs text-tinta-500">
+                                                        JPG, PNG o WebP, hasta 8 MB. La dejamos liviana para el celular.
+                                                        Si no eliges nada, se queda la de ahora.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        @elseif ($fila->tipo === 'parrafo')
                                             <textarea id="t-{{ $fila->id }}" name="textos[{{ $fila->id }}]"
                                                       rows="2" maxlength="500"
                                                       class="w-full rounded-lg border border-tinta-300 px-3 py-2 text-sm">{{ $fila->valor }}</textarea>
@@ -88,6 +140,24 @@
                         @php $sid = $seoRow->id; @endphp
                         <div class="rounded-lg border border-marca-100 bg-marca-50/40 p-5 space-y-5"
                              x-data="{ subTab: 'basico' }">
+                            {{-- Cerrado por defecto.
+
+                                 Al abrir una sección de tres campos, el cliente
+                                 se encontraba antes con `og:locale:alternate`,
+                                 `max-snippet`, `noimageindex`, `changefreq` y
+                                 `rel="prev"`. Lo que venía a cambiar quedaba
+                                 sepultado bajo jerga que nadie le tradujo. --}}
+                            <div x-data="{ abierto: false }">
+                            <button type="button" @click="abierto = ! abierto"
+                                    :aria-expanded="abierto"
+                                    class="flex w-full flex-wrap items-center justify-between gap-2 text-left">
+                                <h3 class="text-xs font-semibold uppercase tracking-wide text-marca-800">
+                                    Cómo se ve en Google
+                                    <span class="font-normal normal-case text-tinta-500">(avanzado)</span>
+                                </h3>
+                                <span class="text-xs font-semibold text-marca-700" x-text="abierto ? 'Cerrar' : 'Abrir'"></span>
+                            </button>
+                            <div x-show="abierto" x-cloak class="mt-4 space-y-5">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <h3 class="text-xs font-semibold uppercase tracking-wide text-marca-800">
                                     SEO de la página · <span class="font-mono normal-case text-[11px]">{{ $s['seo']['ruta'] }}</span>
@@ -117,36 +187,40 @@
                                     <div>
                                         <label class="block text-xs font-semibold uppercase tracking-wide text-tinta-600">Meta title <span class="text-tinta-400 normal-case">(≤ 60 car.)</span></label>
                                         <input type="text" name="seo[{{ $sid }}][titulo]" value="{{ $seoRow->titulo }}" maxlength="200"
+                                               placeholder="Se arma solo si lo dejas vacío"
                                                class="mt-1 w-full rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold uppercase tracking-wide text-tinta-600">
-                                            Slug de la URL
-                                            <span class="text-alerta-600 normal-case">· cuidado: cambiarlo rompe enlaces</span>
-                                        </label>
-                                        <input type="text" name="seo[{{ $sid }}][slug]" value="{{ $seoRow->slug }}" maxlength="120"
-                                               pattern="[a-z0-9\-]*" placeholder="{{ $s['seo']['ruta'] }}"
-                                               class="mt-1 w-full rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm font-mono">
+                                        {{-- Aviso puesto porque paso: alguien escribio aqui un titulo
+                                             sin la marca y esa pagina quedo siendo la unica del sitio
+                                             que no dice «Importadora Sur Alpine» en la pestana ni en el
+                                             resultado de Google. Vacio se arma solo y siempre la lleva. --}}
+                                        <p class="mt-1 text-xs text-tinta-500">
+                                            Si escribes algo aquí, es EXACTAMENTE lo que sale: acuérdate de terminar
+                                            en «· Importadora Sur Alpine». Vacío se arma solo y ya la lleva.
+                                        </p>
                                     </div>
                                 </div>
+
+                                {{-- Aquí había tres campos que se guardaban y no
+                                     cambiaban NADA: «Slug de la URL», «H1 propio»
+                                     y «Focus keyword».
+
+                                     El del slug era el peor: avisaba en rojo que
+                                     «cambiarlo rompe enlaces» sobre un campo que
+                                     no enruta nada —las URLs viven en
+                                     `routes/web.php`—, así que asustaba sin
+                                     motivo. El H1 se guardaba y ninguna vista lo
+                                     leía. Y la «focus keyword» era para un
+                                     diagnóstico que no existe.
+
+                                     Un campo que se guarda y no hace nada es peor
+                                     que no tenerlo: el cliente cree que editó
+                                     algo. Las columnas siguen en base por si
+                                     algún día se usan de verdad. --}}
 
                                 <div>
                                     <label class="block text-xs font-semibold uppercase tracking-wide text-tinta-600">Meta description <span class="text-tinta-400 normal-case">(≤ 160 car.)</span></label>
                                     <textarea name="seo[{{ $sid }}][descripcion]" rows="2" maxlength="400"
                                               class="mt-1 w-full rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">{{ $seoRow->descripcion }}</textarea>
-                                </div>
-
-                                <div class="grid gap-3 sm:grid-cols-2">
-                                    <div>
-                                        <label class="block text-xs font-semibold uppercase tracking-wide text-tinta-600">H1 propio <span class="text-tinta-400 normal-case">(distinto del title)</span></label>
-                                        <input type="text" name="seo[{{ $sid }}][titulo_h1]" value="{{ $seoRow->titulo_h1 }}" maxlength="200"
-                                               class="mt-1 w-full rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold uppercase tracking-wide text-tinta-600">Focus keyword <span class="text-tinta-400 normal-case">(diagnóstico interno)</span></label>
-                                        <input type="text" name="seo[{{ $sid }}][focus_keyword]" value="{{ $seoRow->focus_keyword }}" maxlength="120"
-                                               class="mt-1 w-full rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
-                                    </div>
                                 </div>
 
                                 <div class="grid gap-3 sm:grid-cols-2">
@@ -354,12 +428,25 @@
                                     <legend class="px-1 text-xs font-semibold uppercase tracking-wide text-tinta-500">Sitemap por página</legend>
                                     <div class="mt-2 grid gap-3 sm:grid-cols-3">
                                         <div class="sm:col-span-1">
-                                            <input type="hidden" name="seo[{{ $sid }}][sitemap_incluir]" value="0">
-                                            <label class="flex items-center gap-2 pt-6 text-sm">
-                                                <input type="checkbox" name="seo[{{ $sid }}][sitemap_incluir]" value="1"
-                                                       @checked($seoRow->sitemap_incluir) class="size-4 rounded border-tinta-300 text-marca-700">
-                                                Incluir en <code>sitemap.xml</code>
-                                            </label>
+                                            @if ($seoRow->ruta === 'inicio')
+                                                {{-- La portada va siempre. La casilla se ve, para que
+                                                     el cuadro no quede raro, pero no se puede apagar:
+                                                     sacar la raíz del sitio del sitemap no es algo que
+                                                     nadie quiera, y no se nota hasta perder el tráfico. --}}
+                                                <label class="flex items-center gap-2 pt-6 text-sm text-tinta-500">
+                                                    <input type="checkbox" checked disabled
+                                                           class="size-4 rounded border-tinta-300 text-tinta-400">
+                                                    Incluir en <code>sitemap.xml</code>
+                                                </label>
+                                                <p class="mt-1 text-xs text-tinta-500">La portada va siempre.</p>
+                                            @else
+                                                <input type="hidden" name="seo[{{ $sid }}][sitemap_incluir]" value="0">
+                                                <label class="flex items-center gap-2 pt-6 text-sm">
+                                                    <input type="checkbox" name="seo[{{ $sid }}][sitemap_incluir]" value="1"
+                                                           @checked($seoRow->sitemap_incluir) class="size-4 rounded border-tinta-300 text-marca-700">
+                                                    Incluir en <code>sitemap.xml</code>
+                                                </label>
+                                            @endif
                                         </div>
                                         <div>
                                             <label class="block text-xs text-tinta-600">changefreq</label>
@@ -407,7 +494,8 @@
                                         <select name="seo[{{ $sid }}][schema_tipo]"
                                                 class="selector mt-1 w-full rounded-lg border border-tinta-300 px-3 py-2 text-sm">
                                             <option value="">— sin cambio —</option>
-                                            @foreach (['WebPage', 'AboutPage', 'ContactPage', 'CollectionPage', 'Product', 'Article', 'BlogPosting', 'FAQPage', 'HowTo', 'LocalBusiness', 'AutoPartsStore', 'Organization', 'Event', 'Recipe'] as $t)
+                                            {{-- La lista sale del controlador, que es quien la valida al guardar. --}}
+                                            @foreach (\App\Http\Controllers\Panel\ConfiguracionPaginaController::TIPOS_DE_SCHEMA as $t)
                                                 <option value="{{ $t }}" @selected($seoRow->schema_tipo === $t)>{{ $t }}</option>
                                             @endforeach
                                         </select>
@@ -492,6 +580,8 @@
                                               class="mt-2 w-full rounded-lg border border-tinta-300 bg-white px-3 py-2 font-mono text-xs">{{ $seoRow->head_extra }}</textarea>
                                 </fieldset>
                             </div>
+                            </div>{{-- cierra el cuerpo colapsable --}}
+                            </div>{{-- cierra el x-data del colapsable --}}
                         </div>
                     @endif
 

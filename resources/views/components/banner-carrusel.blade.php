@@ -72,11 +72,11 @@
                  teléfono esa carrera la tiene que ganar el archivo pequeño. --}}
             <img @if ($i === 0)
                      src="{{ $banner['chico'] }}"
-                     srcset="{{ $banner['chico'] }} 900w, {{ $banner['medio'] }} 1280w, {{ $banner['src'] }} 1600w"
+                     srcset="{{ $banner['srcset'] }}"
                      fetchpriority="high"
                  @else
                      :src="visible({{ $i }}) ? '{{ $banner['src'] }}' : null"
-                     :srcset="visible({{ $i }}) ? '{{ $banner['chico'] }} 900w, {{ $banner['medio'] }} 1280w, {{ $banner['src'] }} 1600w' : null"
+                     :srcset="visible({{ $i }}) ? '{{ $banner['srcset'] }}' : null"
                      loading="lazy"
                  @endif
                  sizes="(min-width: 1312px) 1248px, calc(100vw - 2rem)"
@@ -89,18 +89,20 @@
     </div>
 
     @if (count($banners) > 1)
-        {{-- Las flechas ya no dependen del hover: en un teléfono no hay puntero
-             que las revele, y antes en tablet quedaban invisibles pero ocupando
-             zona táctil. --}}
+        {{-- Las flechas se revelan con el puntero, y sólo donde hay puntero.
+             El corte estaba en `sm` (640 px), o sea que una tablet táctil las
+             tenía invisibles y ocupando zona tocable: se pulsaban sin querer y
+             no se veían nunca. `@media (hover: hover)` pregunta lo que de
+             verdad importa —si hay ratón— en vez de deducirlo del ancho. --}}
         <button type="button" @click="anterior(); arrancar()" aria-label="Novedad anterior"
-                class="absolute left-2 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/70 sm:left-3 sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100">
+                class="absolute left-2 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/70 sm:left-3 [@media(hover:hover)]:opacity-0 focus-visible:opacity-100 [@media(hover:hover)]:group-hover:opacity-100">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-5" aria-hidden="true">
                 <path d="M15 18 9 12l6-6" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </button>
 
         <button type="button" @click="siguiente(); arrancar()" aria-label="Novedad siguiente"
-                class="absolute right-2 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/70 sm:right-3 sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100">
+                class="absolute right-2 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:bg-black/70 sm:right-3 [@media(hover:hover)]:opacity-0 focus-visible:opacity-100 [@media(hover:hover)]:group-hover:opacity-100">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-5" aria-hidden="true">
                 <path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>

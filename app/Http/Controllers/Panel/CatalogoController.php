@@ -9,6 +9,7 @@ use App\Models\Modelo;
 use App\Models\Producto;
 use App\Models\TipoParte;
 use App\Models\Vehiculo;
+use App\Services\ImagenesWeb;
 use App\Services\ImportadorCatalogo;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -18,6 +19,8 @@ use Illuminate\Support\Str;
 
 class CatalogoController extends Controller
 {
+    public function __construct(private readonly ImagenesWeb $imagenes) {}
+
     public function index(Request $request): View
     {
         return view('panel.catalogo.index', [
@@ -64,9 +67,12 @@ class CatalogoController extends Controller
             'categorias' => Categoria::with(['tiposParte' => fn ($q) => $q->orderBy('nombre')])
                 ->orderBy('nombre')
                 ->get(),
+            // La pieza entera y no sólo su id: hace falta el slug para poder
+            // enlazar a su ficha desde la casilla marcada. Las claves siguen
+            // siendo el `tipo_parte_id`, que es lo que usa la vista.
             'marcados' => Producto::where('vehiculo_id', $vehiculo->id)
-                ->pluck('tipo_parte_id')
-                ->flip(),
+                ->get()
+                ->keyBy('tipo_parte_id'),
         ]);
     }
 
@@ -80,7 +86,6 @@ class CatalogoController extends Controller
         $elegidos = collect($datos['tipos'] ?? [])->map(fn ($id) => (int) $id);
         $actualesPorTipo = Producto::where('vehiculo_id', $vehiculo->id)->get()->keyBy('tipo_parte_id');
 
-        $porCrear = $elegidos->reject(fn ($id) => $actualesPorTipo->has($id));
         $desmarcadas = $actualesPorTipo->reject(fn ($_, $tipoId) => $elegidos->contains($tipoId));
 
         // Un desmarcado por error borraba en silencio referencias, imágenes y
@@ -102,28 +107,51 @@ class CatalogoController extends Controller
             ]);
         }
 
-        $porQuitar = $desmarcadas->pluck('id');
+        // El plan se RECALCULA dentro de la transacción.
+        //
+        // Lo de arriba se leyó fuera para poder pedir la confirmación de
+        // retiro, así que es una foto vieja. Si dos personas del equipo
+        // guardan el mismo vehículo con pocos segundos de diferencia, la
+        // segunda intenta crear una pieza que la primera acaba de crear y
+        // revienta con «Duplicate entry» —perdiendo su guardado entero—, o
+        // peor: quedan mezcladas las piezas de los dos formularios, que no es
+        // ni lo que pidió uno ni lo que pidió el otro.
+        //
+        // Volver a leer aquí, con la transacción ya abierta, hace que el plan
+        // se calcule sobre lo que hay de verdad. Lo que decide sigue siendo lo
+        // que la persona marcó; lo que cambia es contra qué se compara.
+        // Lo que de verdad pasó, para que el aviso no cuente el plan viejo.
+        [$creadas, $retiradas] = DB::transaction(function () use ($vehiculo, $elegidos) {
+            $ahora = Producto::where('vehiculo_id', $vehiculo->id)
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('tipo_parte_id');
 
-        DB::transaction(function () use ($vehiculo, $porCrear, $porQuitar) {
-            if ($porQuitar->isNotEmpty()) {
+            $quitar = $ahora->reject(fn ($_, $tipoId) => $elegidos->contains($tipoId))->pluck('id');
+
+            if ($quitar->isNotEmpty()) {
                 // Las solicitudes históricas no se rompen: el ítem guarda el
                 // nombre congelado y la llave foránea queda en nulo.
-                Producto::whereIn('id', $porQuitar)->delete();
+                Producto::whereIn('id', $quitar)->delete();
             }
 
-            foreach (TipoParte::with('categoria')->whereIn('id', $porCrear)->get() as $tipo) {
+            $crear = $elegidos->reject(fn ($id) => $ahora->has($id));
+
+            foreach (TipoParte::with('categoria')->whereIn('id', $crear)->get() as $tipo) {
                 Producto::create($this->armar($vehiculo, $tipo));
             }
+
+            return [$crear->count(), $quitar->count()];
         });
 
         ImportadorCatalogo::olvidarCaches();
 
         return back()->with('mensaje', sprintf(
             'Guardado: %d %s, %d %s en %s.',
-            $porCrear->count(),
-            Str::plural('pieza agregada', $porCrear->count()),
-            $porQuitar->count(),
-            Str::plural('retirada', $porQuitar->count()),
+            $creadas,
+            Str::plural('pieza agregada', $creadas),
+            $retiradas,
+            Str::plural('retirada', $retiradas),
             $vehiculo->nombre_completo
         ));
     }
@@ -180,7 +208,16 @@ class CatalogoController extends Controller
         // Marca, modelo, cilindraje y año inicial son la identidad del vehículo:
         // si al editar se cambian a los de otro que ya existe, se avisa en vez
         // de dejar que reviente el índice único.
-        $choque = Vehiculo::where($identidad)->when($vehiculo, fn ($q) => $q->whereKeyNot($vehiculo->id))->first();
+        // Se comprueba la identidad Y el slug.
+        //
+        // Con sólo la identidad, el aviso amable no llegaba nunca cuando el
+        // choque era de slug: en el catálogo real conviven cilindrajes como
+        // «1600 M.N», «1600 M.V» y «1300 CARB», y teclear «1600 MN» donde ya
+        // existe «1600 M.N» produce el mismo slug —y un 500 en la cara de
+        // quien está corrigiendo un dato—.
+        $choque = Vehiculo::where(fn ($q) => $q->where($identidad)->orWhere('slug', $slug))
+            ->when($vehiculo, fn ($q) => $q->whereKeyNot($vehiculo->id))
+            ->first();
 
         if ($choque) {
             return back()->withInput()->withErrors([
@@ -190,6 +227,8 @@ class CatalogoController extends Controller
 
         if ($vehiculo) {
             $vehiculo->update($identidad + ['anio_fin' => $datos['anio_fin'], 'slug' => $slug]);
+
+            $this->renombrarPiezasDe($vehiculo);
         } else {
             $vehiculo = Vehiculo::create($identidad + ['anio_fin' => $datos['anio_fin'], 'slug' => $slug]);
         }
@@ -201,6 +240,42 @@ class CatalogoController extends Controller
             ->with('mensaje', $vehiculo->wasRecentlyCreated
                 ? 'Vehículo guardado. Marca ahora las piezas que lleva.'
                 : 'Vehículo actualizado.');
+    }
+
+    /**
+     * Rehace el nombre de las piezas de un vehículo que se acaba de corregir.
+     *
+     * El nombre se compone con marca, modelo y cilindraje —«Pastillas Freno
+     * Delanteras AVEO 1600 CHEVROLET»—, así que al corregir el cilindraje de
+     * 1600 a 1800 el catálogo, el buscador y el correo al mostrador seguían
+     * diciendo 1600 debajo de un carro que ya se llamaba 1800.
+     *
+     * El SLUG no se toca, y es a propósito: está en URLs que Google ya indexó
+     * y en el sitemap, y además puede llevar desambiguaciones que sólo conoce
+     * el importador (la categoría cuando dos partes se llaman igual, el año
+     * cuando hay dos generaciones). Cambiar lo que se lee y dejar quieto lo
+     * que enlaza es lo correcto en los dos frentes.
+     */
+    private function renombrarPiezasDe(Vehiculo $vehiculo): void
+    {
+        $vehiculo->loadMissing('modelo.marca');
+
+        $modelo = $vehiculo->modelo;
+        $marca = $modelo->marca;
+
+        $vehiculo->productos()->with('tipoParte')->chunkById(200, function ($productos) use ($modelo, $marca, $vehiculo) {
+            foreach ($productos as $producto) {
+                $producto->update([
+                    'nombre' => sprintf(
+                        '%s %s %s %s',
+                        $producto->tipoParte->nombre,
+                        $modelo->nombre,
+                        $vehiculo->cilindraje,
+                        $marca->nombre
+                    ),
+                ]);
+            }
+        });
     }
 
     /** Ficha individual: referencia, foto y descripción son datos del equipo. */
@@ -217,11 +292,27 @@ class CatalogoController extends Controller
             'referencia' => ['nullable', 'string', 'max:80'],
             'descripcion' => ['nullable', 'string', 'max:2000'],
             'publicado' => ['nullable', 'boolean'],
-            'imagen' => ['nullable', 'image', 'max:4096'],
+            'imagen' => ['nullable', 'image', 'mimes:webp,jpg,jpeg,png', 'max:4096'],
+        ], [
+            'imagen.image' => 'Sube una imagen (WebP, JPG o PNG).',
+            'imagen.max' => 'La imagen no puede pesar más de 4 MB.',
         ]);
 
         if ($request->hasFile('imagen')) {
-            $datos['imagen'] = '/storage/'.$request->file('imagen')->store('productos', 'public');
+            // Por el mismo camino que las demás fotos del panel. Ésta era la
+            // única que guardaba los BYTES ORIGINALES: sin `mimes:` aceptaba
+            // GIF y BMP que las otras rechazan, sin reencodar se servía con
+            // todos sus metadatos —el EXIF con la ubicación si la foto la tomó
+            // un asesor con el celular—, sin tope de dimensiones un JPEG de
+            // 6.000 px iba entero a un móvil, y el nombre nunca cumplía la
+            // convención `-{ancho}.webp` que exige el `srcset`.
+            try {
+                $datos['imagen'] = $this->imagenes->guardarEnDisco(
+                    $request->file('imagen'), 'productos', $producto->slug, [520, 1024]
+                );
+            } catch (\RuntimeException $e) {
+                return back()->withInput()->withErrors(['imagen' => $e->getMessage()]);
+            }
         }
 
         // Sólo invalidamos la caché de la portada si cambió lo que la portada

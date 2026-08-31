@@ -11,13 +11,20 @@
 
 @php
     $usuario = auth()->user();
+    // Sin `rol` por enlace: al panel sólo entran administradores, y todos
+    // ven lo mismo. Cuando había cuatro roles esta lista se filtraba.
     $enlaces = [
-        ['ruta' => 'panel.tablero', 'texto' => 'Tablero', 'rol' => \App\Enums\Rol::Vendedor],
-        ['ruta' => 'panel.solicitudes', 'texto' => 'Solicitudes', 'rol' => \App\Enums\Rol::Vendedor],
-        ['ruta' => 'panel.catalogo', 'texto' => 'Catálogo', 'rol' => \App\Enums\Rol::Asesor],
-        ['ruta' => 'panel.pagina', 'texto' => 'Configuración de página', 'rol' => \App\Enums\Rol::Asesor],
-        ['ruta' => 'panel.usuarios', 'texto' => 'Usuarios', 'rol' => \App\Enums\Rol::Admin],
-        ['ruta' => 'panel.configuracion', 'texto' => 'Configuración', 'rol' => \App\Enums\Rol::Admin],
+        ['ruta' => 'panel.tablero', 'texto' => 'Tablero'],
+        ['ruta' => 'panel.solicitudes', 'texto' => 'Solicitudes'],
+        ['ruta' => 'panel.mensajes', 'texto' => 'Mensajes'],
+        ['ruta' => 'panel.catalogo', 'texto' => 'Catálogo'],
+        ['ruta' => 'panel.pagina', 'texto' => 'Textos e imágenes'],
+        ['ruta' => 'panel.banners', 'texto' => 'Campañas'],
+        ['ruta' => 'panel.categorias', 'texto' => 'Categorías'],
+        ['ruta' => 'panel.notas', 'texto' => 'Noticias'],
+        ['ruta' => 'panel.suscriptores', 'texto' => 'Suscriptores'],
+        ['ruta' => 'panel.usuarios', 'texto' => 'Usuarios'],
+        ['ruta' => 'panel.configuracion', 'texto' => 'Datos y correos'],
     ];
 @endphp
 
@@ -30,7 +37,6 @@
 
         <nav class="flex flex-wrap items-center gap-1" aria-label="Panel">
             @foreach ($enlaces as $enlace)
-                @continue (! $usuario->puede($enlace['rol']))
                 @php $activo = request()->routeIs($enlace['ruta'].'*'); @endphp
                 <a href="{{ Route::has($enlace['ruta']) ? route($enlace['ruta']) : '#' }}"
                    @class([

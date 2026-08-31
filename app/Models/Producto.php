@@ -2,12 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SeResuelvePorSlug;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Producto extends Model
 {
+    use SeResuelvePorSlug;
+
+    /** Lo que se ve mientras nadie ha subido la foto de la pieza. */
+    public const IMAGEN_GENERICA = '/img/generico/generico.webp';
+
     protected $table = 'productos';
 
     protected $fillable = [
@@ -25,6 +32,12 @@ class Producto extends Model
         return $this->belongsTo(Vehiculo::class);
     }
 
+    /** Cuántas veces ha entrado esta pieza en una solicitud. */
+    public function itemsCotizados(): HasMany
+    {
+        return $this->hasMany(CotizacionItem::class);
+    }
+
     public function tipoParte(): BelongsTo
     {
         return $this->belongsTo(TipoParte::class);
@@ -37,9 +50,64 @@ class Producto extends Model
      */
     public function getImagenMostrableAttribute(): ?string
     {
+        // Una sola imagen general mientras llega la foto real, nunca la de la
+        // categoría: el cliente pidió expresamente que no se use, porque una
+        // foto de «Frenos» junto al nombre de una pieza concreta se lee como si
+        // ese fuera el repuesto que se está vendiendo.
         return $this->imagen
             ?? $this->tipoParte?->imagen_defecto
-            ?? $this->tipoParte?->categoria?->imagen;
+            ?? self::IMAGEN_GENERICA;
+    }
+
+    /**
+     * La ficha que manda cuando esta pieza esta duplicada.
+     *
+     * 890 fichas del catalogo son pares identicos: la misma pieza del mismo
+     * carro, importada bajo dos categorias porque su tipo de parte existe en
+     * las dos (ver `TipoParte::principalesPorSlug`). Titulo, descripcion y
+     * contenido coinciden byte a byte; solo cambia el sufijo del slug.
+     *
+     * Las dos siguen respondiendo 200 —hay enlaces circulando hacia ambas—
+     * pero solo una entra al sitemap y la otra la senala con su canonical.
+     */
+    public function fichaPrincipal(): self
+    {
+        $this->loadMissing('tipoParte');
+
+        $principal = $this->tipoParte?->principal();
+
+        if (! $principal || (int) $principal->id === (int) $this->tipo_parte_id) {
+            return $this;
+        }
+
+        return static::query()
+            ->where('vehiculo_id', $this->vehiculo_id)
+            ->where('nombre', $this->nombre)
+            ->where('tipo_parte_id', $principal->id)
+            ->first() ?? $this;
+    }
+
+    public function esFichaPrincipal(): bool
+    {
+        return (int) $this->fichaPrincipal()->id === (int) $this->id;
+    }
+
+    /**
+     * Sólo las fichas que mandan. Es el filtro del sitemap: publicar las dos
+     * caras del duplicado es pedirle a Google que elija, y elige él.
+     */
+    public function scopeCanonicos(Builder $query): Builder
+    {
+        $secundarios = collect(TipoParte::principalesPorSlug());
+
+        if ($secundarios->isEmpty()) {
+            return $query;
+        }
+
+        return $query->whereNotIn('tipo_parte_id', TipoParte::query()
+            ->whereIn('slug', $secundarios->keys())
+            ->whereNotIn('id', $secundarios->values())
+            ->pluck('id'));
     }
 
     public function scopePublicados(Builder $query): Builder
@@ -98,8 +166,4 @@ class Producto extends Model
             : $query->whereFullText(['nombre', 'referencia'], $expresion, ['mode' => 'boolean']);
     }
 
-    public function getRouteKeyName(): string
-    {
-        return 'slug';
-    }
 }

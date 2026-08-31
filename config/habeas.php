@@ -20,6 +20,6 @@ return [
         'nit' => env('HABEAS_NIT', '900.000.000-0'),
         'correo' => env('HABEAS_CORREO', 'datos@suralpine.com'),
         'telefono' => env('HABEAS_TELEFONO', '(601) 000 0000'),
-        'direccion' => env('HABEAS_DIRECCION', 'Av. Caracas 19-21 sur, Bogotá D.C.'),
+        'direccion' => env('HABEAS_DIRECCION', 'Av. Caracas #19-15 sur, Bogotá D.C.'),
     ],
 ];

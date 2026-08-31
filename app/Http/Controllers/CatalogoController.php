@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Banner;
 use App\Models\Categoria;
 use App\Models\Marca;
+use App\Models\Nota;
 use App\Models\Producto;
 use App\Models\TipoParte;
 use App\Services\Cotizador;
@@ -11,6 +13,7 @@ use App\Services\ImportadorCatalogo;
 use App\Services\VehiculoActivo;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -18,6 +21,15 @@ use Illuminate\Support\Str;
 class CatalogoController extends Controller
 {
     private const POR_PAGINA = 24;
+
+    /*
+     * Las que el cliente exhibe en la portada, en el orden que él fijó.
+     *
+     * Son diez, contadas sobre su sitio en producción: hasta ahora aquí salían
+     * ocho, y las dos que quedaban fuera eran Frenos y Suspensión —justo las
+     * dos categorías más grandes del catálogo.
+     */
+    private const CATEGORIAS_EN_PORTADA = 10;
 
     public function __construct(private readonly VehiculoActivo $vehiculoActivo) {}
 
@@ -32,6 +44,7 @@ class CatalogoController extends Controller
             'banners' => $this->banners(),
             'destacados' => $this->destacados(),
             'proveedores' => $this->proveedores(),
+            'notas' => $this->notas(),
         ]);
     }
 
@@ -47,20 +60,39 @@ class CatalogoController extends Controller
     {
         $id = $this->vehiculoActivo->id();
 
-        return Cache::remember('inicio.categorias.'.ImportadorCatalogo::version().'.'.$id, 3600, fn () => Categoria::query()
+        // Diez, no las doce: el cliente eligió cuáles exhibir y en qué orden,
+        // y ese orden vive en la columna `orden` (ver ImagenesSeeder). Las
+        // demás siguen accesibles desde el catálogo y el menú.
+        //
+        // El límite entra en la llave de caché: sin él, subirlo de ocho a diez
+        // no cambiaba nada hasta que la caché expirara sola una hora después.
+        return Cache::remember('inicio.categorias.'.ImportadorCatalogo::version().'.'.self::CATEGORIAS_EN_PORTADA.'.'.$id, 3600, fn () => Categoria::query()
             ->withCount(['productos' => $this->filtroVehiculo()])
             ->orderBy('orden')
             ->orderBy('nombre')
+            ->limit(self::CATEGORIAS_EN_PORTADA)
             ->get());
     }
 
     /**
-     * El carrusel de "Productos Destacados". Mientras no haya un criterio del
-     * negocio, se muestran piezas de rotación alta de vehículos populares.
+     * Las cuatro notas de «Actualízate con Nosotros».
      *
-     * El azar se congela diez minutos. Sin eso, `ORDER BY RAND()` escanea la
-     * tabla entera en cada visita —el 60 % del tiempo de la portada— y, peor,
-     * la lista cambia bajo los pies del visitante cada vez que agrega algo.
+     * Cuatro porque son las que caben en la fila del original; si el cliente
+     * publica una quinta, entra la nueva y sale la más vieja. El listado
+     * completo vive en `/noticias`.
+     */
+    private function notas(): \Illuminate\Support\Collection
+    {
+        return Nota::query()->visibles()->recientes()->limit(4)->get();
+    }
+
+    /**
+     * El carrusel de "Productos Destacados": las piezas que más han pedido.
+     *
+     * El criterio lo fijó el cliente —«lo ideal es que sean los productos más
+     * cotizados»—, así que se ordena por cuántas veces ha entrado cada pieza en
+     * una solicitud. Las que nadie ha pedido todavía completan la fila en orden
+     * estable, para que el carrusel nunca salga vacío al arrancar.
      */
     private function destacados(): \Illuminate\Support\Collection
     {
@@ -71,8 +103,10 @@ class CatalogoController extends Controller
             600,
             fn () => Producto::publicados()
                 ->with(['vehiculo.modelo.marca', 'tipoParte.categoria'])
+                ->withCount('itemsCotizados as veces_cotizado')
                 ->when($vehiculo, fn ($q) => $q->where('vehiculo_id', $vehiculo->id))
-                ->inRandomOrder()
+                ->orderByDesc('veces_cotizado')
+                ->orderBy('id')
                 ->limit(10)
                 ->get()
         );
@@ -111,41 +145,21 @@ class CatalogoController extends Controller
     }
 
     /**
-     * Las campañas que envió el cliente, ya convertidas a WebP en dos anchos.
-     * Se leen del disco para que subir una nueva sea copiar un archivo.
+     * Las campañas de la portada.
+     *
+     * Antes salían de un `glob()` sobre el disco y los textos alternativos
+     * estaban escritos aquí. Ahora vienen de la tabla `banners`, que el
+     * cliente administra desde el panel: puede ordenarlas, apagar una por
+     * temporada sin borrarla, y ponerle el texto que lea un lector de
+     * pantalla.
      */
     private function banners(): array
     {
-        return Cache::remember('inicio.banners', 3600, function () {
-            $rotulos = [
-                'espirales' => 'Espirales Imal: mayor resistencia y duración',
-                'gabriel' => 'Amortiguadores Gabriel: las mejores piezas de suspensión',
-                'mac' => 'Baterías MAC',
-                'bwb' => 'Frenos BWB',
-                'incolbest' => 'Frenos Incolbest',
-                'aceite' => 'Aceites y lubricantes',
-                'sitio-oficial' => 'Importadora Sur Alpine: único sitio web oficial',
-            ];
-
-            return collect(glob(public_path('img/banners/*-1600.webp')))
-                ->map(function (string $ruta) use ($rotulos) {
-                    $base = str_replace('-1600.webp', '', basename($ruta));
-                    $clave = collect($rotulos)->keys()->first(fn ($k) => str_contains($base, $k));
-
-                    return [
-                        'src' => '/img/banners/'.$base.'-1600.webp',
-                        // El escalón que faltaba: la caja mide 1248 px, así que
-                        // entre 900 y 1600 el navegador saltaba al grande.
-                        'medio' => '/img/banners/'.$base.'-1280.webp',
-                        'chico' => '/img/banners/'.$base.'-900.webp',
-                        'alt' => $rotulos[$clave] ?? 'Novedades Sur Alpine',
-                        'orden' => $clave === 'sitio-oficial' ? 0 : 1,
-                    ];
-                })
-                ->sortBy('orden')
-                ->values()
-                ->all();
-        });
+        return Cache::remember(
+            'inicio.banners',
+            3600,
+            fn () => Banner::visibles()->get()->map->paraElCarrusel()->all()
+        );
     }
 
     /**
@@ -162,9 +176,44 @@ class CatalogoController extends Controller
         return $this->listado($request, titulo: $categoria->nombre, categoria: $categoria);
     }
 
-    public function tipoParte(Request $request, Categoria $categoria, TipoParte $tipoParte): View
+    /**
+     * El listado de un tipo de parte dentro de una categoría.
+     *
+     * El slug llega como texto y se busca DENTRO de la categoría, en vez de
+     * dejar que Laravel resuelva el modelo por su cuenta. Cuatro slugs existen
+     * dos veces —«axial-direccion», «terminal-direccion» y los dos retenes de
+     * rueda están en Dirección y también en Suspensión—: el binding implícito
+     * devolvía siempre la fila de Dirección y las cuatro URLs de Suspensión
+     * morían con 404… mientras el sitemap las seguía publicando. Eran 457
+     * repuestos sin página de aterrizaje, justo en las búsquedas de más
+     * intención («terminal de dirección aveo»).
+     */
+    public function tipoParte(Request $request, Categoria $categoria, string $tipoParte): View|RedirectResponse
     {
-        abort_unless($tipoParte->categoria_id === $categoria->id, 404);
+        // El slug se resuelve a mano —dentro de su categoría, porque cuatro se
+        // repiten entre dos—, así que este segmento no es un parámetro de ruta
+        // y el middleware `slug` no lo ve. La corrección de mayúsculas hay que
+        // hacerla aquí: sin ella, `/repuestos/FRENOS/BANDAS-FRENO` se quedaba
+        // a medias, con la categoría ya corregida y la pieza no.
+        $pedido = $tipoParte;
+
+        $tipoParte = $categoria->tiposParte()
+            ->where(fn ($q) => $q->where('slug', $pedido)
+                ->orWhereRaw('lower(slug) = ?', [mb_strtolower($pedido)]))
+            ->firstOrFail();
+
+        // Se comparan los dos segmentos a la vez para redirigir UNA sola vez.
+        // `originalParameter` y no `route('categoria')`: lo segundo devuelve el
+        // MODELO ya resuelto, así que la comparación era siempre distinta y la
+        // URL buena se redirigía a sí misma. Bucle infinito en el navegador.
+        if ($pedido !== $tipoParte->slug
+            || $request->route()->originalParameter('categoria') !== $categoria->slug) {
+            return redirect()->to(
+                route('tipo-parte', [$categoria, $tipoParte])
+                .($request->getQueryString() ? '?'.$request->getQueryString() : ''),
+                301
+            );
+        }
 
         return $this->listado(
             $request,
@@ -227,7 +276,20 @@ class CatalogoController extends Controller
         // Un solo conteo alimenta el encabezado, el filtro lateral y la
         // paginación. En el sitio anterior había tres cifras distintas para el
         // mismo listado, y ninguna coincidía con lo que se veía en pantalla.
-        $productos = $consulta->paginate(self::POR_PAGINA)->withQueryString();
+        // Los enlaces del paginador llevan `orden` y `q`, y nada más.
+        //
+        // `withQueryString()` los llenaba con TODA la cadena de consulta, así
+        // que `/repuestos?utm_source=facebook` generaba mil doscientos enlaces
+        // rastreables con el `utm_source` dentro. Cada uno es una dirección
+        // distinta del mismo catálogo, y multiplicarlas es exactamente lo que
+        // le sirve a quien está suplantando a Sur Alpine.
+        $productos = $consulta->paginate(self::POR_PAGINA)
+            ->appends(array_filter($request->only(['orden', 'q']), 'is_scalar'));
+
+        // `?page=99999` respondía 200 con cero productos: un 404 disfrazado,
+        // que Google cuenta como página de baja calidad. Con 3.822 URLs
+        // paginadas en el catálogo, eso es mucho ruido.
+        abort_if($productos->currentPage() > max(1, $productos->lastPage()), 404);
 
         // Los conteos del filtro lateral son la consulta más cara del sitio
         // —una subconsulta correlacionada por categoría sobre 29.272 productos,
@@ -235,11 +297,42 @@ class CatalogoController extends Controller
         // La misma estrategia que la portada, con la misma versión de caché.
         $id = $this->vehiculoActivo->id() ?? 0;
 
+        // Con una búsqueda activa NO se muestran los contadores del filtro
+        // lateral.
+        //
+        // Decían 2.877 mientras la grilla mostraba 239: dos cifras que se
+        // contradicen en la misma pantalla. Meter el término en el conteo
+        // arreglaba el número pero metía la búsqueda de texto completo dentro
+        // de una subconsulta correlacionada sobre 29.272 productos, y eso son
+        // cientos de milisegundos por página que además no se puede cachear
+        // (una llave por término escrito). Un número que no se ve es mejor que
+        // un número que miente y más barato que uno que cuesta medio segundo.
+        $buscando = filled($q);
+
+        // La descripción para Google, armada con lo que ya está en la mano.
+        //
+        // El catálogo, las 12 categorías y los 290 tipos de parte emitían
+        // LITERALMENTE la misma frase: 303 páginas indistinguibles entre sí y
+        // ninguna que responda a la búsqueda que la trajo.
+        $cuantos = $productos->total();
+        // Con cero resultados no se emite descripción propia: decirle a
+        // Google y al visitante «0 referencias en catálogo» es peor que el
+        // texto genérico del sitio.
+        $descripcion = ($tipoParte || $categoria) && $cuantos > 0
+            ? sprintf(
+                '%s: %s en catálogo para vehículos livianos. Pide tu cotización a Importadora Sur Alpine, Bogotá.',
+                $titulo,
+                $cuantos === 1 ? '1 referencia' : number_format($cuantos, 0, ',', '.').' referencias'
+            )
+            : null;
+
         return view('catalogo', [
             'titulo' => $titulo,
+            'descripcion' => $descripcion,
             'productos' => $productos,
             'categoria' => $categoria,
             'tipoParte' => $tipoParte,
+            'contarFiltros' => ! $buscando,
             'categorias' => Cache::remember(
                 'catalogo.categorias.'.ImportadorCatalogo::version().'.'.$id,
                 3600,

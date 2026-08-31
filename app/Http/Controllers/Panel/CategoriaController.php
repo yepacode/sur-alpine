@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\Categoria;
+use App\Services\ImagenesWeb;
 use App\Services\ImportadorCatalogo;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -15,11 +16,13 @@ use Illuminate\Support\Facades\Cache;
  *
  * Antes la portada mostraba «sin foto» en las categorías que no tenían
  * imagen en base, y no había forma de subirla sin tocar el seeder. Aquí el
- * asesor las edita cosa por cosa: nombre, orden y foto. El slug no se
+ * equipo las edita cosa por cosa: nombre, orden y foto. El slug no se
  * cambia —está en URLs indexadas y en el sitemap—, así se protege.
  */
 class CategoriaController extends Controller
 {
+    public function __construct(private readonly ImagenesWeb $imagenes) {}
+
     public function index(): View
     {
         return view('panel.categorias.index', [
@@ -53,10 +56,16 @@ class CategoriaController extends Controller
         // para el diseñador: `-640.webp` en el nombre le dice al modelo que
         // genere el `srcset` automático.
         if ($request->hasFile('imagen')) {
-            $extension = $request->file('imagen')->getClientOriginalExtension();
-            $nombre = $categoria->slug.'-640.'.$extension;
-            $ruta = $request->file('imagen')->storeAs('categorias', $nombre, 'public');
-            $datos['imagen'] = '/storage/'.$ruta;
+            // Igual que en las notas: el nombre y el formato los pone el
+            // servidor. Con la extensión del cliente, un PNG válido llamado
+            // `algo.html` quedaba servido como HTML desde el propio dominio.
+            try {
+                $datos['imagen'] = $this->imagenes->guardarEnDisco(
+                    $request->file('imagen'), 'categorias', $categoria->slug, Categoria::ANCHOS
+                );
+            } catch (\RuntimeException $e) {
+                return back()->withInput()->withErrors(['imagen' => $e->getMessage()]);
+            }
         }
 
         $categoria->update([

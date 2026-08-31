@@ -14,55 +14,28 @@
  *
  * `font-display: swap` mantiene el texto legible aunque una fuente tarde en
  * llegar; los pesos cargan según se pidan en `font-weight`.
+ *
+ * Aquí había además siete `@font-face` que ninguna regla referenciaba —Archivo
+ * en tres pesos y Barlow en cuatro—: `--font-sans` y `--font-titulo` son las
+ * dos Inter. No costaban tiempo de carga (el navegador no baja una fuente que
+ * nadie usa) pero eran 190 KB en cada despliegue y siete declaraciones que
+ * hacían dudar de cuál es la tipografía del sitio. Los tres pesos de Archivo,
+ * además, apuntaban al MISMO archivo.
  */
 
-@font-face {
-    font-family: 'Archivo';
-    font-style: normal;
-    font-weight: 600;
-    font-display: swap;
-    src: url('/fonts/archivo-600.woff2') format('woff2');
-}
-@font-face {
-    font-family: 'Archivo';
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url('/fonts/archivo-700.woff2') format('woff2');
-}
-@font-face {
-    font-family: 'Archivo';
-    font-style: normal;
-    font-weight: 800;
-    font-display: swap;
-    src: url('/fonts/archivo-800.woff2') format('woff2');
-}
 
+/*
+ * Inter. Es la tipografía que usa el sitio actual de Sur Alpine, y el cliente
+ * pidió que la página nueva se le parezca lo más posible: cambiarla era lo que
+ * más hacía que «no se viera ni parecido», por encima de cualquier color.
+ *
+ * Va como fuente variable —un solo archivo para todos los pesos, 47 KB— en vez
+ * de siete estáticos.
+ */
 @font-face {
-    font-family: 'Barlow';
+    font-family: 'Inter';
     font-style: normal;
-    font-weight: 400;
+    font-weight: 100 900;
     font-display: swap;
-    src: url('/fonts/barlow-400.woff2') format('woff2');
-}
-@font-face {
-    font-family: 'Barlow';
-    font-style: normal;
-    font-weight: 500;
-    font-display: swap;
-    src: url('/fonts/barlow-500.woff2') format('woff2');
-}
-@font-face {
-    font-family: 'Barlow';
-    font-style: normal;
-    font-weight: 600;
-    font-display: swap;
-    src: url('/fonts/barlow-600.woff2') format('woff2');
-}
-@font-face {
-    font-family: 'Barlow';
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url('/fonts/barlow-700.woff2') format('woff2');
+    src: url('/fonts/inter-latin.woff2') format('woff2');
 }

@@ -27,6 +27,18 @@
 # Compresión. Es la mitad del peso de la portada y no cuesta nada: el HTML
 # baja de 79 a 10 KB, el CSS de 56 a 10 y el JSON de vehículos de 23 a 4,5.
 # Las imágenes ya vienen en WebP, así que comprimirlas otra vez sólo gasta CPU.
+# Brotli si el hosting lo trae: comprime entre un 15 y un 20 % mejor que gzip
+# en texto, y el sitemap de productos son 4,9 MB de XML que Googlebot vuelve a
+# pedir entero cada vez. Va ANTES de deflate porque el navegador que entiende
+# los dos prefiere este; si el modulo no esta, Apache ignora el bloque y queda
+# gzip, que es lo que hay hoy.
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css text/xml
+    AddOutputFilterByType BROTLI_COMPRESS application/javascript application/json
+    AddOutputFilterByType BROTLI_COMPRESS application/xml application/rss+xml
+    AddOutputFilterByType BROTLI_COMPRESS image/svg+xml
+</IfModule>
+
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
     AddOutputFilterByType DEFLATE application/javascript application/json
@@ -74,4 +86,29 @@
     Header set Permissions-Policy "geolocation=(), camera=(), microphone=()"
     # Evita clickjacking sobre el formulario de cotización.
     Header set X-Frame-Options "SAMEORIGIN"
+
+    # Content-Security-Policy.
+    #
+    # `'unsafe-eval'` NO es opcional aquí, y conviene entender por qué antes de
+    # quitarlo: Alpine evalúa las expresiones de `x-data`, `@click` y `x-show`
+    # con `new Function(...)`, que la política gobierna con `script-src
+    # 'unsafe-eval'`. Sin él, en el servidor real —donde Apache SÍ lee este
+    # archivo, a diferencia de `artisan serve`— muere de golpe todo lo
+    # interactivo: el selector marca→modelo→cilindraje→año, el menú móvil, las
+    # sugerencias del buscador, el contador del carrito y el mapa de la
+    # portada, que además se queda invisible para siempre por su `x-cloak`.
+    # Trece vistas dependen de esto.
+    #
+    # `'unsafe-inline'` lo necesitan el telón de entrada —que decide antes del
+    # primer pintado— y el campo «HTML extra en el head» del panel, que existe
+    # justo para pegar un píxel de Meta.
+    #
+    # Y hay que decirlo sin adornos: con esas dos permisiones, esta política NO
+    # protege contra un script inyectado. Lo que sí hace, y no es poco, es
+    # cerrar de dónde puede venir TODO lo demás —imágenes, marcos, formularios,
+    # conexiones, `object-src 'none'`—, de modo que un archivo subido o un
+    # `head_extra` mal pegado no puedan sacar datos a otro dominio ni enmarcar
+    # el sitio. Endurecer `script-src` de verdad pide `@alpinejs/csp` y nonces
+    # por petición: es un trabajo aparte, no un ajuste de esta línea.
+    Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; media-src 'self'; frame-src https://www.google.com https://maps.google.com; connect-src 'self'; form-action 'self'; base-uri 'self'; frame-ancestors 'self'; object-src 'none'"
 </IfModule>

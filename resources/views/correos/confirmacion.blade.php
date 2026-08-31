@@ -14,6 +14,14 @@ Tu número de solicitud es **{{ $cotizacion->consecutivo }}**. Tenlo a mano cuan
 @endforeach
 @endforeach
 
+@if ($cotizacion->user_id)
+<x-mail::button :url="route('cuenta.cotizacion', $cotizacion)">
+Ver mi solicitud
+</x-mail::button>
+
+Queda guardada en tu cuenta, por si después quieres volver a pedir lo mismo.
+
+@endif
 Si necesitas agregar algo o corregir un dato, respóndenos este correo o llámanos
 al **{{ $contacto->pbx() }}**.
 

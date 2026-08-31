@@ -9,7 +9,10 @@
 
     <h1 class="text-2xl font-bold tracking-tight">Editar «{{ $categoria->nombre }}»</h1>
     <p class="mt-1 text-sm text-tinta-500">
-        Ruta pública: <code class="rounded bg-tinta-100 px-1.5 py-0.5 text-xs">{{ url('/repuestos/'.$categoria->slug) }}</code>
+        Ruta pública:
+        <a href="{{ route('categoria', $categoria) }}" target="_blank" rel="noopener"
+           class="rounded bg-tinta-100 px-1.5 py-0.5 font-mono text-xs text-marca-700 underline-offset-2 hover:underline">{{ route('categoria', $categoria) }}</a>
+        <span class="text-tinta-400">(se abre en otra pestaña)</span>
     </p>
 
     @if ($errors->any())

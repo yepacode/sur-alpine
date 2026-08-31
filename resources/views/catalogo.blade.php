@@ -1,6 +1,83 @@
 @extends('layouts.app')
 
 @section('titulo', $titulo)
+@if ($descripcion)
+    @section('descripcion', $descripcion)
+@endif
+
+@php
+    // Sólo estos tres parámetros forman parte de una dirección de verdad.
+    //
+    // El paginador conserva TODA la cadena de consulta, así que el canonical
+    // salía con lo que trajera la URL: `/repuestos?utm_source=facebook` se
+    // declaraba a sí mismo el original. Eso son copias ilimitadas del catálogo
+    // entero —basta con enlazar `?x=1`, `?x=2`, `?x=3`—, cada una diciéndole a
+    // Google que ella es la buena. Es la misma puerta que cierra el 301 de
+    // mayúsculas, abierta por otro lado, y es el problema por el que este
+    // cliente contrató el sitio.
+    //
+    // `robots.txt` bloquea `orden`, pero eso tapa UN NOMBRE, no el eje: no
+    // cubre `utm_*`, `gclid`, `fbclid` ni nada que a alguien se le ocurra.
+    $paramsBuenos = ['page', 'orden', 'q'];
+    $paramsRaros = array_diff(array_keys(request()->query()), $paramsBuenos);
+@endphp
+
+{{-- Una búsqueda no se indexa; el catálogo sí.
+     `/repuestos?q=freno` respondía 200 con `index,follow` y con el mismo
+     título y la misma descripción que `/repuestos`: un espacio infinito de
+     páginas casi idénticas al que además invita a entrar el `SearchAction` del
+     schema. `noindex,follow`, y no una regla en robots.txt, porque una URL
+     bloqueada ni siquiera puede enseñar su propio canonical.
+
+     Lo mismo con cualquier parámetro que no reconozcamos. --}}
+@if (filled(request('q')) || $paramsRaros !== [])
+    @section('robots', 'noindex,follow')
+@endif
+
+{{-- Canonical propio en cada pagina del paginador, y `prev`/`next`.
+     Hacian falta las dos cosas: el catalogo tiene 1.220 paginas alcanzables
+     -mas las de cada categoria y tipo, unas 3.900 en total- y todas
+     canonicalizaban a la pagina 1. Eso le dice a Google que las 3.900 son la
+     misma pagina, y lo que hay en la 700 deja de existir para el.
+     Lo que Google pide es exactamente esto: cada pagina apuntandose a si
+     misma, encadenadas con prev/next. --}}
+{{-- Cuatro tipos de parte viven en dos categorias, asi que hay cuatro pares
+     de paginas de aterrizaje con el mismo titulo —«terminal-direccion» es de
+     las consultas de mas intencion del catalogo y su autoridad se partia en
+     dos—. La secundaria apunta a la principal. --}}
+@if (($tipoParte ?? null) && ! $tipoParte->esPrincipal())
+    @php $tipoBueno = $tipoParte->principal(); @endphp
+    @section('canonical', route('tipo-parte', [$tipoBueno->categoria, $tipoBueno]))
+@elseif ($productos->hasPages())
+    @php
+        // La dirección se reconstruye con los parámetros buenos y nada más, en
+        // vez de tomar la del paginador tal cual: el paginador conserva TODA la
+        // cadena de consulta, así que `?utm_source=facebook` acababa dentro del
+        // canonical y esa URL se declaraba a sí misma la original.
+        //
+        // Y la primera página es `/repuestos` a secas: `?page=1` es la misma
+        // página con otra dirección, o sea el duplicado que estas etiquetas
+        // vienen a evitar.
+        $limpia = function (?int $pagina) use ($paramsBuenos) {
+            if ($pagina === null) {
+                return null;
+            }
+
+            $query = array_filter(
+                array_merge(
+                    array_intersect_key(request()->query(), array_flip($paramsBuenos)),
+                    ['page' => $pagina > 1 ? $pagina : null]
+                ),
+                fn ($v) => $v !== null && $v !== ''
+            );
+
+            return url()->current().($query ? '?'.http_build_query($query) : '');
+        };
+    @endphp
+    @section('canonical', $limpia($productos->currentPage()))
+    @section('rel-prev', $limpia($productos->currentPage() > 1 ? $productos->currentPage() - 1 : null) ?? '')
+    @section('rel-next', $productos->hasMorePages() ? $limpia($productos->currentPage() + 1) : '')
+@endif
 
 {{-- G · Datos estructurados del catálogo.
      · BreadcrumbList: Inicio → Repuestos → Categoría → Tipo, según se vea.
@@ -44,7 +121,13 @@
             'about' => ['@type' => 'AutoPartsStore', '@id' => url('/').'#negocio'],
             'mainEntity' => [
                 '@type' => 'ItemList',
-                'numberOfItems' => $productos->total(),
+                // Los que de verdad van en la lista, no los del catalogo
+                // entero: `numberOfItems` describe ESTE `itemListElement`, y
+                // decir 29.272 con veinte adentro es una contradiccion dentro
+                // del mismo nodo -y el mismo numero se repetia identico en
+                // cada pagina del paginador-.
+                'numberOfItems' => count($items),
+                'itemListOrder' => 'https://schema.org/ItemListOrderAscending',
                 'itemListElement' => $items,
             ],
         ];
@@ -54,7 +137,7 @@
 @endpush
 
 @section('contenido')
-    <div class="mx-auto max-w-7xl px-4 py-8">
+    <div class="contenedor py-8">
 
         <nav aria-label="Migas de pan" class="mb-6 text-sm text-tinta-500">
             <ol class="flex flex-wrap items-center gap-1">
@@ -83,14 +166,22 @@
                 <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">
                     {{ $categoria?->nombre ?? 'Catálogo' }}
                 </p>
-                <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">{{ $titulo }}</h1>
-                <p class="mt-1.5 text-[15px] text-tinta-500">
+                {{-- El h1 dice lo que se está viendo.
+                     Con un carro puesto decía «Todos los repuestos» encima de
+                     «184 repuestos en el catálogo»: el texto más grande de la
+                     página contradecía el resultado, y «en el catálogo» hacía
+                     pensar que Sur Alpine sólo tiene 184 piezas. --}}
+                <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">
+                    {{ $titulo }}@if ($vehiculoActivo ?? null) <span class="text-tinta-500">para tu {{ $vehiculoActivo->nombre_completo }}</span>@endif
+                </h1>
+                <p class="mt-1.5 text-base text-tinta-500">
+                    <span class="tabular-nums">@numero($productos->total())</span>
                     @if (is_string(request('q')) && request('q') !== '')
-                        <span class="tabular-nums">@numero($productos->total())</span>
                         {{ Str::plural('resultado', $productos->total()) }} para
                         <span class="font-medium text-tinta-700">«{{ request('q') }}»</span>
+                    @elseif ($vehiculoActivo ?? null)
+                        {{ Str::plural('repuesto', $productos->total()) }} que le sirven
                     @else
-                        <span class="tabular-nums">@numero($productos->total())</span>
                         {{ Str::plural('repuesto', $productos->total()) }} en el catálogo
                     @endif
                 </p>
@@ -100,18 +191,37 @@
                 {{-- Sólo escalares: si alguien pide `?q[]=freno` el valor llega
                      como arreglo y `{{ }}` reventaría en `htmlspecialchars`, con un
                      500 en las tres URLs con más peso SEO del sitio. --}}
-                @foreach (request()->except(['orden', 'page']) as $campo => $valor)
+                {{-- Sólo `q`: el formulario de ordenar reinyectaba en campos
+                     ocultos TODO lo que trajera la URL, así que un
+                     `?utm_source=facebook` volvía a salir en el siguiente
+                     enlace y se propagaba solo por el catálogo. --}}
+                @foreach (request()->only(['q']) as $campo => $valor)
                     @if (is_scalar($valor))
                         <input type="hidden" name="{{ $campo }}" value="{{ $valor }}">
                     @endif
                 @endforeach
                 <label for="orden" class="text-sm text-tinta-500">Ordenar</label>
-                <select id="orden" name="orden" onchange="this.form.submit()"
+                {{-- Con el ratón se aplica solo; con el teclado, no.
+                     `onchange="submit()"` recargaba la página en CADA opción por
+                     la que pasaba alguien moviéndose con las flechas: nunca
+                     llegaba a la que quería, y eso es un cambio de contexto que
+                     el usuario no pidió. Aquí, si hubo teclas de por medio, se
+                     espera a Enter o a salir del campo, y el botón de al lado
+                     queda visible para que la salida sea evidente. --}}
+                <select id="orden" name="orden"
+                        x-data="{ conTeclado: false }"
+                        x-on:keydown="conTeclado = true"
+                        x-on:change="if (! conTeclado) $el.form.requestSubmit()"
+                        x-on:keydown.enter.prevent="$el.form.requestSubmit()"
+                        x-on:blur="if (conTeclado) $el.form.requestSubmit()"
                         class="selector rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
                     <option value="a-z" @selected(request('orden', 'a-z') === 'a-z')>Nombre A-Z</option>
                     <option value="z-a" @selected(request('orden') === 'z-a')>Nombre Z-A</option>
                     <option value="recientes" @selected(request('orden') === 'recientes')>Más recientes</option>
                 </select>
+                <button type="submit" class="rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm font-medium text-tinta-700 hover:bg-tinta-50">
+                    Aplicar
+                </button>
             </form>
         </div>
 
@@ -120,85 +230,81 @@
              todo el filtro y tenía que bajar mucho para llegar a las piezas. --}}
         <div class="mt-8 grid gap-6 md:grid-cols-[14rem_1fr] md:gap-8 lg:grid-cols-[16rem_1fr]">
 
+            {{-- Los filtros, plegados en el teléfono.
+                 El `aside` va antes en el DOM, así que a 360 px el orden era:
+                 migas, título, contador, ordenar, tarjeta del vehículo y DOCE
+                 filas de categorías antes del primer repuesto. Es también el
+                 orden de tabulación: trece enlaces de filtro antes de ver una
+                 pieza. En pantalla ancha el filtro va al lado y no estorba, así
+                 que ahí se queda abierto y sin el desplegable. --}}
             <aside class="lg:self-start">
-                <h2 class="font-titulo text-[11px] font-bold uppercase tracking-[0.16em] text-tinta-500">Tu vehículo</h2>
-                <div class="mt-3 rounded-2xl border border-tinta-200 bg-white p-5">
-                    @if ($vehiculoActivo ?? null)
-                        <p class="text-sm font-semibold">{{ $vehiculoActivo->nombre_completo }}</p>
-                        <form method="post" action="{{ route('vehiculo.olvidar') }}" class="mt-2">
-                            @csrf
-                            <button type="submit" class="text-sm font-medium text-marca-700 underline-offset-2 hover:underline">
-                                Quitar filtro
-                            </button>
-                        </form>
-                    @else
-                        <p class="text-sm text-tinta-600">
-                            Elige tu carro y te mostramos sólo las piezas que le sirven.
-                        </p>
-                        <a href="{{ route('inicio') }}#contenido"
-                           class="mt-2 inline-block text-sm font-medium text-marca-700 underline-offset-2 hover:underline">
-                            Elegir vehículo
-                        </a>
-                    @endif
+                <details class="md:hidden">
+                    <summary class="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-tinta-200 bg-white px-4 py-3 text-sm font-semibold text-tinta-800 marker:hidden [&::-webkit-details-marker]:hidden">
+                        Filtrar
+                        <span class="text-xs font-normal text-tinta-500">
+                            {{ $vehiculoActivo?->nombre_completo ?? ($tipoParte?->nombre ?? $categoria?->nombre ?? 'todo el catálogo') }}
+                        </span>
+                    </summary>
+                    <div class="pt-4">
+                        @include('catalogo-filtros')
+                    </div>
+                </details>
+
+                <div class="hidden md:block">
+                    @include('catalogo-filtros')
                 </div>
-
-                <h2 class="mt-8 font-titulo text-[11px] font-bold uppercase tracking-[0.16em] text-tinta-500">Filtrar por parte</h2>
-
-                @if ($tiposParte->isNotEmpty())
-                    <p class="mt-3 text-sm">
-                        <a href="{{ route('categoria', $categoria) }}"
-                           class="font-medium text-marca-700 hover:underline">← Todo en {{ $categoria->nombre }}</a>
-                    </p>
-                    <ul class="mt-2 max-h-[28rem] space-y-1 overflow-y-auto pr-2 text-sm">
-                        @foreach ($tiposParte as $tipo)
-                            <li>
-                                {{-- Sin resultados no es un enlace: decir "0" y dejarlo clicable
-                                     manda al usuario a una página vacía. --}}
-                                @if ($tipo->productos_count === 0)
-                                    <span class="flex items-center justify-between gap-2 rounded px-2 py-1.5 text-tinta-400"
-                                          title="No manejamos esta pieza para el vehículo seleccionado">
-                                        <span>{{ $tipo->nombre }}</span>
-                                        <span class="shrink-0 text-xs">—</span>
-                                    </span>
-                                @else
-                                    <a href="{{ route('tipo-parte', [$categoria, $tipo]) }}"
-                                       @class([
-                                           'flex items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-tinta-100',
-                                           'bg-marca-50 font-semibold text-marca-700' => $tipoParte?->id === $tipo->id,
-                                       ])>
-                                        <span>{{ $tipo->nombre }}</span>
-                                        <span class="shrink-0 tabular-nums text-xs text-tinta-400">@numero($tipo->productos_count)</span>
-                                    </a>
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
-                @else
-                    <ul class="mt-3 space-y-1 text-sm">
-                        @foreach ($categorias as $cat)
-                            <li>
-                                <a href="{{ route('categoria', $cat) }}"
-                                   class="flex items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-tinta-100">
-                                    <span>{{ $cat->nombre }}</span>
-                                    <span class="shrink-0 tabular-nums text-xs text-tinta-400">@numero($cat->productos_count)</span>
-                                </a>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
             </aside>
+
 
             <div>
                 @if ($productos->isEmpty())
-                    <div class="rounded-2xl border border-dashed border-tinta-300 bg-white p-12 text-center" data-revelar>
-                        <p class="text-lg font-semibold">No encontramos repuestos con esa búsqueda</p>
-                        <p class="mt-2 text-sm text-tinta-500">
-                            Prueba con el nombre de la pieza, por ejemplo «pastillas freno» o «filtro aceite».
-                        </p>
-                        <a href="{{ route('catalogo') }}"
-                           class="mt-6 inline-block rounded-lg bg-marca-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-marca-800">
-                            Ver todo el catálogo
-                        </a>
+                    {{-- El vacío tiene que nombrar la causa real y dar la salida
+                         que corresponde.
+                         Antes decía siempre «no encontramos repuestos con esa
+                         búsqueda» —aunque no hubiera habido búsqueda— y ofrecía
+                         «Ver todo el catálogo», que llevaba al mismo listado
+                         SEGUÍA filtrado por el carro. La salida no sacaba. --}}
+                    <div class="rounded-2xl border border-dashed border-tinta-300 bg-white p-10 text-center sm:p-12" data-revelar>
+                        @if ($vehiculoActivo ?? null)
+                            <p class="text-lg font-semibold">
+                                Para tu {{ $vehiculoActivo->nombre_completo }} no manejamos
+                                {{ $tipoParte?->nombre ?? $categoria?->nombre ?? 'esas piezas' }}
+                            </p>
+                            <p class="mt-2 text-sm text-tinta-500">
+                                @if (is_string(request('q')) && request('q') !== '')
+                                    Tu búsqueda de «{{ request('q') }}» está limitada a ese carro.
+                                    Quita el filtro y busca en todo el catálogo.
+                                @else
+                                    Quita el filtro para ver esta sección completa, o llámanos:
+                                    muchas veces la conseguimos.
+                                @endif
+                            </p>
+
+                            <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+                                <form method="post" action="{{ route('vehiculo.olvidar') }}">
+                                    @csrf
+                                    <button type="submit"
+                                            class="rounded-lg bg-marca-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-marca-800">
+                                        Quitar el filtro de mi carro
+                                    </button>
+                                </form>
+                                <a href="tel:{{ $contacto->pbxTel() }}"
+                                   class="rounded-lg border border-tinta-300 bg-white px-5 py-2.5 text-sm font-semibold text-tinta-700 hover:bg-tinta-50">
+                                    Llamar al {{ $contacto->pbx() }}
+                                </a>
+                            </div>
+                        @else
+                            <p class="text-lg font-semibold">
+                                {{ contenido('catalogo.vacio.titulo', 'No encontramos repuestos con esa búsqueda') }}
+                            </p>
+                            <p class="mt-2 text-sm text-tinta-500">
+                                {{ contenido('catalogo.vacio.texto', 'Prueba con el nombre de la pieza, por ejemplo «pastillas freno» o «filtro aceite».') }}
+                            </p>
+                            <a href="{{ route('catalogo') }}"
+                               class="mt-6 inline-block rounded-lg bg-marca-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-marca-800">
+                                Ver todo el catálogo
+                            </a>
+                        @endif
                     </div>
                 @else
                     <ul class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -210,16 +316,24 @@
                             <li data-revelar class="group relative">
                                 <a href="{{ route('producto', $producto) }}"
                                    class="con-luz flex h-full flex-col rounded-2xl border border-tinta-200 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-marca-300 hover:shadow-lg">
-                                    <p class="font-titulo text-[11px] font-bold uppercase tracking-[0.14em] text-marca-600">
+                                    <p class="font-titulo text-xs font-bold uppercase tracking-[0.14em] text-marca-600">
                                         {{ $producto->tipoParte->categoria->nombre }}
                                     </p>
-                                    <h3 class="mt-1.5 font-titulo text-[17px] font-bold leading-snug text-tinta-900 group-hover:text-marca-700">
+                                    <h3 class="mt-1.5 font-titulo text-lg font-bold leading-snug text-tinta-900 group-hover:text-marca-700">
                                         {{ $producto->nombre }}
                                     </h3>
+                                    {{-- Con un carro puesto esta línea repite lo que
+                                         ya dice el nombre —«Aceite AVEO 1400
+                                         CHEVROLET» encima de «CHEVROLET AVEO 1400
+                                         2006-2009»— y en un teléfono empuja hacia
+                                         abajo la palabra que de verdad distingue.
+                                         Con el filtro puesto sólo quedan los años. --}}
                                     <p class="mt-2 text-sm text-tinta-500">
-                                        {{ $producto->vehiculo->modelo->marca->nombre }}
-                                        {{ $producto->vehiculo->modelo->nombre }}
-                                        {{ $producto->vehiculo->cilindraje }}
+                                        @unless ($vehiculoActivo ?? null)
+                                            {{ $producto->vehiculo->modelo->marca->nombre }}
+                                            {{ $producto->vehiculo->modelo->nombre }}
+                                            {{ $producto->vehiculo->cilindraje }}
+                                        @endunless
                                         <span class="cifra">{{ $producto->vehiculo->anio_inicio }}-{{ $producto->vehiculo->anio_fin }}</span>
                                     </p>
                                     <span class="mt-5 inline-flex items-center gap-1.5 self-start rounded-xl bg-alerta-500 px-4 py-2.5 font-titulo text-xs font-bold uppercase tracking-[0.06em] text-white transition group-hover:bg-alerta-600">
@@ -229,6 +343,28 @@
                                         </svg>
                                     </span>
                                 </a>
+
+                                {{-- Agregar sin abrir la ficha.
+                                     Quien ya sabe qué pieza quiere tenía que entrar
+                                     a la ficha, esperar, bajar, pulsar y volver
+                                     atrás: para ocho repuestos eran dieciséis
+                                     cargas de página en un taller con mala señal.
+                                     Va FUERA del ancla —un formulario dentro de un
+                                     enlace no es HTML válido— y por encima de ella
+                                     con `z-10`, en la esquina donde no compite con
+                                     el «Ver y cotizar». --}}
+                                <form method="post" action="{{ route('cotizacion.agregar', $producto) }}"
+                                      x-data="agregarACotizacion" @submit.prevent="enviar($event)"
+                                      class="absolute bottom-5 right-5 z-10">
+                                    @csrf
+                                    <button type="submit" :disabled="enviando"
+                                            aria-label="Agregar {{ $producto->nombre }} a mi cotización"
+                                            class="grid size-11 place-items-center rounded-xl border border-tinta-200 bg-white text-tinta-600 shadow-sm transition hover:border-marca-300 hover:text-marca-700"
+                                            :class="listo && 'border-marca-300 text-marca-700'">
+                                        <span x-show="!listo" aria-hidden="true" class="text-xl font-bold leading-none">+</span>
+                                        <span x-show="listo" x-cloak aria-hidden="true" class="text-lg font-bold leading-none">✓</span>
+                                    </button>
+                                </form>
                             </li>
                         @endforeach
                     </ul>

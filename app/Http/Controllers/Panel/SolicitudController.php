@@ -48,10 +48,14 @@ class SolicitudController extends Controller
 
     public function exportar(Request $request): StreamedResponse
     {
-        $solicitudes = $this->consulta($request)->with('items')->latest('id')->get();
+        // La consulta, no sus resultados: se recorre por lotes dentro del
+        // flujo. Con `->get()` el histórico entero entraba en memoria antes de
+        // escribir la primera línea, y este archivo se descarga justo cuando
+        // más solicitudes hay.
+        $consulta = $this->consulta($request)->with('items')->latest('id');
         $nombre = 'solicitudes-'.now()->format('Y-m-d').'.csv';
 
-        return response()->streamDownload(function () use ($solicitudes) {
+        return response()->streamDownload(function () use ($consulta) {
             $salida = fopen('php://output', 'w');
 
             // BOM para que Excel en Windows respete las tildes.
@@ -63,29 +67,27 @@ class SolicitudController extends Controller
             ], ';');
 
             // Inyección de fórmulas: un cliente anónimo pone `=cmd|'/C calc.exe'!A1`
-            // en su nombre, el vendedor abre el CSV en Excel y ejecuta el
+            // en su nombre, quien atiende abre el CSV en Excel y ejecuta el
             // comando. Prefijar con `'` toda celda que arranque por `= + - @`
             // (o tab/CR) hace que Excel la trate como texto y no como fórmula.
-            $blindar = fn ($v) => is_string($v) && $v !== '' && str_contains("=+-@	", $v[0])
-                ? "'".$v
-                : $v;
-
-            foreach ($solicitudes as $solicitud) {
-                foreach ($solicitud->items as $item) {
-                    fputcsv($salida, array_map($blindar, [
-                        $solicitud->consecutivo,
-                        $solicitud->created_at->format('d/m/Y H:i'),
-                        $solicitud->nombre_completo,
-                        $solicitud->telefono,
-                        $solicitud->email,
-                        $item->vehiculo_nombre,
-                        $item->producto_nombre,
-                        $item->cantidad,
-                        $solicitud->notas,
-                        $solicitud->seEnvio() ? 'Sí' : 'No',
-                    ]), ';');
+            $consulta->chunk(200, function ($solicitudes) use ($salida) {
+                foreach ($solicitudes as $solicitud) {
+                    foreach ($solicitud->items as $item) {
+                        fputcsv($salida, array_map('celda_csv', [
+                            $solicitud->consecutivo,
+                            $solicitud->created_at->format('d/m/Y H:i'),
+                            $solicitud->nombre_completo,
+                            $solicitud->telefono,
+                            $solicitud->email,
+                            $item->vehiculo_nombre,
+                            $item->producto_nombre,
+                            $item->cantidad,
+                            $solicitud->notas,
+                            $solicitud->seEnvio() ? 'Sí' : 'No',
+                        ]), ';');
+                    }
                 }
-            }
+            });
 
             fclose($salida);
         }, $nombre, ['Content-Type' => 'text/csv; charset=UTF-8']);

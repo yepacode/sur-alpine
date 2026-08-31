@@ -54,13 +54,44 @@
         @endif
     </form>
 
+    {{-- Los atajos que el tablero ya tenía y aquí no.
+         Para «quién pidió cotización esta semana» había que teclear dos fechas
+         a mano, que es justo la pregunta que se hace todos los lunes. --}}
+    @php
+        $atajos = [
+            'Hoy' => [today(), today()],
+            'Esta semana' => [today()->startOfWeek(), today()],
+            'Últimos 30 días' => [today()->subDays(29), today()],
+            'Este mes' => [today()->startOfMonth(), today()],
+        ];
+    @endphp
+    <div class="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+        <span class="text-xs font-semibold uppercase tracking-wide text-tinta-500">Ver:</span>
+        @foreach ($atajos as $texto => [$d, $h])
+            @php $activo = ($filtros['desde'] ?? '') === $d->toDateString() && ($filtros['hasta'] ?? '') === $h->toDateString(); @endphp
+            <a href="{{ route('panel.solicitudes', array_merge(request()->only(['q', 'estado']), ['desde' => $d->toDateString(), 'hasta' => $h->toDateString()])) }}"
+               @class([
+                   'rounded-full px-3 py-1 font-medium',
+                   'bg-marca-700 text-white' => $activo,
+                   'bg-tinta-100 text-tinta-700 hover:bg-tinta-200' => ! $activo,
+               ])>{{ $texto }}</a>
+        @endforeach
+    </div>
+
     @if ($solicitudes->isEmpty())
         <div class="mt-6 rounded-xl border border-dashed border-tinta-300 bg-white p-12 text-center">
             <p class="font-semibold">No hay solicitudes con esos filtros</p>
         </div>
     @else
         <div class="mt-6 overflow-x-auto rounded-xl border border-tinta-200 bg-white">
-            <table class="w-full min-w-3xl text-sm">
+            {{-- `min-w-xl` y no `min-w-3xl`: 806 px de tabla dentro de los 768
+                 de una tablet no sólo cortaban la columna «Correo», sino que
+                 el desborde se escapaba del contenedor y desplazaba la página
+                 entera de lado. Lo que quedaba fuera de pantalla era la
+                 columna «Acciones», o sea el botón «Reenviar» —la acción
+                 principal justo cuando un correo no salió, en la tablet del
+                 mostrador—. --}}
+            <table class="w-full min-w-xl text-sm">
                 <thead class="border-b border-tinta-200 text-left text-xs uppercase tracking-wide text-tinta-500">
                     <tr>
                         <th class="px-4 py-3 font-medium">Consecutivo</th>

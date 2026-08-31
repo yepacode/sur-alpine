@@ -57,38 +57,28 @@ class PanelCatalogoTest extends TestCase
         ]);
     }
 
-    private function asesor(): User
+    private function cliente(): User
     {
-        return User::firstOrCreate(
-            ['email' => 'asesor@suralpine.com'],
-            ['name' => 'Asesor', 'password' => 'secreto123', 'rol' => Rol::Asesor, 'activo' => true]
-        );
-    }
-
-    private function vendedor(): User
-    {
-        return User::firstOrCreate(
-            ['email' => 'vendedor@suralpine.com'],
-            ['name' => 'Vendedor', 'password' => 'secreto123', 'rol' => Rol::Vendedor, 'activo' => true]
-        );
+        return User::firstWhere(['email' => 'cliente@ejemplo.com']) ?? User::forceCreate(['email' => 'cliente@ejemplo.com'] + ['name' => 'Cliente', 'password' => 'secreto123', 'rol' => Rol::Cliente, 'activo' => true]);
     }
 
     private function admin(): User
     {
-        return User::firstOrCreate(
-            ['email' => 'admin@suralpine.com'],
-            ['name' => 'Admin', 'password' => 'secreto123', 'rol' => Rol::Admin, 'activo' => true]
-        );
+        return User::firstWhere(['email' => 'admin@suralpine.com']) ?? User::forceCreate(['email' => 'admin@suralpine.com'] + ['name' => 'Admin', 'password' => 'secreto123', 'rol' => Rol::Admin, 'activo' => true]);
     }
 
-    public function test_el_vendedor_no_edita_el_catalogo(): void
+    /**
+     * Con dos roles, la frontera es una sola: o eres administrador o eres
+     * cliente. Un cliente con sesión iniciada no entra al panel.
+     */
+    public function test_el_cliente_no_edita_el_catalogo(): void
     {
-        $this->actingAs($this->vendedor())->get('/panel/catalogo')->assertForbidden();
+        $this->actingAs($this->cliente())->get('/panel/catalogo')->assertForbidden();
     }
 
     public function test_el_listado_muestra_cuantas_piezas_lleva_cada_vehiculo(): void
     {
-        $vehiculos = $this->actingAs($this->asesor())->get('/panel/catalogo')
+        $vehiculos = $this->actingAs($this->admin())->get('/panel/catalogo')
             ->assertOk()
             ->viewData('vehiculos');
 
@@ -97,7 +87,7 @@ class PanelCatalogoTest extends TestCase
 
     public function test_la_matriz_muestra_todos_los_tipos_de_parte_y_marca_los_que_lleva(): void
     {
-        $vista = $this->actingAs($this->asesor())
+        $vista = $this->actingAs($this->admin())
             ->get(route('panel.catalogo.editar', $this->aveo))
             ->assertOk()
             ->assertSee('Pastillas Freno Delanteras')
@@ -111,7 +101,7 @@ class PanelCatalogoTest extends TestCase
 
     public function test_marcar_una_casilla_crea_la_pieza_y_desmarcar_la_quita(): void
     {
-        $this->actingAs($this->asesor())->post(route('panel.catalogo.matriz', $this->aveo), [
+        $this->actingAs($this->admin())->post(route('panel.catalogo.matriz', $this->aveo), [
             'tipos' => [$this->filtro->id],
         ])->assertRedirect();
 
@@ -147,7 +137,7 @@ class PanelCatalogoTest extends TestCase
             'cantidad' => 2,
         ]);
 
-        $this->actingAs($this->asesor())->post(route('panel.catalogo.matriz', $this->aveo), ['tipos' => []]);
+        $this->actingAs($this->admin())->post(route('panel.catalogo.matriz', $this->aveo), ['tipos' => []]);
 
         $item = $cotizacion->fresh()->items->first();
 
@@ -157,7 +147,7 @@ class PanelCatalogoTest extends TestCase
 
     public function test_se_puede_dar_de_alta_un_vehiculo_con_cilindraje_de_texto(): void
     {
-        $this->actingAs($this->asesor())->post(route('panel.catalogo.guardar-vehiculo'), [
+        $this->actingAs($this->admin())->post(route('panel.catalogo.guardar-vehiculo'), [
             'marca' => 'Mazda',
             'modelo' => '323',
             'cilindraje' => '1300 CARB',
@@ -171,7 +161,7 @@ class PanelCatalogoTest extends TestCase
 
     public function test_el_ano_final_no_puede_ser_anterior_al_inicial(): void
     {
-        $this->actingAs($this->asesor())
+        $this->actingAs($this->admin())
             ->from(route('panel.catalogo.crear'))
             ->post(route('panel.catalogo.guardar-vehiculo'), [
                 'marca' => 'Kia', 'modelo' => 'Picanto', 'cilindraje' => '1000',
@@ -184,7 +174,7 @@ class PanelCatalogoTest extends TestCase
     {
         $producto = Producto::first();
 
-        $this->actingAs($this->asesor())->post(route('panel.catalogo.guardar-producto', $producto), [
+        $this->actingAs($this->admin())->post(route('panel.catalogo.guardar-producto', $producto), [
             'referencia' => 'MAH-4471',
             'descripcion' => 'Juego de cuatro pastillas.',
             'publicado' => '1',
@@ -199,7 +189,7 @@ class PanelCatalogoTest extends TestCase
 
         $antes = Producto::count();
 
-        $vista = $this->actingAs($this->asesor())
+        $vista = $this->actingAs($this->admin())
             ->post(route('panel.catalogo.previsualizar'), ['archivo' => $this->excelDePrueba()])
             ->assertOk();
 
@@ -213,10 +203,10 @@ class PanelCatalogoTest extends TestCase
 
     public function test_confirmar_la_carga_masiva_importa_de_verdad(): void
     {
-        $vista = $this->actingAs($this->asesor())
+        $vista = $this->actingAs($this->admin())
             ->post(route('panel.catalogo.previsualizar'), ['archivo' => $this->excelDePrueba()]);
 
-        $this->actingAs($this->asesor())
+        $this->actingAs($this->admin())
             ->post(route('panel.catalogo.confirmar'), ['archivo' => $vista->viewData('archivo')])
             ->assertRedirect(route('panel.catalogo'));
 
@@ -227,14 +217,22 @@ class PanelCatalogoTest extends TestCase
     /** El nombre del archivo viene de un formulario: no puede apuntar a cualquier ruta. */
     public function test_no_se_puede_importar_un_archivo_fuera_de_la_carpeta(): void
     {
-        $this->actingAs($this->asesor())
+        $this->actingAs($this->admin())
             ->post(route('panel.catalogo.confirmar'), ['archivo' => '../../.env'])
             ->assertRedirect(route('panel.catalogo.importar'));
     }
 
     public function test_solo_el_administrador_toca_la_configuracion(): void
     {
-        $this->actingAs($this->asesor())->get('/panel/configuracion')->assertForbidden();
+        $this->actingAs($this->cliente())->get('/panel/configuracion')->assertForbidden();
+
+        // `flushSession()` entre los dos: la sesión quedó atada a la
+        // contraseña del primero (middleware `AuthenticateSession`) y
+        // reusarla con otra cuenta lo saca. Un navegador no puede cambiar
+        // de identidad sin cerrar sesión; esto es sólo el atajo de las
+        // pruebas, y aquí se paga.
+        $this->flushSession();
+
         $this->actingAs($this->admin())->get('/panel/configuracion')->assertOk();
     }
 
@@ -264,9 +262,9 @@ class PanelCatalogoTest extends TestCase
     public function test_el_administrador_crea_usuarios_con_su_rol(): void
     {
         $this->actingAs($this->admin())->post(route('panel.usuarios.guardar'), [
-            'name' => 'Nueva Vendedora',
+            'name' => 'Nueva Administradora',
             'email' => 'nueva@suralpine.com',
-            'rol' => 'vendedor',
+            'rol' => 'admin',
             'password' => 'clavelarga123',
             'password_confirmation' => 'clavelarga123',
             'activo' => '1',
@@ -274,7 +272,7 @@ class PanelCatalogoTest extends TestCase
 
         $usuario = User::where('email', 'nueva@suralpine.com')->firstOrFail();
 
-        $this->assertSame(Rol::Vendedor, $usuario->rol);
+        $this->assertSame(Rol::Admin, $usuario->rol);
         $this->assertTrue($usuario->activo);
     }
 
@@ -284,65 +282,65 @@ class PanelCatalogoTest extends TestCase
      */
     public function test_el_administrador_desactiva_a_quien_ya_no_trabaja(): void
     {
-        $vendedor = User::create([
-            'name' => 'Vendedor que se fue', 'email' => 'sefue@suralpine.com',
-            'password' => 'secreto123', 'rol' => Rol::Vendedor, 'activo' => true,
+        $empleado = User::forceCreate([
+            'name' => 'Empleado que se fue', 'email' => 'sefue@suralpine.com',
+            'password' => 'secreto123', 'rol' => Rol::Admin, 'activo' => true,
         ]);
 
         $this->actingAs($this->admin())
-            ->post(route('panel.usuarios.actualizar', $vendedor), [
-                'name' => $vendedor->name,
-                'email' => $vendedor->email,
-                'rol' => Rol::Vendedor->value,
+            ->post(route('panel.usuarios.actualizar', $empleado), [
+                'name' => $empleado->name,
+                'email' => $empleado->email,
+                'rol' => Rol::Admin->value,
                 // Sin 'activo': es la casilla desmarcada.
             ])
             ->assertRedirect(route('panel.usuarios'));
 
-        $this->assertFalse($vendedor->fresh()->activo);
+        $this->assertFalse($empleado->fresh()->activo);
 
         // Y de verdad deja de entrar. Hay que salir primero: la ruta de acceso
         // es sólo para invitados y con el admin dentro nunca se ejecuta.
         auth()->logout();
 
-        $this->post(route('entrar'), ['email' => $vendedor->email, 'password' => 'secreto123'])
+        $this->post(route('entrar'), ['email' => $empleado->email, 'password' => 'secreto123'])
             ->assertSessionHasErrors('email');
     }
 
     /** Editar sin escribir contraseña no la borra ni la cambia. */
     public function test_editar_un_usuario_sin_contrasena_deja_la_que_tenia(): void
     {
-        $asesor = User::create([
-            'name' => 'Asesor', 'email' => 'asesor2@suralpine.com',
-            'password' => 'secreto123', 'rol' => Rol::Asesor, 'activo' => true,
+        $empleado = User::forceCreate([
+            'name' => 'Empleado', 'email' => 'empleado2@suralpine.com',
+            'password' => 'secreto123', 'rol' => Rol::Admin, 'activo' => true,
         ]);
-        $claveVieja = $asesor->password;
+        $claveVieja = $empleado->password;
 
         $this->actingAs($this->admin())
-            ->post(route('panel.usuarios.actualizar', $asesor), [
+            ->post(route('panel.usuarios.actualizar', $empleado), [
                 'name' => 'Nombre corregido',
-                'email' => $asesor->email,
-                'rol' => Rol::Asesor->value,
+                'email' => $empleado->email,
+                'rol' => Rol::Admin->value,
                 'activo' => 1,
             ])->assertRedirect(route('panel.usuarios'));
 
-        $asesor->refresh();
-        $this->assertSame('Nombre corregido', $asesor->name);
-        $this->assertSame($claveVieja, $asesor->password);
+        $empleado->refresh();
+        $this->assertSame('Nombre corregido', $empleado->name);
+        $this->assertSame($claveVieja, $empleado->password);
     }
 
     /** El formulario llega relleno cuando se pide editar a alguien. */
     public function test_el_formulario_de_edicion_trae_los_datos_del_usuario(): void
     {
-        $asesor = User::create([
-            'name' => 'Asesor de catálogo', 'email' => 'asesor3@suralpine.com',
-            'password' => 'secreto123', 'rol' => Rol::Asesor, 'activo' => true,
+        $empleado = User::forceCreate([
+            'name' => 'Empleado de mostrador', 'email' => 'empleado3@suralpine.com',
+            'password' => 'secreto123', 'rol' => Rol::Admin, 'activo' => true,
         ]);
 
         $this->actingAs($this->admin())
-            ->get(route('panel.usuarios', ['editar' => $asesor->id]))
+            ->get(route('panel.usuarios', ['editar' => $empleado->id]))
             ->assertOk()
-            ->assertSee('Editar Asesor de catálogo')
-            ->assertSee('asesor3@suralpine.com');
+            ->assertSee('Editar Empleado de mostrador')
+            ->assertSee('empleado3@suralpine.com');
     }
 
     /** Nadie se quita a sí mismo el acceso y deja el panel sin administrador. */
@@ -375,7 +373,15 @@ class PanelCatalogoTest extends TestCase
             ['CHEVROLET', 'SAIL', 1200.0, 2018.0, 2022.0, 1, 0, 1],
         ], null, 'A1');
 
-        $ruta = tempnam(sys_get_temp_dir(), 'matriz').'.xlsx';
+        $ruta = (function () {
+            // `tempnam` CREA el archivo; al añadirle `.xlsx` se guarda en otro
+            // nombre y el original se queda huérfano. Eran ~1.400 archivos de
+            // cero bytes en el temp del sistema, +15 por cada corrida.
+            $base = tempnam(sys_get_temp_dir(), 'matriz');
+            unlink($base);
+
+            return $base.'.xlsx';
+        })();
         (new Xlsx($hoja->getParent()))->save($ruta);
 
         return new UploadedFile($ruta, 'matriz.xlsx', null, null, true);

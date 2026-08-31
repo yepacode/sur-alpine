@@ -17,7 +17,12 @@
                 <select id="periodo" name="periodo" onchange="this.form.submit()"
                         class="rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
                     @foreach ($periodos as $valor => $texto)
-                        <option value="{{ $valor }}" @selected($periodo === $valor)>{{ $texto }}</option>
+                        {{-- `(string)`: las claves '7'/'30'/'90' de PERIODOS son
+                             enteros para PHP, así que `$periodo === $valor`
+                             comparaba '30' con 30 y NUNCA marcaba nada. El
+                             navegador pintaba la primera opción: el tablero
+                             decía «Hoy» mientras mostraba el mes entero. --}}
+                        <option value="{{ $valor }}" @selected((string) $valor === $periodo)>{{ $texto }}</option>
                     @endforeach
                 </select>
             </div>
@@ -39,6 +44,53 @@
             @endif
         </form>
     </div>
+
+    {{--
+        «No encuentro dónde se edita».
+
+        Lo dijo el cliente y tenía razón, aunque todo estuviera ya hecho: el
+        menú se llama «Catálogo» y «Configuración de página», y él no piensa en
+        catálogos ni en configuraciones —piensa en «quiero cambiarle la foto a
+        una categoría». Este bloque no agrega ninguna pantalla nueva: pone en
+        sus palabras lo que ya existe y lleva directo.
+
+        Va arriba de los números a propósito. Entra al panel a hacer algo, no a
+        mirar estadísticas.
+    --}}
+    @php
+        $tareas = [
+            ['ruta' => 'panel.pagina', 'texto' => 'Cambiar los textos de la portada y de las páginas'],
+            ['ruta' => 'panel.catalogo', 'texto' => 'Corregir la referencia, la foto o la descripción de un repuesto'],
+            ['ruta' => 'panel.banners', 'texto' => 'Poner o quitar una campaña del banner'],
+            ['ruta' => 'panel.categorias', 'texto' => 'Cambiar la foto o el orden de una categoría'],
+            ['ruta' => 'panel.notas', 'texto' => 'Publicar una noticia'],
+            ['ruta' => 'panel.configuracion', 'texto' => 'Cambiar teléfonos, dirección o a qué correo llegan las cotizaciones'],
+            // El horario tiene DOS sitios y este atajo llevaba al que no es.
+            // El de «Datos y correos» sólo alimenta la ficha de Google; el que
+            // lee una persona en /contactenos vive en los textos de la sección
+            // «Contacto y ubicación». Prometer «horarios» y llevar al primero
+            // hacía que el cliente lo cambiara, viera «Configuración guardada»
+            // y la web siguiera diciendo lo de antes.
+            ['ruta' => 'panel.pagina', 'texto' => 'Cambiar el horario de atención que se lee en la página'],
+            ['ruta' => 'panel.usuarios', 'texto' => 'Agregar o quitar a alguien del equipo'],
+        ];
+    @endphp
+
+    <section class="mt-6 rounded-xl border border-tinta-200 bg-white p-5">
+        <h2 class="text-sm font-bold uppercase tracking-wide text-tinta-700">¿Qué quieres cambiar?</h2>
+
+        <ul class="mt-4 grid gap-2 sm:grid-cols-2">
+            @foreach ($tareas as $tarea)
+                <li>
+                    <a href="{{ route($tarea['ruta']) }}"
+                       class="flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-tinta-700 transition hover:bg-marca-50 hover:text-marca-800">
+                        <span aria-hidden="true" class="text-marca-500">→</span>
+                        {{ $tarea['texto'] }}
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+    </section>
 
     <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-xl border border-tinta-200 bg-white p-5">

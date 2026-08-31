@@ -2,6 +2,10 @@
 
 @section('titulo', 'Mi cuenta')
 
+{{-- Nada de esto tiene por qué salir en Google: o es privado, o es un
+     paso intermedio. Salían todas `index,follow`. --}}
+@section('robots', 'noindex, nofollow')
+
 @section('contenido')
     <div class="mx-auto max-w-5xl px-4 py-10">
 
@@ -15,12 +19,18 @@
                     Tus carros y sus mantenimientos, en un solo lugar.
                 </p>
             </div>
-            <form method="post" action="{{ route('salir') }}">
-                @csrf
-                <button type="submit" class="text-sm font-medium text-tinta-600 underline-offset-2 hover:underline">
-                    Cerrar sesión
-                </button>
-            </form>
+            <div class="flex items-center gap-4">
+                <a href="{{ route('cuenta.datos') }}"
+                   class="text-sm font-semibold text-marca-700 underline-offset-2 hover:underline">
+                    Mis datos
+                </a>
+                <form method="post" action="{{ route('salir') }}">
+                    @csrf
+                    <button type="submit" class="text-sm font-medium text-tinta-600 underline-offset-2 hover:underline">
+                        Cerrar sesión
+                    </button>
+                </form>
+            </div>
         </div>
 
         {{-- Lo que toca pronto va arriba: es a lo que entra un mecánico. --}}
@@ -67,6 +77,27 @@
             @endif
         </section>
 
+        {{-- Mis cotizaciones · sólo la puerta. El listado vive en su página:
+             aquí lo que importa es que se vea que existe. --}}
+        <section class="mt-10">
+            <a href="{{ route('cuenta.cotizaciones') }}"
+               class="flex items-center gap-4 rounded-2xl border border-tinta-200 bg-white px-5 py-4 transition hover:border-marca-300 hover:shadow-md">
+                <span aria-hidden="true" class="grid size-11 shrink-0 place-items-center rounded-xl bg-marca-50 text-marca-700">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path d="M6 6h15l-1.7 8.3a2 2 0 0 1-2 1.6H9.4a2 2 0 0 1-2-1.6L5.4 3.6H2.2v-1.6h4.4z"/>
+                        <circle cx="9.5" cy="20" r="1.7"/><circle cx="17.5" cy="20" r="1.7"/>
+                    </svg>
+                </span>
+                <span class="min-w-0 flex-1">
+                    <span class="block font-titulo text-xl font-bold">Mis cotizaciones</span>
+                    <span class="block text-sm text-tinta-600">
+                        Lo que has pedido, con su número y sus repuestos.
+                    </span>
+                </span>
+                <span aria-hidden="true" class="shrink-0 text-tinta-400">→</span>
+            </a>
+        </section>
+
         {{-- Mis vehículos --}}
         <section class="mt-10">
             <h2 class="font-titulo text-xl font-bold">Mis vehículos</h2>
@@ -78,25 +109,34 @@
             @else
                 <ul class="mt-4 grid gap-3 sm:grid-cols-2">
                     @foreach ($vehiculos as $vehiculo)
-                        <li class="flex items-center gap-3 rounded-xl border border-tinta-200 bg-white px-5 py-4">
-                            <div class="min-w-0 flex-1">
-                                <p class="truncate font-semibold">
-                                    {{ $vehiculo->pivot->alias ?: $vehiculo->nombre_completo }}
-                                </p>
-                                <p class="truncate text-sm text-tinta-600">
-                                    @if ($vehiculo->pivot->placa)
-                                        <span class="font-medium tabular-nums">{{ $vehiculo->pivot->placa }}</span> ·
-                                    @endif
-                                    {{ $vehiculo->nombre_completo }}
-                                </p>
-                            </div>
-                            <form method="post" action="{{ route('cuenta.vehiculo.quitar', $vehiculo) }}">
-                                @csrf
-                                <button type="submit" aria-label="Quitar {{ $vehiculo->nombre_completo }}"
-                                        class="rounded-lg px-3 py-1.5 text-sm font-medium text-tinta-500 hover:bg-tinta-100 hover:text-alerta-600">
-                                    Quitar
-                                </button>
-                            </form>
+                        {{-- La tarjeta entera es el enlace al perfil del carro.
+                             «Quitar» se fue de aquí: era la única acción que
+                             ofrecía la lista, y borrar no es lo que uno viene a
+                             hacer con su carro. Ahora vive dentro del perfil. --}}
+                        {{-- `min-w-0`: un hijo de rejilla trae `min-width: auto`,
+                             así que el `truncate` de adentro quedaba anulado y
+                             «AU0001 · CHEVROLET ASTRA 1800 (2002-2006)» estiraba
+                             la pista. Era el único desbordamiento horizontal del
+                             sitio: 475 px de contenido en una pantalla de 360, y
+                             lo que se salía eran las pastillas de estado de
+                             «Próximos mantenimientos», que es el dato entero de
+                             esa sección. --}}
+                        <li class="min-w-0">
+                            <a href="{{ route('cuenta.vehiculo', $vehiculo) }}"
+                               class="flex items-center gap-3 rounded-xl border border-tinta-200 bg-white px-5 py-4 transition hover:border-marca-300 hover:shadow-md">
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate font-semibold">
+                                        {{ $vehiculo->pivot->alias ?: $vehiculo->nombre_completo }}
+                                    </p>
+                                    <p class="truncate text-sm text-tinta-600">
+                                        @if ($vehiculo->pivot->placa)
+                                            <span class="font-medium tabular-nums">{{ $vehiculo->pivot->placa }}</span> ·
+                                        @endif
+                                        {{ $vehiculo->nombre_completo }}
+                                    </p>
+                                </div>
+                                <span aria-hidden="true" class="shrink-0 text-tinta-400">→</span>
+                            </a>
                         </li>
                     @endforeach
                 </ul>
@@ -158,10 +198,22 @@
 
                     <input type="hidden" name="vehiculo_id" :value="vehiculoId">
 
-                    <button type="submit" :disabled="!completo"
-                            class="mt-4 rounded-lg bg-marca-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-marca-800 disabled:cursor-not-allowed disabled:bg-tinta-300">
+                    {{-- `aria-disabled` y no `disabled`, igual que el botón
+                         BUSCAR del selector principal —donde ya está razonado—:
+                         un botón deshabilitado de verdad sale del recorrido de
+                         tabulación, y quien navega con teclado pasaba del campo
+                         «Cómo le dices» al pie sin encontrarlo nunca ni
+                         enterarse de por qué. Así sigue ahí y dice qué falta. --}}
+                    <button type="submit" :aria-disabled="!completo"
+                            @click="if (!completo) { $event.preventDefault(); $refs.faltaAlgo?.focus() }"
+                            class="mt-4 rounded-lg bg-marca-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-marca-800 aria-disabled:cursor-not-allowed aria-disabled:bg-tinta-400">
                         Guardar vehículo
                     </button>
+
+                    <p x-ref="faltaAlgo" tabindex="-1" x-show="!completo" x-cloak
+                       role="status" class="mt-2 text-xs text-tinta-600">
+                        Elige marca, modelo, cilindraje y año para poder guardarlo.
+                    </p>
 
                     <p x-show="error" x-cloak role="status" class="mt-3 text-xs text-alerta-600">
                         No pudimos cargar la lista.
@@ -173,8 +225,51 @@
 
         {{-- Habeas Data · Cierre de cuenta. Va debajo de todo porque no es a lo
              que el cliente entra, pero tiene que estar visible sin cavar. --}}
-        <section class="mt-14 rounded-2xl border border-alerta-200 bg-alerta-50/40 p-5 sm:p-7"
-                 x-data="{ abierto: false }">
+        <section id="baja-cuenta" class="mt-14 rounded-2xl border border-alerta-200 bg-alerta-50/40 p-5 sm:p-7"
+                 {{-- Este modal pide una contraseña para un borrado que no se
+                      deshace, y no tenía nada de lo que sí tiene el del
+                      buscador: ni foco al abrir, ni Escape, ni fondo inerte,
+                      ni devolución del foco al cerrar. --}}
+                 x-data="{
+                     abierto: false,
+
+                     abrir() {
+                         this.abierto = true;
+                         document.body.classList.add('overflow-hidden');
+                         document.querySelectorAll('main, footer')
+                             .forEach((e) => e.setAttribute('inert', ''));
+
+                         this.$nextTick(() => setTimeout(() => this.$refs.clave?.focus(), 16));
+                     },
+
+                     cerrar() {
+                         this.abierto = false;
+                         document.body.classList.remove('overflow-hidden');
+                         document.querySelectorAll('[inert]').forEach((e) => e.removeAttribute('inert'));
+
+                         this.$nextTick(() => this.$refs.abre?.focus());
+                     },
+
+                     atrapar(evento) {
+                         const focales = [...this.$refs.dialogo.querySelectorAll(
+                             'a[href], button:not([disabled]), input:not([disabled])'
+                         )].filter((e) => (e.offsetWidth || e.offsetHeight || e.getClientRects().length) > 0);
+
+                         if (! focales.length) return;
+
+                         const primero = focales[0];
+                         const ultimo = focales[focales.length - 1];
+
+                         if (evento.shiftKey && document.activeElement === primero) {
+                             evento.preventDefault();
+                             ultimo.focus();
+                         } else if (! evento.shiftKey && document.activeElement === ultimo) {
+                             evento.preventDefault();
+                             primero.focus();
+                         }
+                     },
+                 }"
+                 @keydown.escape.window="if (abierto) cerrar()">
             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <h2 class="font-titulo text-lg font-semibold text-tinta-900">Cerrar mi cuenta</h2>
@@ -186,16 +281,23 @@
                         explica el detalle.
                     </p>
                 </div>
-                <button type="button" @click="abierto = true"
+                <button type="button" x-ref="abre" @click="abrir()"
                         class="shrink-0 rounded-lg border border-alerta-300 bg-white px-4 py-2 text-sm font-semibold text-alerta-700 transition hover:bg-alerta-100">
                     Cerrar mi cuenta
                 </button>
             </div>
 
+            {{-- `x-teleport`: el diálogo se pinta al final del `body`, fuera de
+                 `main`. Si se queda dentro, marcar `main` como inerte lo
+                 alcanza también a él y su campo de contraseña deja de poder
+                 enfocarse —el foco se quedaba en el `body`, que es justo lo
+                 que este bloque venía a arreglar—. Es lo mismo que hace el
+                 diálogo del buscador, que vive en la cabecera. --}}
+            <template x-teleport="body">
             <div x-show="abierto" x-cloak x-transition.opacity
                  class="fixed inset-0 z-50 flex items-center justify-center bg-noche/60 px-4"
                  role="dialog" aria-modal="true" aria-labelledby="baja-titulo">
-                <div @click.outside="abierto = false"
+                <div x-ref="dialogo" @click.outside="cerrar()" @keydown.tab="atrapar($event)"
                      class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
                     <h3 id="baja-titulo" class="font-titulo text-lg font-semibold text-tinta-900">
                         ¿Seguro que quieres cerrar tu cuenta?
@@ -208,7 +310,7 @@
                         @csrf
 
                         <label for="baja-pass" class="block text-xs font-semibold uppercase tracking-wide text-tinta-500">Tu contraseña</label>
-                        <input id="baja-pass" name="password" type="password" required autocomplete="current-password"
+                        <input id="baja-pass" x-ref="clave" name="password" type="password" required autocomplete="current-password"
                                class="w-full rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
 
                         <label class="flex items-start gap-2 text-sm text-tinta-700">
@@ -224,7 +326,7 @@
                         @enderror
 
                         <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-                            <button type="button" @click="abierto = false"
+                            <button type="button" @click="cerrar()"
                                     class="rounded-lg border border-tinta-300 bg-white px-4 py-2 text-sm font-semibold text-tinta-700 hover:bg-tinta-100">
                                 Cancelar
                             </button>
@@ -236,6 +338,7 @@
                     </form>
                 </div>
             </div>
+            </template>
         </section>
 
         {{-- Un enlace discreto a la política, para el pie del área. --}}

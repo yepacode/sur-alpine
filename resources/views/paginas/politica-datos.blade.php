@@ -3,11 +3,18 @@
 @section('titulo', 'Política de tratamiento de datos personales')
 @section('descripcion', 'Política de tratamiento de datos personales de Importadora Sur Alpine, conforme a la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.')
 
+@push('cabeza')
+    <x-pagina-schema tipo="WebPage" nombre="Política de tratamiento de datos" :miga="['Política de datos' => route('politica-datos')]" />
+@endpush
+
 @section('contenido')
     @php
         $r = config('habeas.responsable');
-        $version = config('habeas.version');
-        $vigencia = config('habeas.vigente_desde');
+        // El panel manda sobre el `.env`: quien reemplaza el documento es
+        // quien sabe qué versión es y desde cuándo rige, y no puede depender
+        // de que alguien le toque una variable de entorno al servidor.
+        $version = contenido('politica.version', (string) config('habeas.version'));
+        $vigencia = contenido('politica.vigencia', (string) config('habeas.vigente_desde'));
     @endphp
 
     {{-- Cabecera sobria: es un documento legal, no una promoción. --}}

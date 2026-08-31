@@ -21,7 +21,15 @@
 {{-- Footer --}}
 <x-slot:footer>
 <x-mail::footer>
-© {{ date('Y') }} {{ config('app.name') }}. {{ __('All rights reserved.') }}
+{{-- El pie del correo lleva los datos del negocio: es lo que un
+     gestor de correo mira para decidir si esto es legítimo, y de paso le
+     da al que lo recibe cómo llamar sin volver a la web. --}}
+@php $contacto = app(\App\Services\Contacto::class); @endphp
+**{{ config('app.name') }}**
+{{ $contacto->direccionCompleta() }}
+PBX {{ $contacto->pbx() }}
+
+© {{ date('Y') }} {{ config('app.name') }}. Todos los derechos reservados.
 </x-mail::footer>
 </x-slot:footer>
 </x-mail::layout>

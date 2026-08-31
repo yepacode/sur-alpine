@@ -32,7 +32,7 @@
           action="{{ $vehiculo->exists ? route('panel.catalogo.editar-datos', $vehiculo) : route('panel.catalogo.guardar-vehiculo') }}"
           class="mt-6 grid max-w-2xl gap-4 rounded-xl border border-tinta-200 bg-white p-6 sm:grid-cols-2">
         @csrf
-        @php $campo = 'mt-1 w-full rounded-lg border border-tinta-300 px-3 py-2.5 text-sm focus:border-marca-600 focus:outline-none'; @endphp
+        @php $campo = 'mt-1 w-full rounded-lg border border-tinta-300 px-3 py-2.5 text-sm focus:border-marca-600'; @endphp
 
         <div>
             <label for="marca" class="text-sm font-medium">Marca</label>

@@ -166,7 +166,10 @@ class ImportadorCatalogo
         // Los contadores de la portada se guardan por vehículo, así que son
         // hasta 225 llaves distintas y no hay forma de borrarlas una por una.
         // Subir la versión las deja huérfanas y expiran solas.
-        Cache::increment(self::CLAVE_VERSION) ?: Cache::forever(self::CLAVE_VERSION, 2);
+        // `Cache::increment` devuelve 1 sobre una llave ausente —que es
+        // «truthy»—, así que la rama `?:` que había aquí como red de
+        // seguridad no se ejecutaba nunca y la versión se quedaba en 1.
+        Cache::forever(self::CLAVE_VERSION, self::version() + 1);
     }
 
     /** El número que cuelga de las llaves de caché que dependen del catálogo. */

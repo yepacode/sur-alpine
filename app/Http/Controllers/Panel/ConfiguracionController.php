@@ -23,6 +23,12 @@ class ConfiguracionController extends Controller
         'direccion' => 'contacto',
         'ciudad' => 'contacto',
         'whatsapp' => 'contacto',
+        // El horario en 24 horas, para el dato estructurado. El texto que se
+        // LEE en «Contáctenos» es otro campo, en «Textos e imágenes»:
+        // adivinar horas a partir de «de 8 a 6» se rompe solo.
+        'horario_semana' => 'contacto',
+        'horario_sabado' => 'contacto',
+        'horario_festivo' => 'contacto',
         'facebook' => 'redes',
         'instagram' => 'redes',
     ];
@@ -46,8 +52,18 @@ class ConfiguracionController extends Controller
             'direccion' => ['nullable', 'string', 'max:160'],
             'ciudad' => ['nullable', 'string', 'max:80'],
             'whatsapp' => ['nullable', 'string', 'max:40'],
+            // El formato se valida aquí y no al leerlo: mejor decirle al
+            // administrador que se equivocó que dejar de emitir el horario en
+            // silencio y que él crea que quedó puesto.
+            'horario_semana' => ['nullable', 'regex:/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}$/'],
+            'horario_sabado' => ['nullable', 'regex:/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}$/'],
+            'horario_festivo' => ['nullable', 'regex:/^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}$/'],
             'facebook' => ['nullable', 'url', 'max:200'],
             'instagram' => ['nullable', 'url', 'max:200'],
+        ], [
+            'horario_semana.regex' => 'El horario entre semana va así: 08:00-18:00.',
+            'horario_sabado.regex' => 'El horario del sábado va así: 08:00-16:00.',
+            'horario_festivo.regex' => 'El horario de festivos va así: 09:00-13:00.',
         ]);
 
         foreach (self::CAMPOS as $clave => $grupo) {

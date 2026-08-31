@@ -35,4 +35,29 @@ return [
         ],
     ],
 
+    /*
+     * Entrar con Facebook o con Google.
+     *
+     * Mientras estas llaves estén vacías, los botones NO se pintan en la
+     * página de acceso: un botón que lleva a un error del proveedor es peor
+     * que no tenerlo. El cliente las saca de:
+     *   Facebook  → developers.facebook.com  (app > Inicio de sesión con Facebook)
+     *   Google    → console.cloud.google.com (credenciales > ID de cliente OAuth)
+     *
+     * Y en cada consola hay que registrar la URL de retorno tal cual:
+     *   https://SU-DOMINIO/acceso/facebook/volver
+     *   https://SU-DOMINIO/acceso/google/volver
+     */
+    'facebook' => [
+        'client_id' => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI', '/acceso/facebook/volver'),
+    ],
+
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', '/acceso/google/volver'),
+    ],
+
 ];

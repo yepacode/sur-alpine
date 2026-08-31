@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\Rol;
 use App\Mail\ConfirmacionCotizacion;
 use App\Mail\SolicitudCotizacion;
 use App\Models\Categoria;
@@ -11,6 +12,7 @@ use App\Models\Marca;
 use App\Models\Modelo;
 use App\Models\Producto;
 use App\Models\TipoParte;
+use App\Models\User;
 use App\Models\Vehiculo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
@@ -79,6 +81,18 @@ class CotizadorTest extends TestCase
         $this->post(route('cotizacion.agregar', $producto), ['cantidad' => $cantidad]);
     }
 
+    /** El que cotiza. Sus datos son los mismos de `datosContacto()`. */
+    private function cliente(): User
+    {
+        return User::firstWhere(['email' => 'julian@taller.co']) ?? User::forceCreate(['email' => 'julian@taller.co'] + [
+                'name' => 'Julián Restrepo',
+                'telefono' => '3134223861',
+                'password' => 'secreto123',
+                'rol' => Rol::Cliente,
+                'activo' => true,
+            ]);
+    }
+
     private function datosContacto(array $extra = []): array
     {
         return array_merge([
@@ -88,6 +102,95 @@ class CotizadorTest extends TestCase
             'email' => 'julian@taller.co',
             'acepta' => '1',
         ], $extra);
+    }
+
+    // ── Enviar exige sesión ─────────────────────────────────────────────────
+
+    /**
+     * Lo pidió el cliente: una solicitud sin cuenta detrás deja al mostrador
+     * llamando a un número suelto, sin historial ni forma de retomar.
+     */
+    public function test_sin_sesion_no_se_envia_y_no_se_pierde_lo_agregado(): void
+    {
+        $this->agregar($this->pastillasAveo, 2);
+
+        $this->post(route('cotizacion.enviar'), $this->datosContacto())
+            ->assertRedirect(route('acceso'));
+
+        $this->assertSame(0, Cotizacion::count());
+        Mail::assertNothingSent();
+
+        // Y lo que traía sigue ahí: es la diferencia entre volver e irse.
+        $this->get(route('cotizacion.ver'))->assertOk()->assertSee('Pastillas Freno Delanteras');
+    }
+
+    /** Al entrar cae otra vez en su cotización, no en la portada. */
+    public function test_tras_iniciar_sesion_vuelve_a_su_cotizacion(): void
+    {
+        $this->agregar($this->pastillasAveo);
+        $cliente = $this->cliente();
+
+        $this->post(route('cotizacion.enviar'), $this->datosContacto())
+            ->assertRedirect(route('acceso'));
+
+        $this->post(route('entrar'), ['email' => $cliente->email, 'password' => 'secreto123'])
+            ->assertRedirect(route('cotizacion.ver'));
+    }
+
+    /** Sin sesión el formulario ni se pinta: se ofrece entrar o registrarse. */
+    public function test_al_visitante_se_le_ofrece_entrar_en_vez_del_formulario(): void
+    {
+        $this->agregar($this->pastillasAveo);
+
+        $this->get(route('cotizacion.ver'))
+            ->assertOk()
+            ->assertSee('Para enviarla, entra a tu cuenta')
+            ->assertSee(route('registro'))
+            ->assertDontSee('quién llamamos', false);
+    }
+
+    /**
+     * El otro punto del documento del cliente: quien ya entró no vuelve a
+     * escribir su nombre, su teléfono y su correo en cada cotización.
+     */
+    public function test_con_sesion_el_formulario_llega_con_sus_datos(): void
+    {
+        $this->agregar($this->pastillasAveo);
+
+        $html = $this->actingAs($this->cliente())->get(route('cotizacion.ver'))
+            ->assertOk()
+            ->assertSee('quién llamamos', false)
+            ->getContent();
+
+        $this->assertStringContainsString('value="Julián"', $html);
+        $this->assertStringContainsString('value="Restrepo"', $html);
+        $this->assertStringContainsString('value="3134223861"', $html);
+        $this->assertStringContainsString('value="julian@taller.co"', $html);
+    }
+
+    /**
+     * Si la validación devuelve el formulario, manda lo que la persona
+     * escribió y no lo que tiene guardado: si no, corregir un teléfono sólo
+     * para esta solicitud sería imposible.
+     */
+    public function test_lo_escrito_no_lo_pisa_lo_guardado(): void
+    {
+        $this->agregar($this->pastillasAveo);
+        $cliente = $this->cliente();
+
+        $this->actingAs($cliente)
+            ->from(route('cotizacion.ver'))
+            ->post(route('cotizacion.enviar'), $this->datosContacto([
+                'telefono' => '3009998877',
+                'acepta' => '',
+            ]))
+            ->assertRedirect(route('cotizacion.ver'))
+            ->assertSessionHasErrors('acepta');
+
+        $this->actingAs($cliente)
+            ->get(route('cotizacion.ver'))
+            ->assertOk()
+            ->assertSee('value="3009998877"', false);
     }
 
     /**
@@ -110,7 +213,7 @@ class CotizadorTest extends TestCase
         $this->agregar($this->filtroAveo, 2);
         $this->agregar($this->filtroAveo, 3);
 
-        $this->post(route('cotizacion.enviar'), $this->datosContacto());
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto());
 
         $items = Cotizacion::first()->items;
         $this->assertCount(1, $items);
@@ -142,10 +245,10 @@ class CotizadorTest extends TestCase
     public function test_el_consecutivo_no_se_reutiliza_al_borrar(): void
     {
         $this->agregar($this->filtroAveo);
-        $this->post(route('cotizacion.enviar'), $this->datosContacto());
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto());
 
         $this->agregar($this->pastillasAveo);
-        $this->post(route('cotizacion.enviar'), $this->datosContacto());
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto());
 
         $this->assertSame(
             ['SA-'.now()->year.'-00001', 'SA-'.now()->year.'-00002'],
@@ -158,7 +261,7 @@ class CotizadorTest extends TestCase
         Cotizacion::orderBy('id')->first()->delete();
 
         $this->agregar($this->bandasLogan);
-        $this->post(route('cotizacion.enviar'), $this->datosContacto());
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto());
 
         $this->assertSame(
             ['SA-'.now()->year.'-00002', 'SA-'.now()->year.'-00003'],
@@ -193,7 +296,7 @@ class CotizadorTest extends TestCase
         $this->post(route('vehiculo.guardar'), ['vehiculo_id' => $this->bandasLogan->vehiculo_id]);
         $this->agregar($this->bandasLogan);
 
-        $this->post(route('cotizacion.enviar'), $this->datosContacto());
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto());
 
         $this->assertCount(2, Cotizacion::first()->items);
     }
@@ -229,7 +332,7 @@ class CotizadorTest extends TestCase
         $this->agregar($this->pastillasAveo, 2);
         $this->agregar($this->bandasLogan);
 
-        $this->post(route('cotizacion.enviar'), $this->datosContacto(['notas' => 'Urgente']))
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto(['notas' => 'Urgente']))
             ->assertRedirect(route('cotizacion.enviada'));
 
         $cotizacion = Cotizacion::with('items')->firstOrFail();
@@ -249,7 +352,7 @@ class CotizadorTest extends TestCase
     public function test_el_item_recuerda_el_vehiculo_con_el_que_se_pidio(): void
     {
         $this->agregar($this->bandasLogan);
-        $this->post(route('cotizacion.enviar'), $this->datosContacto());
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto());
 
         $item = Cotizacion::first()->items->first();
 
@@ -260,7 +363,7 @@ class CotizadorTest extends TestCase
     public function test_enviar_vacia_el_carrito(): void
     {
         $this->agregar($this->pastillasAveo);
-        $this->post(route('cotizacion.enviar'), $this->datosContacto());
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto());
 
         $this->get(route('cotizacion.ver'))
             ->assertOk()
@@ -271,7 +374,8 @@ class CotizadorTest extends TestCase
     {
         $this->agregar($this->pastillasAveo);
 
-        $this->from(route('cotizacion.ver'))
+        $this->actingAs($this->cliente())
+            ->from(route('cotizacion.ver'))
             ->post(route('cotizacion.enviar'), $this->datosContacto(['acepta' => null]))
             ->assertSessionHasErrors('acepta');
 
@@ -283,7 +387,7 @@ class CotizadorTest extends TestCase
     {
         $this->agregar($this->pastillasAveo);
 
-        $this->post(route('cotizacion.enviar'), $this->datosContacto(['sitio_web' => 'http://spam.example']))
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto(['sitio_web' => 'http://spam.example']))
             ->assertRedirect(route('cotizacion.enviada'));
 
         $this->assertSame(0, Cotizacion::count());
@@ -299,7 +403,7 @@ class CotizadorTest extends TestCase
         Mail::shouldReceive('to')->andThrow(new \RuntimeException('Buzón lleno'));
 
         $this->agregar($this->pastillasAveo);
-        $this->post(route('cotizacion.enviar'), $this->datosContacto());
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto());
 
         $cotizacion = Cotizacion::firstOrFail();
 
@@ -317,7 +421,7 @@ class CotizadorTest extends TestCase
     {
         $this->agregar($this->pastillasAveo, 2);
         $this->agregar($this->bandasLogan);
-        $this->post(route('cotizacion.enviar'), $this->datosContacto(['notas' => 'Urgente']));
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto(['notas' => 'Urgente']));
 
         $cotizacion = Cotizacion::with('items')->firstOrFail();
 
@@ -338,7 +442,7 @@ class CotizadorTest extends TestCase
 
     public function test_no_se_envia_una_cotizacion_vacia(): void
     {
-        $this->post(route('cotizacion.enviar'), $this->datosContacto())
+        $this->actingAs($this->cliente())->post(route('cotizacion.enviar'), $this->datosContacto())
             ->assertRedirect(route('cotizacion.ver'));
 
         $this->assertSame(0, Cotizacion::count());

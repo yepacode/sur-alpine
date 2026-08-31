@@ -101,15 +101,32 @@
                         </span>
                     </header>
 
-                    <ul x-ref="lista" class="max-h-80 space-y-0.5 overflow-y-auto p-2">
+                    {{-- El scroll interno sólo desde `lg`. En la tablet del
+                         mostrador eran doce cajas con scroll propio dentro de
+                         una página que también tiene scroll: arrastrar el dedo
+                         dentro de una tarjeta movía la tarjeta y no la página,
+                         y se veían 8 piezas de 40. Con el dedo eso se siente
+                         trabado; con el ratón y una rueda, no. --}}
+                    <ul x-ref="lista" class="space-y-0.5 p-2 lg:max-h-80 lg:overflow-y-auto">
                         @foreach ($categoria->tiposParte as $tipo)
-                            <li>
-                                <label class="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-tinta-50">
+                            <li class="flex items-center gap-1 rounded pr-2 hover:bg-tinta-50">
+                                <label class="flex grow cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm">
                                     <input type="checkbox" name="tipos[]" value="{{ $tipo->id }}"
                                            @checked(old('tipos', $marcados->keys()->all()) && in_array($tipo->id, (array) old('tipos', $marcados->keys()->all()), true))
                                            class="size-4 shrink-0 rounded border-tinta-300 text-marca-700">
                                     <span>{{ $tipo->nombre }}</span>
                                 </label>
+
+                                {{-- La única puerta a la ficha de la pieza.
+                                     La pantalla existía y funcionaba —referencia,
+                                     descripción, foto, visible— pero no había un
+                                     solo enlace hacia ella en todo el panel: para
+                                     entrar había que teclear la URL a mano. --}}
+                                @if ($pieza = $marcados->get($tipo->id))
+                                    <a href="{{ route('panel.catalogo.producto', $pieza) }}"
+                                       title="Editar referencia, foto y descripción de esta pieza"
+                                       class="shrink-0 rounded px-1.5 py-1 text-xs font-semibold text-marca-700 underline-offset-2 hover:underline">Editar</a>
+                                @endif
                             </li>
                         @endforeach
                     </ul>

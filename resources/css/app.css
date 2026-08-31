@@ -6,44 +6,97 @@
 @source '../**/*.js';
 
 /*
- * Dos familias, las dos con raíz en la señalización de transporte, que es de
- * donde viene el aire de un negocio de autopartes:
+ * Una sola familia: Inter.
  *
- *   Archivo  → titulares. Grotesca industrial, apretada, con carácter.
- *   Barlow   → texto y controles. Nace de la señalética de carretera; es la
- *              que hace que un formulario largo no canse.
+ * Este comentario describía dos —Archivo para titulares y Barlow para texto—
+ * que fue el diseño original, antes de que el cliente pidiera que la página
+ * nueva se pareciera a la suya. Los archivos siguieron siete meses en
+ * `public/fonts` sin que ninguna regla los nombrara.
  *
- * El `<link>` que las trae vive en `layouts/app.blade.php`, no aquí: un
+ * El `<link>` que la trae vive en `layouts/app.blade.php`, no aquí: un
  * `@import` remoto dentro de este archivo lo borra el compilador —comprobado—
  * y además obligaría al navegador a esperar a que el CSS llegue para recién
- * empezar a pedir las fuentes.
+ * empezar a pedir la fuente.
  */
 @theme {
-    --font-sans: 'Barlow', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    --font-titulo: 'Archivo', 'Barlow', ui-sans-serif, system-ui, sans-serif;
+    /* Inter para todo, como el sitio actual. `--font-titulo` se conserva
+       como alias para no tocar las decenas de `font-titulo` ya escritas. */
+    --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-titulo: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-    /* Marca Sur Alpine: el azul vivo de la barra y el rojo del logo. */
+    /*
+     * La escala tipográfica, un escalón por encima de la de Tailwind.
+     *
+     * El sitio se leía pequeño: la letra corriente iba a 16 px y había mucho
+     * `text-sm` (14) y `text-xs` (12) repartido —rótulos de formulario, notas
+     * al pie, enlaces del menú—. A quien atiende un mostrador o mira el
+     * teléfono con las manos sucias, 12 px no le sirven.
+     *
+     * Un primer intento subió cada escalón un punto y se quedó corto. Este
+     * sube dos: el cuerpo queda en 18 px y lo más pequeño del sitio, en 14.
+     *
+     * Se sube aquí y no clase por clase: son sesenta y pico de usos, y
+     * cambiarlos a mano garantiza que el próximo se escriba pequeño otra vez.
+     * Sólo se toca el tamaño de letra —los márgenes y los anchos siguen en la
+     * escala de siempre—, así que nada de lo que quedó medido contra su sitio
+     * se mueve de sitio.
+     */
+    --text-xs: 0.875rem;    /* 14 px, era 12 */
+    --text-xs--line-height: 1.35rem;
+    --text-sm: 1rem;        /* 16 px, era 14 */
+    --text-sm--line-height: 1.5rem;
+    --text-base: 1.125rem;  /* 18 px, era 16 */
+    --text-base--line-height: 1.7rem;
+    --text-lg: 1.25rem;     /* 20 px, era 18 */
+    --text-lg--line-height: 1.85rem;
+    --text-xl: 1.375rem;    /* 22 px, era 20 */
+    --text-xl--line-height: 1.9rem;
+
+    /*
+     * Colores corporativos, tomados del manual de marca de Importadora Sur
+     * Alpine S.A. — no del CSS del sitio viejo, que traía un rojo más oscuro
+     * del que la empresa tiene definido.
+     *
+     *   Azul   #1866E0  ·  RGB 24 102 224   → conocimiento y confianza
+     *   Rojo   #E02929  ·  RGB 224 41 41    → pasión, fuerza y vitalidad
+     *   Negro  #242424  ·  RGB 36 36 36     → formalidad y sobriedad
+     *
+     * El resto de la escala se deriva de esos tres. El tono oficial va
+     * siempre en el escalón 600 (azul) y 500 (rojo): son los que usan los
+     * botones y la barra, que es donde el cliente compara contra su manual.
+     */
     --color-marca-50: #eef4fe;
-    --color-marca-100: #d8e6fc;
-    --color-marca-200: #b3cdf9;
-    --color-marca-300: #82adf4;
-    --color-marca-400: #4a8aef;
-    --color-marca-500: #2b7bf0;
-    --color-marca-600: #1668e5;
-    --color-marca-700: #1153bd;
-    --color-marca-800: #0d3f8f;
-    --color-marca-900: #0a2f6b;
+    --color-marca-100: #d9e7fd;
+    --color-marca-200: #b8d1fb;
+    --color-marca-300: #8ab3f7;
+    --color-marca-400: #5590f0;
+    --color-marca-500: #2b74e8;
+    --color-marca-600: #1866e0;
+    --color-marca-700: #1252bb;
+    --color-marca-800: #124497;
+    --color-marca-900: #143c78;
 
-    /* El rojo exacto de la marca, tomado del CSS del sitio actual. */
-    --color-alerta-500: #d0021b;
-    --color-alerta-600: #b00218;
-    --color-alerta-700: #8d0213;
+    --color-alerta-50: #fef2f2;
+    --color-alerta-400: #ea5555;
+    /* El tono del boton «todavia no»: opaco y claro, pero con 4,6:1 contra
+       el blanco de su texto. `opacity-45` sobre el rojo daba 2,06:1, y ese
+       boton usa `aria-disabled`, o sea que SIGUE siendo operable: no le
+       aplica la excepcion de control inactivo. */
+    --color-alerta-300: #b01f1f;
+    --color-alerta-500: #e02929;
+    --color-alerta-600: #c41f1f;
+    --color-alerta-700: #a11a1a;
 
     /* Neutros con una pizca de azul, para que no peleen con la marca. */
     --color-tinta-50: #f6f7f9;
     --color-tinta-100: #eceef2;
     --color-tinta-200: #dde1e8;
-    --color-tinta-300: #c2c9d4;
+    /* #c2c9d4 daba 1,67:1 sobre blanco y con él se dibujaba el contorno de
+       todos los campos de formulario. WCAG 1.4.11 pide 3:1 para el borde de un
+       control: por debajo de eso, quien tiene poca visión no distingue dónde
+       empieza la caja donde hay que escribir. #8b95a5 da 3,03:1 y se sigue
+       leyendo como un gris suave. */
+    --color-tinta-300: #8b95a5;
     /* Estos dos se oscurecieron para cumplir contraste AA sobre el gris del
        body (#f1f1f1), no sólo sobre blanco: con los valores originales el
        contador de piezas de cada categoría quedaba en 2,61:1 y no se leía. */
@@ -51,12 +104,26 @@
     --color-tinta-500: #5b6473;
     --color-tinta-600: #4d5563;
     --color-tinta-700: #363d49;
-    --color-tinta-800: #232935;
-    --color-tinta-900: #171b22;
+    --color-tinta-800: #2c2c2c;
 
-    /* Un negro con carga de azul para el hero: el negro puro se ve barato al
-       lado del azul de marca, y este deja respirar al degradado. */
-    --color-noche: #080d1a;
+    /* El negro del manual. Antes este escalón cargaba azul, y ese era el
+       «azul muy oscuro» que el cliente pidió quitar. */
+    --color-tinta-900: #242424;
+    --color-noche: #242424;
+}
+
+/*
+ * El ancho de página del sitio actual, copiado de su CSS (`.contenedor-estandar`):
+ * `min(94vw, 1370px)`.
+ *
+ * El cliente pidió que «abarque toda la pantalla, sin dejar los espacios blancos
+ * de los lados». Con `max-w-7xl` —1280 px fijos— en un monitor ancho quedaban
+ * dos franjas muertas; con 94vw el contenido respira con la pantalla y sólo se
+ * detiene en 1370, que es donde ellos lo detienen.
+ */
+@utility contenedor {
+    width: min(94vw, 1370px);
+    margin-inline: auto;
 }
 
 @layer base {
@@ -64,7 +131,7 @@
        para que cualquier `h1`-`h4` nuevo herede el mismo carácter. */
     h1, h2, h3, h4 {
         font-family: var(--font-titulo);
-        letter-spacing: -0.02em;
+        letter-spacing: -0.01em;
     }
 
     /* Las cifras alineadas en columna piden ancho fijo: los contadores del
@@ -171,6 +238,29 @@
     mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
 
+/* Los teléfonos de la barra azul, letra por letra. Es el mismo gesto del sitio
+   actual: los caracteres pares entran desde arriba y los impares desde abajo,
+   escalonados, así que el número «cae» mientras el anterior se va. Se copió
+   porque el cliente pidió que la página se viera igual a la que sus clientes
+   ya conocen, no porque haga falta. */
+@keyframes caer-arriba {
+    from { opacity: 0; transform: translateY(-80%); }
+    to   { opacity: 1; transform: none; }
+}
+@keyframes caer-abajo {
+    from { opacity: 0; transform: translateY(80%); }
+    to   { opacity: 1; transform: none; }
+}
+
+.caer > span {
+    display: inline-block;
+    white-space: pre;
+    animation: caer-arriba 420ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+.caer > span:nth-child(even) {
+    animation-name: caer-abajo;
+}
+
 /* Un select con la flecha del sistema se ve distinto en cada navegador y no
    se puede colorear. Ésta la pintamos: la flecha va como SVG de fondo y el
    `padding-right` deja el espacio que ocupa. `background-size` en unidades
@@ -233,6 +323,101 @@
     }
 }
 
+/* ─── El telón de entrada ──────────────────────────────────────────────────
+   Pantalla en negro y el logo llenándose de abajo hacia arriba.
+
+   Sale del flujo por completo con `display: none`, no con opacidad: un telón
+   invisible pero presente seguiría comiéndose los clics de toda la página.
+
+   El relleno se anima con `clip-path` y no con una variable propia. Animar una
+   custom property obliga a registrarla con `@property`, y donde eso no se
+   soporta la animación no interpola: pega un salto al final. `inset()`
+   interpola en todos lados. */
+.cargador {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.6rem;
+    background: radial-gradient(120% 120% at 50% 40%, #1d2027 0%, #101216 60%, #0b0c0f 100%);
+    transition: opacity 0.5s ease;
+}
+
+html.cargando .cargador { display: flex; }
+html.cargando body { overflow: hidden; }
+html.cargador-fuera .cargador { opacity: 0; }
+
+.cargador-logo {
+    position: relative;
+    width: clamp(96px, 22vw, 132px);
+    aspect-ratio: 280 / 351;
+}
+
+.cargador-logo img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* El logo «vacío»: ahí está la silueta, pero apagada. */
+.cargador-apagado { filter: grayscale(1) brightness(0.3); }
+
+/* El mismo logo a color, descubriéndose de abajo hacia arriba. */
+.cargador-lleno {
+    clip-path: inset(100% 0 0 0);
+    filter: drop-shadow(0 0 16px rgb(24 102 224 / 0.5));
+    /* 0,8s y no 1,5s: el telon se retira a los 800 ms, y una bateria que se
+       queda a medio llenar porque le cortan la animacion se lee como que algo
+       fallo. La curva es la misma, asi que el gesto no cambia: solo va al
+       ritmo del tiempo que de verdad puede robarle a alguien que llego desde
+       Google. */
+    animation: cargar 0.8s cubic-bezier(0.45, 0, 0.2, 1) forwards;
+}
+
+/* La línea del nivel, que es lo que hace leer «se está cargando» y no
+   «apareció una imagen». Sube pegada al borde del relleno. */
+.cargador-nivel {
+    position: absolute;
+    right: -8%;
+    bottom: 0;
+    left: -8%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #4f97ff 30%, #ffffff 50%, #4f97ff 70%, transparent);
+    box-shadow: 0 0 12px rgb(79 151 255 / 0.9);
+    animation: subirNivel 0.8s cubic-bezier(0.45, 0, 0.2, 1) forwards;
+}
+
+.cargador-marca {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.32em;
+    color: rgb(255 255 255 / 0.35);
+    text-transform: uppercase;
+    animation: latirMarca 1.9s ease-in-out infinite;
+}
+
+.cargador-marca span { color: rgb(255 255 255 / 0.75); }
+
+@keyframes cargar {
+    from { clip-path: inset(100% 0 0 0); }
+    to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes subirNivel {
+    from { bottom: 0; opacity: 0; }
+    10% { opacity: 1; }
+    to { bottom: 100%; opacity: 0; }
+}
+
+@keyframes latirMarca {
+    50% { color: rgb(255 255 255 / 0.6); }
+}
+
 /* Quien pidió menos movimiento no ve ninguno de los efectos de arriba —y ve
    el contenido completo, que es lo que de verdad importa: una animación que
    no corre no puede dejar un bloque invisible. */
@@ -248,7 +433,13 @@
 
     .aurora { animation: none; opacity: 0.6; }
     .cinta { animation: none; }
+    .caer > span { animation: none; opacity: 1; transform: none; }
     .con-luz::after { display: none; }
+
+    /* El telón se queda, pero sin la carga: el logo entero y encendido. */
+    .cargador-lleno { animation: none; clip-path: none; }
+    .cargador-nivel { display: none; }
+    .cargador-marca { animation: none; }
 
     .js-revelar [data-revelar] {
         opacity: 1 !important;

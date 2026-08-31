@@ -28,7 +28,7 @@
             @if ($paginator->onFirstPage())
                 <li>
                     <span aria-label="Página anterior" aria-disabled="true"
-                          class="grid size-10 place-items-center rounded-lg text-tinta-300">
+                          class="grid size-11 place-items-center rounded-lg text-tinta-300">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" class="size-4" aria-hidden="true">
                             <path d="M15 18 9 12l6-6" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
@@ -37,7 +37,7 @@
             @else
                 <li>
                     <a href="{{ $paginator->previousPageUrl() }}" aria-label="Página anterior" rel="prev"
-                       class="grid size-10 place-items-center rounded-lg text-tinta-700 transition hover:bg-tinta-100 hover:text-marca-700">
+                       class="grid size-11 place-items-center rounded-lg text-tinta-700 transition hover:bg-tinta-100 hover:text-marca-700">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" class="size-4" aria-hidden="true">
                             <path d="M15 18 9 12l6-6" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
@@ -48,7 +48,7 @@
             @foreach ($elements as $element)
                 @if (is_string($element))
                     <li>
-                        <span aria-hidden="true" class="grid size-10 place-items-center text-tinta-400">…</span>
+                        <span aria-hidden="true" class="grid size-11 place-items-center text-tinta-400">…</span>
                     </li>
                 @endif
 
@@ -57,12 +57,12 @@
                         <li>
                             @if ($page == $paginator->currentPage())
                                 <span aria-current="page"
-                                      class="cifra grid size-10 place-items-center rounded-lg bg-marca-700 text-sm font-semibold text-white">
+                                      class="cifra grid size-11 place-items-center rounded-lg bg-marca-700 text-sm font-semibold text-white">
                                     {{ $page }}
                                 </span>
                             @else
                                 <a href="{{ $url }}" aria-label="Ir a la página {{ $page }}"
-                                   class="cifra grid size-10 place-items-center rounded-lg text-sm font-medium text-tinta-700 transition hover:bg-tinta-100 hover:text-marca-700">
+                                   class="cifra grid size-11 place-items-center rounded-lg text-sm font-medium text-tinta-700 transition hover:bg-tinta-100 hover:text-marca-700">
                                     {{ $page }}
                                 </a>
                             @endif
@@ -74,7 +74,7 @@
             @if ($paginator->hasMorePages())
                 <li>
                     <a href="{{ $paginator->nextPageUrl() }}" aria-label="Página siguiente" rel="next"
-                       class="grid size-10 place-items-center rounded-lg text-tinta-700 transition hover:bg-tinta-100 hover:text-marca-700">
+                       class="grid size-11 place-items-center rounded-lg text-tinta-700 transition hover:bg-tinta-100 hover:text-marca-700">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" class="size-4" aria-hidden="true">
                             <path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
@@ -83,7 +83,7 @@
             @else
                 <li>
                     <span aria-label="Página siguiente" aria-disabled="true"
-                          class="grid size-10 place-items-center rounded-lg text-tinta-300">
+                          class="grid size-11 place-items-center rounded-lg text-tinta-300">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" class="size-4" aria-hidden="true">
                             <path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>

@@ -11,7 +11,7 @@ class CotizacionItem extends Model
 
     protected $fillable = [
         'cotizacion_id', 'producto_id', 'vehiculo_id',
-        'producto_nombre', 'vehiculo_nombre', 'cantidad',
+        'producto_nombre', 'tipo_parte_nombre', 'vehiculo_nombre', 'cantidad',
     ];
 
     protected function casts(): array

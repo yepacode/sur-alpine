@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ImportadorCatalogo;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -96,7 +97,17 @@ class SeoPagina extends Model
 
     protected static function booted(): void
     {
-        static::saved(fn () => Cache::forget(self::LLAVE_CACHE));
-        static::deleted(fn () => Cache::forget(self::LLAVE_CACHE));
+        // Tambien la del sitemap. Esta fila decide la prioridad, la frecuencia
+        // y si la pagina entra o no al sitemap, y sin esto tocar cualquiera de
+        // las tres desde el panel tardaba hasta una hora en verse: el cliente
+        // guardaba, recargaba el sitemap y todo seguia igual. `Nota` ya lo
+        // hacia bien y esto faltaba.
+        $olvidar = function (): void {
+            Cache::forget(self::LLAVE_CACHE);
+            Cache::forget('sitemap.secciones.'.ImportadorCatalogo::version());
+        };
+
+        static::saved($olvidar);
+        static::deleted($olvidar);
     }
 }

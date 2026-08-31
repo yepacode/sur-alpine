@@ -164,6 +164,18 @@ class BusquedaTest extends TestCase
     {
         // `phpunit.xml` pone DB_DATABASE=:memory: y eso también le cae a la
         // conexión mysql: se devuelve a la base de desarrollo para esta prueba.
+        // Se apunta a la base de desarrollo REAL y hay que devolverla como
+        // estaba. Hoy esta prueba sólo lee, pero la conexión quedaba
+        // repuntada para todo lo que viniera después: cualquier
+        // `Producto::on('mysql')->update(...)` que alguien añadiera escribiría
+        // en la base del cliente saltándose `RefreshDatabase`.
+        $original = config('database.connections.mysql.database');
+
+        $this->beforeApplicationDestroyed(function () use ($original) {
+            config(['database.connections.mysql.database' => $original]);
+            DB::purge('mysql');
+        });
+
         config(['database.connections.mysql.database' => 'suralpine']);
         DB::purge('mysql');
 

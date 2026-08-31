@@ -11,11 +11,13 @@
 
 > Distribuidora colombiana de repuestos y autopartes para vehículos livianos, con un único punto de atención en el Barrio Restrepo, Bogotá D.C., desde 1982. No venden por internet: el sitio es un catálogo por vehículo y el cliente pide cotización; un asesor humano responde por teléfono o WhatsApp.
 
-- 44 años de operación (fundada en 1982)
-- Dirección: Av. Caracas 19-21 sur, Barrio Restrepo, Bogotá D.C., Colombia
-- Teléfono PBX: (601) 366 0066
-- Celulares: 313 422 3861 · 310 205 8051
-- 12 marcas cubiertas, ~29.000 referencias en catálogo
+- {{ $anios }} años de operación (fundada en 1982)
+- Dirección: {{ $contacto->direccion() }}, Barrio Restrepo, {{ $contacto->ciudad() }}, Colombia
+- Teléfono PBX: {{ $contacto->pbx() }}
+- Celulares: {{ collect($contacto->celulares())->pluck('texto')->implode(' · ') }}
+- {{ $marcas }} marcas cubiertas, {{ number_format($referencias, 0, ',', '.') }} referencias en catálogo
+- Horario de atención: {{ $contacto->horarioTexto('horario_semana', 'lunes a viernes') ?? 'lunes a viernes de 8:00 a.m. a 6:00 p.m.' }}; {{ $contacto->horarioTexto('horario_sabado', 'sábados') ?? 'sábados de 8:00 a.m. a 4:00 p.m.' }}@if ($festivos = $contacto->horarioTexto('horario_festivo', 'festivos')); {{ $festivos }}@endif
+
 - El sitio no vende: cotiza. Un asesor responde por teléfono.
 
 ## Catálogo

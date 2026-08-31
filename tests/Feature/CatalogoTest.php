@@ -58,13 +58,60 @@ class CatalogoTest extends TestCase
         ]);
     }
 
+    public function test_los_botones_flotantes_estan_en_todas_las_paginas(): void
+    {
+        // Son los dos del sitio actual: la cotización abajo a la izquierda y el
+        // WhatsApp abajo a la derecha. Van en el layout, así que la prueba
+        // recorre páginas de distinta forma para que no se caigan en una sola.
+        foreach (['/', route('catalogo'), route('contacto')] as $url) {
+            $this->get($url)
+                ->assertOk()
+                ->assertSee('https://wa.me/573134223861', false);
+        }
+    }
+
+    /**
+     * El saludo de WhatsApp sólo en la portada.
+     *
+     * Es un globo de 240×126 px anclado a la esquina de abajo, y en un
+     * teléfono ahí SIEMPRE hay algo debajo: medido, tapaba el «Agregar a mi
+     * cotización» de la ficha —el toque abría WhatsApp en vez de agregar—, el
+     * «Iniciar sesión» del acceso y el «Vaciar todo» de la cotización. El
+     * botón redondo sí va en todas, que es lo que hace falta para escribir.
+     */
+    public function test_el_saludo_de_whatsapp_no_tapa_botones_de_otras_paginas(): void
+    {
+        $this->get('/')->assertSee('¿En qué podemos ayudarte?', false);
+
+        foreach ([route('catalogo'), route('contacto'), route('acceso'), route('cotizacion.ver')] as $url) {
+            $this->get($url)
+                ->assertOk()
+                ->assertDontSee('¿En qué podemos ayudarte?', false)
+                ->assertSee('https://wa.me/573134223861', false);
+        }
+    }
+
+    public function test_el_whatsapp_abre_el_chat_con_el_mensaje_escrito(): void
+    {
+        $contacto = app(\App\Services\Contacto::class);
+
+        $this->assertSame(
+            'https://wa.me/573134223861?text=Hola%20%2ASur%20Alpine%2A.%20Necesito%20m%C3%A1s%20informaci%C3%B3n.',
+            $contacto->whatsappUrl('Hola *Sur Alpine*. Necesito más información.')
+        );
+
+        // Sin mensaje sigue siendo el enlace pelado: nada de un «?text=» vacío.
+        $this->assertSame('https://wa.me/573134223861', $contacto->whatsappUrl());
+    }
+
     public function test_la_portada_carga(): void
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('Categorías de autopartes')
-            ->assertSee('historial de mantenimiento')
-            ->assertSee('Visítanos en Restrepo');
+            ->assertSee('Categorías Autopartes')
+            ->assertSee('Nuestros Servicios')
+            ->assertSee('Productos Destacados')
+            ->assertSee('¿Dónde estamos ubicados?');
     }
 
     /**

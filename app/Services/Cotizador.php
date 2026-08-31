@@ -25,12 +25,19 @@ class Cotizador
 
     private ?Collection $hidratados = null;
 
-    public function agregar(Producto $producto, int $cantidad = 1): void
+    /**
+     * Agrega una pieza. Devuelve `false` si la cotización ya está llena.
+     *
+     * Antes devolvía `void` y el controlador respondía «Agregamos …» igual:
+     * el cliente veía el mensaje de éxito, el contador no se movía, y no había
+     * forma de entender por qué.
+     */
+    public function agregar(Producto $producto, int $cantidad = 1): bool
     {
         $items = $this->crudos();
 
         if (! isset($items[$producto->id]) && count($items) >= self::MAXIMO_ITEMS) {
-            return;
+            return false;
         }
 
         $actual = $items[$producto->id]['c'] ?? 0;
@@ -41,6 +48,8 @@ class Cotizador
         ];
 
         $this->guardar($items);
+
+        return true;
     }
 
     public function actualizar(int $productoId, int $cantidad): void
@@ -89,11 +98,6 @@ class Cotizador
         return array_sum(array_column($this->crudos(), 'c'));
     }
 
-    public function totalReferencias(): int
-    {
-        return count($this->crudos());
-    }
-
     /**
      * Los productos reales, con su vehículo. Una sola consulta.
      *
@@ -111,12 +115,17 @@ class Cotizador
             return $this->hidratados = collect();
         }
 
-        $productos = Producto::with(['vehiculo.modelo.marca', 'tipoParte.categoria'])
+        $productos = Producto::publicados()
+            ->with(['vehiculo.modelo.marca', 'tipoParte.categoria'])
             ->whereIn('id', array_keys($crudos))
             ->get()
             ->keyBy('id');
 
-        // Un producto que ya no existe se cae solo del carrito.
+        // Una pieza que ya no existe —o que el mostrador despublicó mientras
+        // el carrito esperaba— se cae sola. `agregar()` ya bloquea lo
+        // despublicado, pero eso sólo mira el momento de agregar: entre que el
+        // cliente arma su lista y la envía pueden pasar días, y la solicitud
+        // llegaría al asesor con algo que el sitio ya no ofrece.
         $vivos = array_intersect_key($crudos, $productos->all());
 
         if (count($vivos) !== count($crudos)) {

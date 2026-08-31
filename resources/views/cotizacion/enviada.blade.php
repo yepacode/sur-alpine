@@ -2,10 +2,16 @@
 
 @section('titulo', 'Solicitud enviada')
 
+{{-- Nada de esto tiene por qué salir en Google: o es privado, o es un
+     paso intermedio. Salían todas `index,follow`. --}}
+@section('robots', 'noindex, nofollow')
+
 @section('contenido')
     <div class="mx-auto max-w-2xl px-4 py-20 text-center">
         <p class="text-sm font-semibold uppercase tracking-widest text-marca-600">Listo</p>
-        <h1 class="mt-3 text-3xl font-bold tracking-tight text-balance">Recibimos tu solicitud</h1>
+        <h1 class="mt-3 text-3xl font-bold tracking-tight text-balance">
+            {{ contenido('cotizacion.gracias', 'Recibimos tu solicitud') }}
+        </h1>
 
         @if ($consecutivo)
             <p class="mt-4 text-tinta-600">
@@ -16,9 +22,20 @@
         @endif
 
         <p class="mt-3 text-tinta-600">
-            Un asesor te contacta para atender tu solicitud.
+            Un asesor te contacta en horario de oficina para atender tu solicitud.
             También te mandamos copia por correo.
         </p>
+
+        {{-- Éste es el momento de decirlo: acaba de enviar algo y quiere saber
+             que no se perdió. Después ya no vuelve a preguntárselo. --}}
+        @auth
+            <p class="mt-3 text-tinta-600">
+                Queda guardada en
+                <a href="{{ route('cuenta.cotizaciones') }}"
+                   class="font-semibold text-marca-700 underline-offset-2 hover:underline">mis cotizaciones</a>,
+                por si después quieres volver a pedir lo mismo.
+            </p>
+        @endauth
 
         <div class="mt-10 flex flex-wrap justify-center gap-3">
             <a href="{{ route('catalogo') }}"

@@ -20,7 +20,7 @@ class ConfiguracionPaginaTest extends TestCase
 
     private function admin(): User
     {
-        return User::create([
+        return User::forceCreate([
             'name' => 'Admin', 'email' => 'admin@x.co', 'telefono' => '300',
             'password' => 'secreto123', 'rol' => Rol::Admin, 'activo' => true,
         ]);
@@ -31,7 +31,7 @@ class ConfiguracionPaginaTest extends TestCase
         $this->actingAs($this->admin())
             ->get(route('panel.pagina'))
             ->assertOk()
-            ->assertSee('Hero de la portada')
+            ->assertSee('Buscador de vehículo')
             ->assertSee('Buscador de vehículo')
             ->assertSee('Cabecera y menú')
             ->assertSee('SEO de la página');
@@ -47,7 +47,7 @@ class ConfiguracionPaginaTest extends TestCase
         $this->actingAs($this->admin())->get(route('panel.pagina'))->assertOk();
 
         $this->assertGreaterThan(0, Contenido::count());
-        $this->assertTrue(Contenido::where('clave', 'inicio.hero.titulo')->exists());
+        $this->assertTrue(Contenido::where('clave', 'buscador.titulo')->exists());
     }
 
     public function test_al_guardar_un_texto_ese_texto_reemplaza_al_original_en_la_portada(): void
@@ -56,21 +56,202 @@ class ConfiguracionPaginaTest extends TestCase
         // Primer refresco: sincroniza las claves.
         $this->actingAs($admin)->get(route('panel.pagina'));
 
-        $bajada = Contenido::firstWhere('clave', 'inicio.hero.bajada');
+        $bajada = Contenido::firstWhere('clave', 'buscador.subtitulo');
         $this->assertNotNull($bajada);
 
         // El asesor cambia la bajada.
         $this->actingAs($admin)->post(route('panel.pagina.guardar'), [
-            'textos' => [$bajada->id => 'Dinos qué carro tienes y te llamamos hoy.'],
+            'textos' => [$bajada->id => 'y te decimos qué le sirve a tu carro'],
         ])->assertRedirect();
 
         $this->assertSame(
-            'Dinos qué carro tienes y te llamamos hoy.',
+            'y te decimos qué le sirve a tu carro',
             $bajada->fresh()->valor,
         );
 
         // Y aparece en la portada.
-        $this->get('/')->assertSee('Dinos qué carro tienes y te llamamos hoy.', false);
+        $this->get('/')->assertSee('y te decimos qué le sirve a tu carro', false);
+    }
+
+    /**
+     * Lo que el cliente pidió revisar: que se pueda editar «a detalle».
+     *
+     * Estos bloques estaban clavados en la plantilla: los tres respaldos, la
+     * tarjeta roja de servicios, «¿Dónde estamos ubicados?» y «Marcas
+     * destacadas». Se veían bien, pero para cambiarles una coma había que
+     * llamarnos.
+     */
+    public function test_los_bloques_de_la_portada_son_editables(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->get(route('panel.pagina'))->assertOk();
+
+        foreach ([
+            'respaldo.1.titulo', 'respaldo.1.texto',
+            'respaldo.2.titulo', 'respaldo.2.texto',
+            'respaldo.3.titulo', 'respaldo.3.texto',
+            'servicios.historial.titulo', 'servicios.historial.texto',
+            'servicios.historial.boton', 'servicios.historial.boton_dentro',
+            'ubicacion.titulo', 'ubicacion.texto', 'marcas.titulo',
+        ] as $clave) {
+            $this->assertTrue(
+                Contenido::where('clave', $clave)->exists(),
+                "Falta la clave editable «{$clave}»."
+            );
+        }
+    }
+
+    /** Y editarlos cambia la portada de verdad, no sólo la fila. */
+    public function test_cambiar_esos_bloques_se_ve_en_la_portada(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->get(route('panel.pagina'));
+
+        $cambios = [
+            'respaldo.2.texto' => 'Trabajamos con más de doce marcas de vehículo liviano.',
+            'ubicacion.titulo' => 'Ven a visitarnos al Restrepo',
+            'marcas.titulo' => 'Con quién trabajamos',
+        ];
+
+        $this->actingAs($admin)->post(route('panel.pagina.guardar'), [
+            'textos' => collect($cambios)
+                ->mapWithKeys(fn ($valor, $clave) => [Contenido::firstWhere('clave', $clave)->id => $valor])
+                ->all(),
+        ])->assertRedirect();
+
+        $portada = $this->get('/')->assertOk();
+
+        foreach ($cambios as $valor) {
+            $portada->assertSee($valor, false);
+        }
+    }
+
+    /**
+     * Los tres respaldos tenían UN solo párrafo compartido: cambiar el segundo
+     * cambiaba los tres. Ahora cada uno lleva su clave.
+     */
+    public function test_cada_respaldo_tiene_su_propio_texto(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->get(route('panel.pagina'));
+
+        $segundo = Contenido::firstWhere('clave', 'respaldo.2.texto');
+
+        $this->actingAs($admin)->post(route('panel.pagina.guardar'), [
+            'textos' => [$segundo->id => 'Sólo este cambia.'],
+        ])->assertRedirect();
+
+        $html = $this->get('/')->getContent();
+
+        $this->assertSame(1, mb_substr_count($html, 'Sólo este cambia.'));
+        $this->assertGreaterThanOrEqual(
+            2,
+            mb_substr_count($html, 'Nuestro equipo cuenta con amplia experiencia'),
+            'Los otros dos siguen con el texto que tenían.'
+        );
+    }
+
+    /** Las dos páginas legales también se editan desde el panel. */
+    public function test_terminos_y_noticias_tienen_seo_editable(): void
+    {
+        $this->actingAs($this->admin())->get(route('panel.pagina'))->assertOk();
+
+        foreach (['terminos', 'noticias'] as $ruta) {
+            $this->assertTrue(
+                SeoPagina::where('ruta', $ruta)->exists(),
+                "«{$ruta}» tiene que poder editarse desde el panel."
+            );
+        }
+    }
+
+    /**
+     * Ninguna sección puede quedar sin nada que editar.
+     *
+     * Es lo que el cliente vio: abría «Quiénes somos» o «Mantenimientos» en el
+     * panel y no había un solo campo, sólo el bloque de SEO. Una sección que
+     * se abre y está vacía se lee como «esto no se puede cambiar».
+     */
+    public function test_ninguna_seccion_queda_sin_campos(): void
+    {
+        $secciones = app(\App\Http\Controllers\Panel\ConfiguracionPaginaController::class)->secciones();
+
+        foreach ($secciones as $slug => $seccion) {
+            $this->assertNotEmpty(
+                $seccion['textos'],
+                "La sección «{$slug}» se abre sin un solo campo que editar."
+            );
+        }
+    }
+
+    /** Las fotos fijas del sitio también se cambian desde el panel. */
+    public function test_las_imagenes_del_sitio_son_editables(): void
+    {
+        $this->actingAs($this->admin())->get(route('panel.pagina'))->assertOk();
+
+        foreach ([
+            'quienes.imagen', 'contacto.imagen', 'contacto.local',
+            'servicios.historial.imagen', 'ubicacion.mapa', 'acceso.imagen',
+        ] as $clave) {
+            $fila = Contenido::firstWhere('clave', $clave);
+
+            $this->assertNotNull($fila, "Falta la imagen editable «{$clave}».");
+            $this->assertSame('imagen', $fila->tipo);
+        }
+    }
+
+    /**
+     * Subir una foto la deja en WebP y en los anchos que esa pieza usa, y la
+     * página empieza a mostrarla.
+     */
+    public function test_subir_una_foto_la_cambia_en_la_pagina(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->get(route('panel.pagina'));
+
+        $fila = Contenido::firstWhere('clave', 'quienes.imagen');
+        $anterior = $fila->valor;
+
+        $this->actingAs($admin)->post(route('panel.pagina.guardar'), [
+            'imagenes' => [$fila->id => \Illuminate\Http\UploadedFile::fake()->image('nueva.jpg', 2000, 700)],
+        ])->assertRedirect();
+
+        $nuevo = $fila->fresh()->valor;
+
+        $this->assertNotSame($anterior, $nuevo);
+        $this->assertStringStartsWith('/img/editables/', $nuevo);
+
+        // 1024 y 1600 son los que pide `components/cabecera-pagina.blade.php`.
+        // Declarar otros anchos dejaba el `srcset` apuntando a un 404 en cuanto
+        // el cliente cambiara la foto.
+        foreach ([1024, 1600] as $ancho) {
+            $ruta = public_path(ltrim($nuevo, '/')."-{$ancho}.webp");
+
+            $this->assertFileExists($ruta);
+            $this->assertSame('image/webp', mime_content_type($ruta));
+
+            unlink($ruta);
+        }
+
+        $this->get(route('quienes-somos'))->assertOk()->assertSee($nuevo, false);
+    }
+
+    /**
+     * El formulario manda los diez campos de imagen a la vez. Guardar un texto
+     * no puede dejar sin foto a las nueve que nadie tocó.
+     */
+    public function test_guardar_sin_elegir_foto_no_borra_la_que_habia(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin)->get(route('panel.pagina'));
+
+        $fila = Contenido::firstWhere('clave', 'contacto.local');
+        $antes = $fila->valor;
+
+        $this->actingAs($admin)->post(route('panel.pagina.guardar'), [
+            'imagenes' => [$fila->id => null],
+        ])->assertRedirect();
+
+        $this->assertSame($antes, $fila->fresh()->valor);
     }
 
     public function test_al_guardar_seo_los_meta_de_la_portada_los_llevan(): void

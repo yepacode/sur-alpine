@@ -9,7 +9,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Los roles son una escalera, así que basta con pedir el mínimo:
- * `rol:asesor` deja pasar a asesores y administradores.
+ * hoy `rol:admin` deja pasar sólo a administradores, pero si mañana el
+ * cliente vuelve a querer un escalon intermedio, esto no cambia.
  */
 class RequiereRol
 {

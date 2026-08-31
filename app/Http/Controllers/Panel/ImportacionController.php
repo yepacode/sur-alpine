@@ -33,6 +33,15 @@ class ImportacionController extends Controller
             'archivo.mimes' => 'Sube el archivo en formato Excel (.xlsx).',
         ]);
 
+        // Antes de subir la nueva, barrer las previsualizaciones abandonadas.
+        //
+        // Sólo `confirmar` borraba el archivo, así que toda previsualización
+        // que alguien dejara a medias se quedaba para siempre: el catálogo
+        // completo del cliente, hasta 20 MB cada uno, acumulándose sin
+        // caducidad. Había uno de hacía once días cuando se revisó. Un día es
+        // margen de sobra para retomar una importación.
+        $this->barrerAbandonados();
+
         $ruta = $request->file('archivo')->store(self::CARPETA, 'local');
 
         return view('panel.catalogo.importar', [
@@ -42,13 +51,33 @@ class ImportacionController extends Controller
         ]);
     }
 
+    /** Las previsualizaciones de más de un día que nadie confirmó. */
+    private function barrerAbandonados(): void
+    {
+        $disco = Storage::disk('local');
+
+        foreach ($disco->files(self::CARPETA) as $archivo) {
+            if ($disco->lastModified($archivo) < now()->subDay()->timestamp) {
+                $disco->delete($archivo);
+            }
+        }
+    }
+
     public function confirmar(Request $request, ImportadorCatalogo $importador): RedirectResponse
     {
         $datos = $request->validate(['archivo' => ['required', 'string']]);
 
         // Sólo rutas dentro de la carpeta de importaciones: el nombre viene de
         // un formulario y no puede apuntar a cualquier archivo del servidor.
-        if (! str_starts_with($datos['archivo'], self::CARPETA.'/') || ! Storage::disk('local')->exists($datos['archivo'])) {
+        //
+        // El `..` se rechaza aquí explícitamente. Hoy también lo frena
+        // Flysystem, pero lanzando una excepción sin capturar —un 500, con
+        // traza si `APP_DEBUG` quedara encendido en el servidor— y sobre todo
+        // dejando creer que el guardián es el `str_starts_with`, que por sí
+        // solo no cubre `importaciones/../../../.env`.
+        if (str_contains($datos['archivo'], '..')
+            || ! str_starts_with($datos['archivo'], self::CARPETA.'/')
+            || ! Storage::disk('local')->exists($datos['archivo'])) {
             return redirect()->route('panel.catalogo.importar')
                 ->with('mensaje', 'El archivo ya no está disponible. Vuelve a subirlo.');
         }

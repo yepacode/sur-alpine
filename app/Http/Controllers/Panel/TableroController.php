@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
 class TableroController extends Controller
 {
     /** Períodos que el equipo consulta a diario. */
+    /** Más de tres meses en barras diarias no se lee. */
+    private const DIAS_EN_EL_GRAFICO = 92;
+
     public const PERIODOS = [
         'hoy' => 'Hoy',
         '7' => 'Últimos 7 días',
@@ -98,15 +101,24 @@ class TableroController extends Controller
             ->groupBy('dia')
             ->pluck('total', 'dia');
 
+        // Se recorta ANTES de construir la serie, no después.
+        //
+        // El bucle iba día a día desde `$desde` y sólo al final se quedaba con
+        // los últimos 92. Un rango de 1900 a 2100 escrito a mano en la URL
+        // construía 73.000 posiciones —3,2 s y 24 MB—, y `Carbon` acepta hasta
+        // 3,6 millones de días, que se lleva por delante el `memory_limit` y
+        // con él al servidor entero mientras dura. Como la vista nunca muestra
+        // más de 92 barras, empezar por ahí da exactamente el mismo gráfico.
+        $primerDia = $desde->copy()->max($hasta->copy()->subDays(self::DIAS_EN_EL_GRAFICO - 1));
+
         $serie = [];
 
-        for ($dia = $desde->copy(); $dia->lte($hasta); $dia->addDay()) {
+        for ($dia = $primerDia; $dia->lte($hasta); $dia->addDay()) {
             $clave = $dia->toDateString();
             $serie[$clave] = (int) ($conteos[$clave] ?? 0);
         }
 
-        // Más de tres meses en barras diarias no se lee: se recorta a lo último.
-        return count($serie) > 92 ? array_slice($serie, -92, null, true) : $serie;
+        return $serie;
     }
 
     private function vehiculosTop(Carbon $desde, Carbon $hasta): array
@@ -123,15 +135,22 @@ class TableroController extends Controller
 
     private function partesTop(Carbon $desde, Carbon $hasta): array
     {
+        // Sobre el nombre CONGELADO en el ítem, no sobre el catálogo vivo.
+        //
+        // Con el `join` a `productos`, retirar una pieza de la matriz la hacía
+        // desaparecer de este gráfico mientras la tarjeta «Repuestos
+        // solicitados» la seguía contando: dos cifras contradictorias en la
+        // misma pantalla, y un histórico que cambiaba solo cada vez que
+        // alguien depuraba el catálogo. Es la misma razón por la que
+        // `vehiculosTop` ya usa `vehiculo_nombre`.
         return DB::table('cotizacion_items')
             ->join('cotizaciones', 'cotizaciones.id', '=', 'cotizacion_items.cotizacion_id')
-            ->join('productos', 'productos.id', '=', 'cotizacion_items.producto_id')
-            ->join('tipos_parte', 'tipos_parte.id', '=', 'productos.tipo_parte_id')
             ->whereBetween('cotizaciones.created_at', [$desde, $hasta])
-            ->groupBy('tipos_parte.nombre')
+            ->whereNotNull('cotizacion_items.tipo_parte_nombre')
+            ->groupBy('cotizacion_items.tipo_parte_nombre')
             ->orderByDesc('total')
             ->limit(8)
-            ->pluck(DB::raw('SUM(cotizacion_items.cantidad) as total'), 'tipos_parte.nombre')
+            ->pluck(DB::raw('SUM(cotizacion_items.cantidad) as total'), 'cotizacion_items.tipo_parte_nombre')
             ->all();
     }
 }

@@ -35,6 +35,22 @@ class OptimizarImagenes extends Command
         'logo' => [280],
         'fondo' => [1200],
         'promo' => [900, 520],
+        'generico' => [640],
+        // Las fotos del blog: la tarjeta de portada las pinta a ~330 px y la
+        // ficha completa a 1370, así que van en dos anchos.
+        'notas' => [1024, 520],
+        // El mapa de «¿Dónde estamos ubicados?»: se pinta a 220 px.
+        'mapa' => [440, 220],
+        // Los banners de cabecera de las páginas internas. Van en su propia
+        // carpeta y NO en `banners/`: la portada arma su carrusel leyendo ese
+        // directorio, y una foto suelta ahí se colaría entre las campañas.
+        'cabeceras' => [1600, 1024],
+        // La foto en diagonal de la página de acceso. Conserva transparencia:
+        // el corte blanco viene recortado en el propio archivo.
+        'acceso' => [700, 480],
+        // Fotos dentro de una tarjeta: la del local en «Contáctenos» se pinta
+        // a 518 px, así que 1040 cubre pantallas de doble densidad.
+        'fotos' => [1040, 520],
         'proveedores' => [190],
     ];
 
@@ -135,6 +151,9 @@ class OptimizarImagenes extends Command
             Str::startsWith($nombre, 'banner') => 'banners',
             Str::contains($nombre, 'fondo') => 'fondo',
             Str::contains($nombre, 'senor') => 'promo',
+            Str::contains($nombre, 'generico') => 'generico',
+            Str::contains($nombre, 'nota-') => 'notas',
+            Str::contains($nombre, 'mapa') => 'mapa',
             Str::contains($nombre, 'logo') => 'logo',
             default => 'categorias',
         };

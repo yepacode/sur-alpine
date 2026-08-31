@@ -49,8 +49,15 @@
     </form>
 
     @if ($vehiculos->isEmpty())
+        {{-- Buscar «filtro» aquí devuelve vacío y parecía que el catálogo no
+             lo tuviera. Este buscador es de MARCAS Y MODELOS: las piezas se
+             marcan dentro de cada vehículo. --}}
         <div class="mt-6 rounded-xl border border-dashed border-tinta-300 bg-white p-12 text-center">
             <p class="font-semibold">No hay vehículos con esos filtros</p>
+            <p class="mx-auto mt-2 max-w-md text-sm text-tinta-500">
+                Este buscador es de vehículos: marca, modelo o cilindraje. Para corregir una
+                pieza, abre su vehículo y entra a la pieza desde la matriz.
+            </p>
         </div>
     @else
         <div class="mt-6 overflow-x-auto rounded-xl border border-tinta-200 bg-white">

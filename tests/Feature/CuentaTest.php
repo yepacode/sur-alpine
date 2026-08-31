@@ -23,7 +23,7 @@ class CuentaTest extends TestCase
 
     private function cliente(array $atributos = []): User
     {
-        return User::create($atributos + [
+        return User::forceCreate($atributos + [
             'name' => 'Julián Mecánico',
             'email' => 'julian@taller.co',
             'telefono' => '313 422 3861',
@@ -42,6 +42,198 @@ class CuentaTest extends TestCase
             'modelo_id' => $modelo->id, 'cilindraje' => '1600',
             'anio_inicio' => 2006, 'anio_fin' => 2013, 'slug' => 'chevrolet-aveo-1600-2006-2013',
         ]);
+    }
+
+    /**
+     * Corregir, y no sólo borrar. La ruta existía y estaba probada, pero
+     * ninguna vista la usaba: quien se equivocaba en el kilometraje tenía que
+     * borrar el registro y escribirlo todo otra vez.
+     */
+    /**
+     * Corregir un registro y equivocarse no puede borrar lo que se escribio.
+     *
+     * Pasaba: el componente decidia entre `old()` y la base con «hay un $m?»,
+     * asi que al fallar la validacion el formulario del nº 7 volvia a los
+     * valores viejos, se quedaba cerrado, y el que se abria solo era el de
+     * «anotar uno nuevo» —o sea que el aviso rojo señalaba al formulario
+     * equivocado mientras el trabajo de la persona desaparecia—.
+     */
+    public function test_corregir_con_un_error_conserva_lo_escrito_y_reabre_ese_formulario(): void
+    {
+        $usuario = $this->cliente();
+        $mantenimiento = $usuario->mantenimientos()->create([
+            'placa' => 'ABC123', 'kilometraje' => 82000, 'tipo' => 'Cambio de aceite',
+            'fecha' => today()->subMonth(), 'periodicidad_tipo' => 'meses', 'periodicidad_valor' => 6,
+        ]);
+
+        $this->actingAs($usuario)
+            ->from(route('cuenta.mantenimientos'))
+            ->post(route('cuenta.mantenimientos.actualizar', $mantenimiento), [
+                '_editando' => $mantenimiento->id,
+                'placa' => 'ABC123',
+                'tipo' => 'Cambio de aceite y filtro',
+                'kilometraje' => 95000,
+                // Una fecha futura: es lo que ya se hizo, no puede estar por venir.
+                'fecha' => today()->addYear()->toDateString(),
+                'periodicidad_tipo' => 'meses',
+                'periodicidad_valor' => 6,
+            ])
+            ->assertSessionHasErrors('fecha');
+
+        $vista = $this->actingAs($usuario)->get(route('cuenta.mantenimientos'))->assertOk();
+
+        // Lo que la persona alcanzo a escribir sigue en pantalla...
+        $vista->assertSee('Cambio de aceite y filtro')
+            ->assertSee('95000');
+
+        // ...y es ESE formulario el que queda abierto, no el de anotar uno nuevo.
+        $vista->assertSee('x-data="{ editando: true }"', false);
+    }
+
+    public function test_el_historial_ofrece_corregir_cada_registro(): void
+    {
+        $usuario = $this->cliente();
+        $mantenimiento = $usuario->mantenimientos()->create([
+            'placa' => 'ABC123', 'kilometraje' => 82000, 'tipo' => 'Cambio de aceite',
+            'fecha' => today()->subMonth(), 'periodicidad_tipo' => 'meses', 'periodicidad_valor' => 6,
+        ]);
+
+        $this->actingAs($usuario)->get(route('cuenta.mantenimientos'))
+            ->assertOk()
+            ->assertSee(route('cuenta.mantenimientos.actualizar', $mantenimiento))
+            ->assertSee('Corregir');
+    }
+
+    /** El formulario de corregir llega con lo que ya estaba escrito. */
+    public function test_el_formulario_de_corregir_trae_los_datos(): void
+    {
+        $usuario = $this->cliente();
+        $usuario->mantenimientos()->create([
+            'placa' => 'XYZ789', 'kilometraje' => 91500, 'tipo' => 'Kit de distribución',
+            'fecha' => today()->subMonths(3), 'periodicidad_tipo' => 'meses', 'periodicidad_valor' => 12,
+            'notas' => 'Lo hicieron en el taller de la 68',
+        ]);
+
+        $this->actingAs($usuario)->get(route('cuenta.mantenimientos'))
+            ->assertOk()
+            ->assertSee('value="XYZ789"', false)
+            ->assertSee('value="91500"', false)
+            ->assertSee('Lo hicieron en el taller de la 68');
+    }
+
+    // ── El perfil de un carro ───────────────────────────────────────────────
+
+    public function test_el_perfil_del_carro_trae_su_ficha_y_sus_mantenimientos(): void
+    {
+        $usuario = $this->cliente();
+        $vehiculo = $this->vehiculo();
+        $usuario->vehiculosGuardados()->attach($vehiculo->id, [
+            'placa' => 'ABC123', 'alias' => 'El del trabajo',
+        ]);
+
+        $usuario->mantenimientos()->create([
+            'vehiculo_id' => $vehiculo->id, 'placa' => 'ABC123', 'kilometraje' => 82000,
+            'tipo' => 'Cambio de aceite', 'fecha' => today()->subMonths(2),
+            'periodicidad_tipo' => 'meses', 'periodicidad_valor' => 6,
+        ]);
+
+        $this->actingAs($usuario)->get(route('cuenta.vehiculo', $vehiculo))
+            ->assertOk()
+            ->assertSee('El del trabajo')
+            ->assertSee('ABC123')
+            ->assertSee('CHEVROLET')
+            ->assertSee('Cambio de aceite');
+    }
+
+    /**
+     * El mantenimiento anotado escribiendo la placa a mano, sin elegir el
+     * carro de la lista, también es de este carro para quien lo mira.
+     */
+    public function test_el_perfil_recoge_lo_anotado_solo_con_la_placa(): void
+    {
+        $usuario = $this->cliente();
+        $vehiculo = $this->vehiculo();
+        $usuario->vehiculosGuardados()->attach($vehiculo->id, ['placa' => 'ABC123']);
+
+        $usuario->mantenimientos()->create([
+            'vehiculo_id' => null, 'placa' => 'ABC123', 'kilometraje' => 90000,
+            'tipo' => 'Correa de repartición', 'fecha' => today()->subMonth(),
+            'periodicidad_tipo' => 'meses', 'periodicidad_valor' => 12,
+        ]);
+
+        $this->actingAs($usuario)->get(route('cuenta.vehiculo', $vehiculo))
+            ->assertOk()
+            ->assertSee('Correa de repartición');
+    }
+
+    /**
+     * El límite que importa: el carro tiene que estar en SU cuenta, no sólo
+     * existir en el catálogo. Si no, la placa y el historial de otro salen
+     * cambiando el slug de la URL.
+     */
+    public function test_un_carro_que_no_guardo_no_tiene_perfil(): void
+    {
+        $usuario = $this->cliente();
+        $vehiculo = $this->vehiculo();
+
+        // Existe, pero es de otra persona.
+        $otro = $this->cliente(['email' => 'otra@taller.co']);
+        $otro->vehiculosGuardados()->attach($vehiculo->id, ['placa' => 'ZZZ999']);
+
+        $this->actingAs($usuario)->get(route('cuenta.vehiculo', $vehiculo))->assertNotFound();
+        $this->actingAs($usuario)->post(route('cuenta.vehiculo.actualizar', $vehiculo), [
+            'placa' => 'HACK01',
+        ])->assertNotFound();
+
+        $this->assertSame('ZZZ999', $otro->vehiculosGuardados()->first()->pivot->placa);
+    }
+
+    public function test_se_corrige_la_placa_y_el_alias(): void
+    {
+        $usuario = $this->cliente();
+        $vehiculo = $this->vehiculo();
+        $usuario->vehiculosGuardados()->attach($vehiculo->id, [
+            'placa' => 'ABC123', 'alias' => 'El viejo',
+        ]);
+
+        $this->actingAs($usuario)->post(route('cuenta.vehiculo.actualizar', $vehiculo), [
+            'placa' => 'xyz789',
+            'alias' => 'El de mi esposa',
+        ])->assertRedirect(route('cuenta.vehiculo', $vehiculo));
+
+        $pivote = $usuario->vehiculosGuardados()->first()->pivot;
+
+        $this->assertSame('XYZ789', $pivote->placa, 'La placa se guarda en mayúsculas.');
+        $this->assertSame('El de mi esposa', $pivote->alias);
+    }
+
+    /**
+     * Aquí sí se puede borrar: este formulario manda los dos campos siempre,
+     * así que dejar el alias en blanco es una orden y no un descuido. (En
+     * «agregar vehículo» es al revés y por eso allá se filtran los vacíos.)
+     */
+    public function test_vaciar_el_alias_lo_borra(): void
+    {
+        $usuario = $this->cliente();
+        $vehiculo = $this->vehiculo();
+        $usuario->vehiculosGuardados()->attach($vehiculo->id, [
+            'placa' => 'ABC123', 'alias' => 'El del trabajo',
+        ]);
+
+        $this->actingAs($usuario)->post(route('cuenta.vehiculo.actualizar', $vehiculo), [
+            'placa' => 'ABC123',
+            'alias' => '',
+        ])->assertRedirect();
+
+        $this->assertNull($usuario->vehiculosGuardados()->first()->pivot->alias);
+    }
+
+    /** Sin sesión no hay perfil que ver. */
+    public function test_el_perfil_del_carro_pide_sesion(): void
+    {
+        $vehiculo = $this->vehiculo();
+
+        $this->get(route('cuenta.vehiculo', $vehiculo))->assertRedirect(route('acceso'));
     }
 
     // ── Registro ────────────────────────────────────────────────────────────
@@ -270,6 +462,12 @@ class CuentaTest extends TestCase
      */
     public function test_el_que_toca_hoy_no_sale_como_vencido(): void
     {
+        // Con fecha congelada a mitad de mes: restar y volver a sumar meses no
+        // es simétrico cerca del fin de mes —desde un día 29, 30 o 31 la
+        // vuelta cae en otro día— y la prueba fallaba sola tres días al mes
+        // por el andamio, no por lo que mide.
+        $this->travelTo('2026-06-15 09:00:00');
+
         $cliente = $this->cliente();
 
         $hoy = Mantenimiento::create([

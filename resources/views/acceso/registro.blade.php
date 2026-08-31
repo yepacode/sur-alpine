@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('titulo', 'Crear mi cuenta')
+
+{{-- El formulario de registro no aporta nada en un resultado de
+     búsqueda, y salía indexable. --}}
+@section('robots', 'noindex, nofollow')
 @section('descripcion', 'Crea tu cuenta en Sur Alpine y lleva el historial de mantenimiento de tu carro: kilometraje, fechas y avisos del próximo cambio.')
 
 @section('contenido')
@@ -12,7 +16,11 @@
         </p>
 
         @if ($errors->any())
-            <div role="alert" class="mt-6 rounded-lg border border-alerta-500 bg-alerta-500/5 p-4 text-sm text-alerta-700">
+            {{-- El aviso se enfoca al cargar: un `role="alert"` que ya viene en el
+     HTML no lo anuncia ningún lector de pantalla —la región viva sirve
+     para lo que aparece DESPUÉS—, y aquí el foco se quedaba en el `body`
+     o se lo llevaba el `autofocus` del primer campo. --}}
+                <div role="alert" tabindex="-1" x-data x-init="$el.focus()" class="mt-6 rounded-lg border border-alerta-500 bg-alerta-500/5 p-4 text-sm text-alerta-700">
                 <ul class="list-disc pl-5">
                     @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -23,7 +31,7 @@
 
         <form method="post" action="{{ route('registro.crear') }}" class="mt-8 space-y-4">
             @csrf
-            @php $campo = 'mt-1 w-full rounded-lg border border-tinta-300 px-3 py-2.5 text-sm focus:border-marca-600 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-600'; @endphp
+            @php $campo = 'mt-1 w-full rounded-lg border border-tinta-300 px-3 py-2.5 text-sm focus:border-marca-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-600'; @endphp
 
             {{-- Campo trampa: invisible para una persona, irresistible para un robot. --}}
             <div class="hidden" aria-hidden="true">
@@ -79,6 +87,8 @@
                 {{ contenido('registro.crear.boton', 'Crear mi cuenta') }}
             </button>
         </form>
+
+        <x-acceso-social />
 
         <p class="mt-6 text-center text-sm text-tinta-600">
             ¿Ya tienes cuenta?

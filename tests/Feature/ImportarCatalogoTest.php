@@ -49,7 +49,15 @@ class ImportarCatalogoTest extends TestCase
             ['FIAT', 147.0, '1300 CARB', 1980.0, 1985.0, 1, 0, 0, $fiatConAmortiguador ? 1 : 0],
         ], null, 'A1');
 
-        $ruta = tempnam(sys_get_temp_dir(), 'matriz').'.xlsx';
+        $ruta = (function () {
+            // `tempnam` CREA el archivo; al añadirle `.xlsx` se guarda en otro
+            // nombre y el original se queda huérfano. Eran ~1.400 archivos de
+            // cero bytes en el temp del sistema, +15 por cada corrida.
+            $base = tempnam(sys_get_temp_dir(), 'matriz');
+            unlink($base);
+
+            return $base.'.xlsx';
+        })();
         (new Xlsx($hoja->getParent()))->save($ruta);
 
         return $ruta;

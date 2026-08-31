@@ -8,10 +8,8 @@ use Illuminate\Support\Facades\Schema;
  * Roles, vehículos guardados y mantenimiento.
  *
  * Los roles son una escalera: cada uno puede todo lo del anterior más algo.
- *   cliente  → navega, cotiza, guarda vehículos y lleva mantenimientos
- *   vendedor → además recibe las solicitudes, ve la bandeja y el tablero
- *   asesor   → además edita el catálogo y da de alta vehículos
- *   admin    → además configura correos y administra usuarios
+ *   cliente → navega, cotiza, guarda vehículos y lleva mantenimientos
+ *   admin   → todo lo anterior más el panel entero
  *
  * Los mecánicos entran como "cliente".
  */

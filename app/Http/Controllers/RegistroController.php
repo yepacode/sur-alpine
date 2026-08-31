@@ -8,6 +8,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules\Password;
 
 /**
@@ -51,7 +52,7 @@ class RegistroController extends Controller
         $emailYaExistia = User::where('email', $datos['email'])->exists();
 
         if (! $emailYaExistia) {
-            User::create([
+            $usuario = User::create([
                 'name' => $datos['name'],
                 'email' => $datos['email'],
                 'telefono' => $datos['telefono'],
@@ -62,8 +63,24 @@ class RegistroController extends Controller
                 // al usuario. Si mañana el texto cambia, la sesión sabrá que hay
                 // una versión nueva y pedirá autorización otra vez.
                 'acepto_en' => now(),
-                'politica_version' => (string) config('habeas.version'),
+                'politica_version' => version_habeas(),
             ]);
+
+            // El enlace para confirmar el correo. Va aquí y no sólo en «Mis
+            // datos» porque éste es el momento en que un dedazo en la
+            // dirección todavía se puede corregir sin haber perdido nada.
+            //
+            // No bloquea nada: la cuenta queda usable sin confirmar. Si el
+            // correo no sale —el servidor de correo caído, por ejemplo— eso
+            // no puede impedir que la persona termine de registrarse.
+            try {
+                $usuario->sendEmailVerificationNotification();
+            } catch (\Throwable $e) {
+                Log::warning('No salió el correo de confirmación', [
+                    'usuario' => $usuario->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         // Enumeración: la respuesta observable es IDÉNTICA en los dos casos.

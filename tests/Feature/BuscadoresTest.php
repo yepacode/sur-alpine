@@ -45,7 +45,7 @@ class BuscadoresTest extends TestCase
             'slug' => 'pastillas-freno-aveo-1600-chevrolet',
         ]);
 
-        Configuracion::poner('direccion', 'Av. Caracas 19-21 sur', 'contacto');
+        Configuracion::poner('direccion', 'Av. Caracas #19-15 sur', 'contacto');
         Configuracion::poner('ciudad', 'Bogotá D.C.', 'contacto');
         Configuracion::poner('telefono_pbx', '(601) 366 0066', 'contacto');
     }
@@ -60,14 +60,31 @@ class BuscadoresTest extends TestCase
         $this->assertNotNull($negocio, 'Falta el dato estructurado del negocio.');
         $this->assertSame('Importadora Sur Alpine', $negocio['name']);
         $this->assertSame('1982', $negocio['foundingDate']);
-        $this->assertSame('Av. Caracas 19-21 sur', $negocio['address']['streetAddress']);
+        $this->assertSame('Av. Caracas #19-15 sur', $negocio['address']['streetAddress']);
         $this->assertSame('Bogotá D.C.', $negocio['address']['addressLocality']);
         $this->assertSame('+576013660066', $negocio['telephone']);
     }
 
-    /** Si no hay redes cargadas, mejor no declarar `sameAs` que declararlo vacío. */
+    /**
+     * Si no hay redes cargadas, mejor no declarar `sameAs` que declararlo vacío.
+     *
+     * Los perfiles reales de la empresa ahora son el valor por defecto —el pie
+     * los necesita para no quedar con la columna de redes vacía—, así que la
+     * prueba los borra a mano para llegar al caso que protege.
+     */
     public function test_las_redes_solo_se_declaran_si_existen(): void
     {
+        $porDefecto = collect($this->schemaDe($this->get(route('inicio'))->getContent()))
+            ->firstWhere('@type', 'AutoPartsStore');
+
+        $this->assertSame([
+            'https://www.facebook.com/Importadorasuralpinesa',
+            'https://www.instagram.com/importadorasuralpine',
+        ], $porDefecto['sameAs']);
+
+        Configuracion::poner('facebook', '', 'redes');
+        Configuracion::poner('instagram', '', 'redes');
+
         $sinRedes = collect($this->schemaDe($this->get(route('inicio'))->getContent()))
             ->firstWhere('@type', 'AutoPartsStore');
 
@@ -154,7 +171,11 @@ class BuscadoresTest extends TestCase
             ->assertOk()
             ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
             ->assertSee('# Importadora Sur Alpine', false)
-            ->assertSee('Av. Caracas 19-21 sur', false)
+            // La dirección sale de «Configuración», no escrita a mano: esta
+            // prueba afirmaba «19-21», que es la contradicción del propio
+            // sitio del cliente. Con suplantadores en juego, dos direcciones
+            // en el mismo dominio debilitan justo la señal a reforzar.
+            ->assertSee(app(\App\Services\Contacto::class)->direccion(), false)
             ->assertSee('No venta en línea', false);
     }
 
@@ -175,11 +196,34 @@ class BuscadoresTest extends TestCase
         $this->assertContains('BreadcrumbList', $tipos);
     }
 
-    public function test_quienes_somos_publica_un_faqpage(): void
+    /**
+     * «Quiénes somos» llevaba un `FAQPage` con preguntas y respuestas que no
+     * se pintaban en ninguna parte de la página. Google pide expresamente que
+     * el marcado de FAQ corresponda a contenido visible, así que salió junto
+     * con la prosa que habíamos inventado.
+     *
+     * Lo que la página tiene ahora es el texto de la empresa, y eso es lo que
+     * se protege: si alguien vuelve a sustituirlo por redacción propia, aquí
+     * se entera.
+     */
+    public function test_quienes_somos_trae_el_texto_de_la_empresa(): void
     {
-        $html = $this->get('/quienes-somos')->assertOk()->getContent();
-        $tipos = collect($this->schemaDe($html))->pluck('@type');
-        $this->assertContains('FAQPage', $tipos, 'Quiénes somos debe llevar las preguntas frecuentes como FAQPage.');
+        $this->get('/quienes-somos')
+            ->assertOk()
+            ->assertSee('¿Quiénes somos?')
+            ->assertSee('fundada en el año 1982')
+            ->assertSee('constante transformación e innovación en sus procesos')
+            ->assertSee('llegando a diferentes municipios con repuestos de alta calidad');
+
+        // La dirección sale de la configuración, no escrita a mano dentro del
+        // párrafo: su propio sitio dice 19-21 aquí y 19-15 en las otras dos
+        // páginas donde aparece, y no queremos heredar esa contradicción.
+        // Con el texto que la ENVUELVE, no la dirección suelta: está
+        // también en el JSON-LD del layout, así que `assertSee` a secas
+        // pasaba aunque el párrafo no la tuviera. Se comprobó quitándola
+        // de la vista: la prueba seguía verde.
+        $this->get('/quienes-somos')
+            ->assertSee('con sede en la '.app(\App\Services\Contacto::class)->direccion().'.');
     }
 
     /** @return array<int, array<string, mixed>> */

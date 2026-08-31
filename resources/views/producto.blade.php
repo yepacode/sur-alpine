@@ -1,10 +1,31 @@
 @extends('layouts.app')
 
 @section('titulo', $producto->nombre)
+
+{{-- 890 fichas del catalogo son pares identicos: la misma pieza del mismo
+     carro, importada bajo dos categorias porque su tipo de parte esta en las
+     dos. Titulo y descripcion coinciden byte a byte y las dos se declaraban a
+     si mismas la original. La secundaria sigue respondiendo 200 —hay enlaces
+     circulando— pero apunta a la buena y se queda fuera del sitemap. --}}
+@php $fichaBuena = $producto->fichaPrincipal(); @endphp
+@if ($fichaBuena->isNot($producto))
+    @section('canonical', route('producto', $fichaBuena))
+@endif
 @section('descripcion', $producto->nombre.' para '.$producto->vehiculo->nombre_completo.'. Pide tu cotización a Importadora Sur Alpine.')
 
-@if ($producto->imagen_mostrable)
-    @section('og-imagen', url($producto->imagen_mostrable))
+{{-- Sólo si hay foto DE ESTA PIEZA.
+     `imagen_mostrable` nunca es nulo —cae en el dibujo genérico—, así que
+     esta condición se cumplía siempre y las 29.272 fichas mandaban a WhatsApp
+     la misma ilustración de 525×465: por debajo del umbral de la tarjeta
+     grande, o sea que todos los enlaces llegaban pelados y todos iguales. Sin
+     foto propia es mejor la tarjeta de marca, que además dice «sitio
+     oficial». --}}
+@if ($producto->imagen)
+    @section('og-imagen', url($producto->imagen))
+    {{-- El texto alternativo de la tarjeta describe LA PIEZA cuando la foto es
+         suya. Sin foto propia se queda el de la tarjeta de marca, que es lo
+         que de verdad se está viendo. --}}
+    @section('og-imagen-alt', $producto->nombre.' para '.$producto->vehiculo->nombre_completo)
 @endif
 
 {{-- La ficha es la página que el asesor pasa por WhatsApp, así que es la que
@@ -27,6 +48,26 @@
                 'vehicleEngine' => ['@type' => 'EngineSpecification', 'name' => $producto->vehiculo->cilindraje],
             ],
             'seller' => ['@type' => 'AutoPartsStore', '@id' => url('/').'#negocio'],
+
+            // Un `Product` sin `offers`, `review` ni `aggregateRating` sale
+            // como no elegible en Search Console: eran 29.272 avisos.
+            //
+            // Va SIN precio ni moneda, y hay que ser claro sobre lo que eso
+            // significa: la ficha NUNCA va a ser elegible para el resultado
+            // enriquecido con precio, porque este negocio decidió no publicar
+            // ninguno. Lo que se gana es que el nodo deja de estar incompleto
+            // y que Google entiende qué se hace con la pieza —se cotiza, no se
+            // compra en línea—. Inventar un precio para contentar al validador
+            // sería mentirle a quien busca, y el cliente lo prohibió
+            // expresamente. Ni siquiera aparece la palabra «COP».
+            'offers' => [
+                '@type' => 'Offer',
+                'url' => route('producto', $producto),
+                'availability' => 'https://schema.org/InStock',
+                'businessFunction' => 'http://purl.org/goodrelations/v1#Sell',
+                'areaServed' => ['@type' => 'Country', 'name' => 'Colombia'],
+                'seller' => ['@id' => url('/').'#negocio'],
+            ],
         ]);
     @endphp
     <script type="application/ld+json">{!! json_encode($ficha, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>
@@ -57,7 +98,7 @@
 @endpush
 
 @section('contenido')
-    <div class="mx-auto max-w-7xl px-4 py-8">
+    <div class="contenedor py-8">
 
         <nav aria-label="Migas de pan" class="mb-6 text-sm text-tinta-500">
             <ol class="flex flex-wrap items-center gap-1">
@@ -80,21 +121,39 @@
 
         <div class="grid gap-6 md:grid-cols-2 md:gap-8">
 
-            <div class="flex aspect-4/3 items-center justify-center rounded-2xl border border-tinta-200 bg-white p-8 shadow-sm">
-                @if ($producto->imagen_mostrable)
+            {{-- Foto propia y dibujo genérico son dos cosas distintas.
+                 Antes se pintaban igual, y como `imagen_mostrable` NUNCA es
+                 nulo —cae siempre en el genérico— la rama de abajo no se veía
+                 jamás: el texto honesto que explica que la foto no está
+                 llegaba a cero personas. Peor en un teléfono, donde ese dibujo
+                 de unos mecánicos ocupaba 540 de los 844 px de pantalla y
+                 empujaba bajo el pliegue el nombre, la referencia y el botón
+                 de agregar. --}}
+            @php $fotoPropia = $producto->imagen ?: $producto->tipoParte?->imagen_defecto; @endphp
+
+            @if ($fotoPropia)
+                <div class="flex aspect-4/3 items-center justify-center rounded-2xl border border-tinta-200 bg-white p-8 shadow-sm">
                     {{-- Sin `width`/`height`: la caja ya reserva el espacio con su
                          proporción fija, y la foto puede venir de la categoría
                          (cuadrada) o del producto (de cualquier tamaño). --}}
-                    <img src="{{ $producto->imagen_mostrable }}" alt="{{ $producto->nombre }}"
+                    <img src="{{ $fotoPropia }}" alt="{{ $producto->nombre }}"
                          loading="eager" fetchpriority="high"
                          class="max-h-full w-auto object-contain">
-                @else
-                    <p class="text-center text-sm text-tinta-400">
+                </div>
+            @else
+                <div class="flex items-center justify-center gap-4 rounded-2xl border border-tinta-200 bg-white p-5 shadow-sm md:aspect-4/3 md:flex-col md:p-8">
+                    {{-- `alt=""`: es una ilustración decorativa, no la pieza.
+                         Anunciarla con el nombre del repuesto le dice a quien
+                         usa lector de pantalla que hay una foto que no hay. --}}
+                    <img src="{{ \App\Models\Producto::IMAGEN_GENERICA }}" alt=""
+                         width="96" height="85" loading="lazy"
+                         class="w-20 shrink-0 opacity-60 md:w-40">
+                    <p class="text-sm text-tinta-400 md:text-center">
                         Foto no disponible todavía.<br>
                         <span class="text-tinta-500">Escríbenos y te la enviamos.</span>
                     </p>
-                @endif
-            </div>
+                </div>
+            @endif
 
             <div>
                 <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">
@@ -125,26 +184,43 @@
 
                     {{-- El producto va en la ruta. No hay forma de que este botón
                          agregue algo distinto a la pieza que se está viendo. --}}
+                    {{-- Sin recargar, como en la portada.
+                         El componente estaba escrito y bien resuelto, pero sólo
+                         cableado al carrusel de destacados: la ficha —que es
+                         DONDE se agrega de verdad— mandaba un POST plano. Para
+                         ocho repuestos en un taller con mala señal eso eran unas
+                         dieciséis cargas de página. Si el `fetch` falla, el
+                         propio componente manda el formulario a la antigua. --}}
                     <form method="post" action="{{ route('cotizacion.agregar', $producto) }}"
+                          x-data="agregarACotizacion" @submit.prevent="enviar($event)"
                           class="mt-4 flex flex-wrap items-end gap-3">
                         @csrf
                         <div>
                             <label for="cantidad" class="text-xs font-medium text-marca-900">Cantidad</label>
                             <input id="cantidad" type="number" name="cantidad" value="1" min="1" max="99"
+                                   inputmode="numeric"
                                    class="mt-1 w-24 rounded-lg border border-marca-200 bg-white px-3 py-2.5 text-center text-sm tabular-nums">
                         </div>
-                        <button type="submit"
-                                class="con-luz flex-1 rounded-xl bg-alerta-500 px-5 py-3.5 font-titulo text-sm font-bold uppercase tracking-[0.06em] text-white shadow-lg shadow-alerta-500/25 transition hover:bg-alerta-600">
-                            Agregar a mi cotización
+                        <button type="submit" :disabled="enviando"
+                                class="con-luz flex-1 rounded-xl px-5 py-3.5 font-titulo text-sm font-bold uppercase tracking-[0.06em] text-white shadow-lg shadow-alerta-500/25 transition"
+                                :class="listo ? 'bg-marca-700' : 'bg-alerta-500 hover:bg-alerta-600'">
+                            <span x-show="!listo">Agregar a mi cotización</span>
+                            <span x-show="listo" x-cloak>Agregado ✓ · sigue buscando</span>
                         </button>
                     </form>
 
-                    @if ($enCotizacion)
-                        <p class="mt-3 text-center text-sm text-marca-800">
-                            Ya está en tu solicitud.
-                            <a href="{{ route('cotizacion.ver') }}" class="font-semibold underline underline-offset-2">Ver mi cotización</a>
-                        </p>
-                    @endif
+                    {{-- El enlace a la cotización aparece TAMBIÉN tras agregar sin
+                         recargar. Antes esta línea la decidía el servidor, así
+                         que quien agregaba con el botón nuevo no la veía nunca:
+                         el botón volvía a su texto a los dos segundos y la única
+                         señal que quedaba era el contador de la cabecera. --}}
+                    <p x-data="{ dentro: {{ $enCotizacion ? 'true' : 'false' }} }"
+                       @cotizacion-actualizada.window="dentro = true"
+                       x-show="dentro" @if (! $enCotizacion) x-cloak @endif
+                       class="mt-3 text-center text-sm text-marca-800">
+                        Ya está en tu solicitud.
+                        <a href="{{ route('cotizacion.ver') }}" class="font-semibold underline underline-offset-2">Ver mi cotización</a>
+                    </p>
                 </div>
             </div>
         </div>
@@ -159,7 +235,7 @@
                         <li data-revelar>
                             <a href="{{ route('producto', $otro) }}"
                                class="con-luz group flex h-full flex-col rounded-2xl border border-tinta-200 bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-marca-300 hover:shadow-lg">
-                                <h3 class="font-titulo text-[15px] font-bold leading-snug text-tinta-900 group-hover:text-marca-700">
+                                <h3 class="font-titulo text-base font-bold leading-snug text-tinta-900 group-hover:text-marca-700">
                                     {{ $otro->nombre }}
                                 </h3>
                                 <p class="mt-1.5 text-xs text-tinta-500">{{ $otro->tipoParte->nombre }}</p>

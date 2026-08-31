@@ -29,6 +29,14 @@
             'addressLocality' => $contacto->ciudad(),
             'addressCountry' => 'CO',
         ],
+
+        // Los cuatro campos que Google cruza contra el perfil de Google
+        // Business para confirmar que esta web y ese local son el mismo
+        // negocio. Es el trabajo directo contra los sitios que lo suplantan:
+        // ellos pueden copiar el texto y las fotos, no la ficha del negocio.
+        'email' => $contacto->correo(),
+        'hasMap' => $contacto->mapaUrl(),
+        'openingHoursSpecification' => $contacto->horarioSchema(),
         'areaServed' => 'Colombia',
         'sameAs' => $contacto->redes(),
     ]);
@@ -53,4 +61,9 @@
     ];
 @endphp
 
-<script type="application/ld+json">@json([$negocio, $sitio], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)</script>
+{{-- `JSON_HEX_TAG` como en los otros seis bloques: sin él, un `</script>`
+     escrito en «Dirección» o en «Ciudad» del panel se sale del `<script>` y
+     lo que venga detrás se ejecuta —en TODAS las páginas, porque este nodo va
+     en todas—. Que sólo lo pueda escribir un administrador no lo hace menos
+     raro: nadie trata el campo «Ciudad» como un sitio donde cabe HTML. --}}
+<script type="application/ld+json">@json([$negocio, $sitio], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG)</script>
