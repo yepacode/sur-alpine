@@ -57,13 +57,33 @@ class VehiculoController extends Controller
             return response()->json([]);
         }
 
+        $vehiculo = $activo->get();
+
         $sugerencias = Producto::publicados()
             ->buscar($termino)
-            ->paraVehiculo($activo->id())
+            ->paraVehiculo($vehiculo?->id)
             ->orderBy('nombre')
             ->limit(8)
             ->get(['nombre', 'slug'])
             ->map(fn (Producto $p) => ['t' => $p->nombre, 'u' => route('producto', $p)]);
+
+        // Cuando no hay nada PARA ESE CARRO, se dice.
+        //
+        // Las sugerencias respetan el vehículo activo, igual que el catálogo, y
+        // eso está bien. Lo que estaba mal es el silencio: quien tenía puesto un
+        // carro con pocas piezas escribía «freno», no pasaba absolutamente nada
+        // —la lista ni siquiera se abría— y se iba pensando que el buscador está
+        // roto. Es exactamente lo que va a reportar cualquiera que pruebe el
+        // sitio con un carro de catálogo corto.
+        //
+        // Se devuelve una fila que explica la causa y lleva al listado, donde ya
+        // está el botón de quitar el filtro.
+        if ($sugerencias->isEmpty() && $vehiculo) {
+            $sugerencias = collect([[
+                't' => "Nada para tu {$vehiculo->nombre_completo}. Buscar «{$termino}» en todo el catálogo",
+                'u' => route('catalogo', ['q' => $termino]),
+            ]]);
+        }
 
         return response()->json($sugerencias);
     }
