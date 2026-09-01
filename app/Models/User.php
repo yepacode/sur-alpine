@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\RolDelUsuario;
 use App\Enums\Rol;
 use App\Notifications\ClaveOlvidada;
 use App\Notifications\CorreoVerificar;
@@ -50,7 +51,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'rol' => Rol::class,
+            // No `Rol::class` a secas: un valor que el enum no conozca lanza
+            // `ValueError` al hidratar y tumba la PANTALLA entera, no sólo esa
+            // fila. Paso en produccion con los roles del esquema viejo y dejo
+            // la lista de usuarios del panel en 500. Ver `RolDelUsuario`.
+            'rol' => RolDelUsuario::class,
             'activo' => 'boolean',
             'acepto_en' => 'datetime',
             'baja_solicitada_en' => 'datetime',
