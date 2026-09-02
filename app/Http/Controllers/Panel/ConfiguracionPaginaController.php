@@ -455,6 +455,40 @@ class ConfiguracionPaginaController extends Controller
             \Illuminate\Support\Facades\Cache::forget(Contenido::LLAVE_CACHE);
         }
 
+        // Y las que YA estaban, puestas al dia con lo que declara `secciones()`.
+        //
+        // Faltaba esto: una fila se creaba una vez y se quedaba con el rotulo,
+        // el grupo y el `valor_ejemplo` del dia que nacio. Cuando el texto de
+        // fabrica de la vista cambiaba, el panel seguia enseñando el viejo como
+        // «lo que hay», y peor: `guardar()` decide si una casilla esta «sin
+        // tocar» comparandola justo contra `valor_ejemplo`, asi que la
+        // comparacion se hacia contra un texto que ya no existe en ninguna
+        // parte.
+        //
+        // `valor` NO se toca aqui. Eso es del dueño; esto es solo la ficha de
+        // fabrica.
+        $declaradas = collect($secciones)
+            ->flatMap(fn ($s) => collect($s['textos'])->map(fn ($t) => $t + ['grupo' => $s['titulo']]))
+            ->keyBy('clave');
+
+        Contenido::query()
+            ->whereIn('clave', $declaradas->keys())
+            ->get(['id', 'clave', 'grupo', 'rotulo', 'tipo', 'valor_ejemplo'])
+            ->each(function (Contenido $fila) use ($declaradas) {
+                $t = $declaradas[$fila->clave];
+
+                $cambios = array_filter([
+                    'grupo' => $fila->grupo !== $t['grupo'] ? $t['grupo'] : null,
+                    'rotulo' => $fila->rotulo !== $t['rotulo'] ? $t['rotulo'] : null,
+                    'tipo' => $fila->tipo !== $t['tipo'] ? $t['tipo'] : null,
+                    'valor_ejemplo' => (string) $fila->valor_ejemplo !== (string) $t['valor'] ? $t['valor'] : null,
+                ], fn ($v) => $v !== null);
+
+                if ($cambios !== []) {
+                    $fila->update($cambios);
+                }
+            });
+
         $rutasQueHay = SeoPagina::query()->pluck('ruta')->flip();
 
         $seoFaltantes = collect($secciones)
