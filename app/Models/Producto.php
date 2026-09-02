@@ -155,15 +155,35 @@ class Producto extends Model
         // de dos caracteres, y si se mide primero, el paréntesis pasa el filtro,
         // se queda en nada al limpiarlo y produce un "+*" suelto —tampoco es
         // una búsqueda vacía, es error de sintaxis.
-        $expresion = collect(preg_split('/\s+/u', $termino))
-            ->map(fn ($palabra) => preg_replace('/[^\p{L}\p{N}_]+/u', '', $palabra))
+        // Se PARTE por lo que no es letra ni número, no se borra.
+        //
+        // Antes se eliminaba, y eso pegaba dos palabras que el índice tiene
+        // separadas: la referencia `MB-092` se convertía en `MB092`, un token
+        // que no existe en ninguna parte, y la pieza no aparecía. Las
+        // referencias de autopartes llevan guion casi siempre —`90915-YZZD4`,
+        // `MB-092`— y es EL dato con el que llama un mecánico. Partiendo,
+        // `MB-092` busca `+MB* +092*` y encuentra la fila.
+        $expresion = collect(preg_split('/[^\p{L}\p{N}_]+/u', $termino, -1, PREG_SPLIT_NO_EMPTY))
             ->filter(fn ($palabra) => mb_strlen($palabra) > 1)
             ->map(fn ($palabra) => '+'.$palabra.'*')
             ->implode(' ');
 
-        return $expresion === ''
-            ? $query->where('nombre', 'like', $like)
-            : $query->whereFullText(['nombre', 'referencia'], $expresion, ['mode' => 'boolean']);
+        if ($expresion === '') {
+            return $query->where('nombre', 'like', $like);
+        }
+
+        return $query->where(fn (Builder $q) => $q
+            ->whereFullText(['nombre', 'referencia'], $expresion, ['mode' => 'boolean'])
+            // Y la referencia, además, tal cual.
+            //
+            // El índice de MySQL no guarda las palabras de menos de tres
+            // letras (`ft_min_word_len`), así que una referencia como `MB-092`
+            // pierde su `MB` y el fulltext solo ya no basta. Este `like`
+            // rescata la búsqueda exacta, y sólo se paga cuando el término
+            // trae algún número —o sea, cuando de verdad parece una
+            // referencia—, no en un «pastillas freno» cualquiera.
+            ->when(preg_match('/\d/u', $termino), fn (Builder $sub) => $sub
+                ->orWhere('referencia', 'like', $like)));
     }
 
 }

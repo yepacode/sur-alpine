@@ -149,9 +149,9 @@ class CatalogoController extends Controller
         return back()->with('mensaje', sprintf(
             'Guardado: %d %s, %d %s en %s.',
             $creadas,
-            Str::plural('pieza agregada', $creadas),
+            plural($creadas, 'pieza agregada', 'piezas agregadas'),
             $retiradas,
-            Str::plural('retirada', $retiradas),
+            plural($retiradas, 'retirada', 'retiradas'),
             $vehiculo->nombre_completo
         ));
     }

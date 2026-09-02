@@ -23,7 +23,7 @@
             <div role="alert" class="mt-6 rounded-2xl border-2 border-alerta-500/40 bg-alerta-500/5 p-6">
                 <p class="font-titulo text-lg font-bold text-alerta-800">
                     Estás a punto de retirar {{ count($aviso['piezas']) }}
-                    {{ Str::plural('pieza', count($aviso['piezas'])) }} de {{ $aviso['vehiculo'] }}
+                    {{ plural(count($aviso['piezas']), 'pieza', 'piezas') }} de {{ $aviso['vehiculo'] }}
                 </p>
                 <p class="mt-2 text-sm text-tinta-700">
                     Estas fichas tienen datos que el equipo cargó a mano —

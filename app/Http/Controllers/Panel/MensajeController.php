@@ -41,7 +41,7 @@ class MensajeController extends Controller
         $destinos = Configuracion::correosDestino();
 
         if ($destinos === []) {
-            return back()->with('mensaje', 'Primero configura los correos de destino.');
+            return back()->with('problema', 'Primero configura los correos de destino.');
         }
 
         try {
@@ -52,7 +52,13 @@ class MensajeController extends Controller
         } catch (\Throwable $e) {
             $mensaje->update(['error_envio' => mb_substr($e->getMessage(), 0, 500)]);
 
-            return back()->with('mensaje', 'No se pudo enviar: '.$e->getMessage());
+            // El detalle técnico al registro, no a la cara del dueño.
+            \Illuminate\Support\Facades\Log::warning('Falló el reenvío de un mensaje', [
+                'mensaje' => $mensaje->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('problema', 'No se pudo reenviar. Revisa la configuración de correo, o pídenos que la miremos.');
         }
     }
 }

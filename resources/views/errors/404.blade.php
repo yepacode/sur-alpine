@@ -27,3 +27,7 @@
         Ir al inicio
     </a>
 @endsection
+
+@section('explicacion-panel')
+    <p>Esa pantalla o ese registro ya no existe. Puede que lo hayan borrado, o que el enlace esté mal copiado.</p>
+@endsection

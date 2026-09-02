@@ -23,3 +23,7 @@
         Volver e intentar en un minuto
     </a>
 @endsection
+
+@section('explicacion-panel')
+    <p>Hiciste varias acciones muy seguidas y el servidor las frenó un minuto. Espera y vuelve a intentar.</p>
+@endsection

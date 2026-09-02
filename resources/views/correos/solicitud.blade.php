@@ -2,8 +2,8 @@
 # Solicitud {{ $cotizacion->consecutivo }}
 
 **{{ $cotizacion->nombre_completo }}** pide cotización de
-{{ $cotizacion->items->sum('cantidad') }} {{ Str::plural('repuesto', $cotizacion->items->sum('cantidad')) }}
-para {{ $porVehiculo->count() }} {{ Str::plural('vehículo', $porVehiculo->count()) }}.
+{{ $cotizacion->items->sum('cantidad') }} {{ plural($cotizacion->items->sum('cantidad'), 'repuesto', 'repuestos') }}
+para {{ $porVehiculo->count() }} {{ plural($porVehiculo->count(), 'vehículo', 'vehículos') }}.
 
 **Teléfono:** {{ $cotizacion->telefono }}
 **Correo:** {{ $cotizacion->email }}

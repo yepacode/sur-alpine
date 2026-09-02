@@ -34,11 +34,20 @@ class Contenido extends Model
      */
     public function getVistaPreviaAttribute(): ?string
     {
-        if ($this->tipo !== 'imagen' || ! $this->valor) {
+        // La foto EFECTIVA: la subida si la hay, y si no la de fábrica.
+        //
+        // Antes miraba sólo `valor`, y desde que las filas nacen en nulo
+        // —para que el panel deje de escribir el contenido del sitio— las seis
+        // fotos editables decían «sin foto» mientras la web las mostraba
+        // perfectamente. Al lado, la ayuda promete «si no eliges nada, se
+        // queda la de ahora»: el dueño concluye que se perdieron.
+        $ruta = $this->valor ?: $this->valor_ejemplo;
+
+        if ($this->tipo !== 'imagen' || ! $ruta) {
             return null;
         }
 
-        $encontrados = glob(public_path(ltrim($this->valor, '/').'-*.webp')) ?: [];
+        $encontrados = glob(public_path(ltrim($ruta, '/').'-*.webp')) ?: [];
 
         if ($encontrados === []) {
             return null;

@@ -29,3 +29,7 @@
         Ir al inicio
     </a>
 @endsection
+
+@section('explicacion-panel')
+    <p>La pantalla estuvo abierta mucho rato y se venció por seguridad. Vuelve a abrirla y repite lo que ibas a hacer.</p>
+@endsection

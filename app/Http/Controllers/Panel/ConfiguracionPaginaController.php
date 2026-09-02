@@ -525,6 +525,27 @@ class ConfiguracionPaginaController extends Controller
             );
         }
 
+        // La longitud, ANTES de escribir nada.
+        //
+        // `contenidos.valor` es un TEXT de 65.535 bytes y MySQL va en modo
+        // estricto: un documento legal más largo reventaba con «Data too long»
+        // a mitad del bucle, dejando escritos los campos anteriores y sin
+        // escribir los siguientes. El administrador veía una pantalla de error
+        // y daba por hecho que no se había guardado nada, mientras los
+        // términos y condiciones ya habían desaparecido del sitio.
+        //
+        // Antes esto no podía pasar porque ningún campo pasaba de 500
+        // caracteres; lo abrió la caja del documento legal, que no tiene tope.
+        $request->validate(
+            collect((array) $request->input('textos', []))
+                ->mapWithKeys(fn ($_, $id) => ["textos.{$id}" => ['nullable', 'string', 'max:60000']])
+                ->all(),
+            [],
+            collect((array) $request->input('textos', []))
+                ->mapWithKeys(fn ($_, $id) => ["textos.{$id}" => 'el texto'])
+                ->all()
+        );
+
         // Textos: un input por cada fila de Contenido. Un solo POST guarda
         // toda la página del panel.
         //
@@ -539,8 +560,40 @@ class ConfiguracionPaginaController extends Controller
         // alguien dejó en blanco.
         foreach ((array) $request->input('textos', []) as $id => $valor) {
             $fila = Contenido::find((int) $id);
-            if (! $fila) continue;
-            $fila->update(['valor' => is_string($valor) ? trim($valor) : '']);
+
+            if (! $fila) {
+                continue;
+            }
+
+            $nuevo = is_string($valor) ? trim($valor) : '';
+
+            // Si devuelve EXACTAMENTE el texto de fábrica, se deja en nulo.
+            //
+            // «Nulo» significa «nadie ha tocado esto», y eso importa porque
+            // varios textos tienen un valor por defecto que se CALCULA: el
+            // horario se arma desde «Datos y correos» y el párrafo de la
+            // empresa intercala su dirección. En cuanto la fila deja de estar
+            // en nulo, ese cálculo se congela: el dueño cambia la dirección en
+            // el panel y «Quiénes somos» sigue diciendo la vieja.
+            //
+            // Sin esto, abrir la pantalla y guardar sin tocar nada pasaba 69
+            // filas de «sin definir» a «definido» de un plumazo, y el sitio se
+            // quedaba clavado en la foto de ese momento.
+            // Ojo con el vacío: sólo se deja en nulo cuando coincide con un
+            // texto de fábrica que EXISTE. Si no hubiera texto de fábrica,
+            // vaciar la casilla y no haberla tocado nunca serían la misma
+            // cosa, y el sitio volvería a enseñar lo que el dueño quiso quitar.
+            $deFabrica = (string) $fila->valor_ejemplo;
+
+            // Un documento legal vacío significa «usa el que trae el sitio»,
+            // no «déjalo en blanco»: así lo lee su vista, que cae al texto de
+            // fábrica cuando no hay nada escrito. Para un rótulo o un botón,
+            // en cambio, vaciar la casilla es una orden: «que esto no salga».
+            $sinTocar = $fila->tipo === 'documento'
+                ? $nuevo === '' || $nuevo === $deFabrica
+                : ($deFabrica !== '' && $nuevo === $deFabrica);
+
+            $fila->update(['valor' => $sinTocar ? null : $nuevo]);
         }
 
         // Las imágenes viajan aparte porque son archivos. Sólo se tocan las

@@ -79,7 +79,7 @@ class ImportacionController extends Controller
             || ! str_starts_with($datos['archivo'], self::CARPETA.'/')
             || ! Storage::disk('local')->exists($datos['archivo'])) {
             return redirect()->route('panel.catalogo.importar')
-                ->with('mensaje', 'El archivo ya no está disponible. Vuelve a subirlo.');
+                ->with('problema', 'El archivo ya no está disponible. Vuelve a subirlo.');
         }
 
         $resultado = $importador->importar(Storage::disk('local')->path($datos['archivo']));
@@ -97,9 +97,9 @@ class ImportacionController extends Controller
         $mensaje = sprintf(
             'Importación lista: %d %s y %s %s.',
             $resultado->vehiculosNuevos,
-            \Illuminate\Support\Str::plural('vehículo nuevo', $resultado->vehiculosNuevos),
+            plural($resultado->vehiculosNuevos, 'vehículo nuevo', 'vehículos nuevos'),
             number_format($resultado->productosCreados),
-            \Illuminate\Support\Str::plural('pieza nueva', $resultado->productosCreados)
+            plural($resultado->productosCreados, 'pieza nueva', 'piezas nuevas')
         );
 
         // Lo que ya no viene en el Excel se avisa pero no se toca: retirarlo es
@@ -109,7 +109,7 @@ class ImportacionController extends Controller
             $mensaje .= sprintf(
                 ' Atención: %s %s siguen en el catálogo y ya no vienen en el Excel (no se tocaron).',
                 number_format($resultado->sobrantes),
-                \Illuminate\Support\Str::plural('pieza', $resultado->sobrantes)
+                plural($resultado->sobrantes, 'pieza', 'piezas')
             );
         }
 

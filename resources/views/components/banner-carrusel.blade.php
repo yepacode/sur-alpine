@@ -79,7 +79,7 @@
                      :srcset="visible({{ $i }}) ? '{{ $banner['srcset'] }}' : null"
                      loading="lazy"
                  @endif
-                 sizes="100vw"
+                 sizes="(min-width: 1600px) 1600px, 100vw"
                  alt="{{ $banner['alt'] }}"
                  width="1600" height="522"
                  decoding="async"

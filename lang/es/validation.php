@@ -48,6 +48,10 @@ return [
     'distinct' => ':Attribute está repetido.',
     'email' => ':Attribute tiene que ser un correo válido.',
     'ends_with' => ':Attribute tiene que terminar en: :values.',
+    // `Rule::enum()` usa esta clave. Sin ella salía «The selected el rol is
+    // invalid.»: inglés y español cosidos en la misma frase, porque
+    // `attributes` sí traducía el nombre del campo.
+    'enum' => ':Attribute no es una de las opciones válidas.',
     'exists' => ':Attribute no existe.',
     'file' => ':Attribute tiene que ser un archivo.',
     'filled' => ':Attribute no puede quedar vacío.',

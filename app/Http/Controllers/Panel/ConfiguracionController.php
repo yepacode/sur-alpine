@@ -87,7 +87,7 @@ class ConfiguracionController extends Controller
         $destinos = Configuracion::correosDestino();
 
         if ($destinos === []) {
-            return back()->with('mensaje', 'Configura primero al menos un correo válido.');
+            return back()->with('problema', 'Configura primero al menos un correo válido.');
         }
 
         // Cotización FICTICIA, armada en memoria: antes se usaba `Cotizacion::latest()`
@@ -113,7 +113,16 @@ class ConfiguracionController extends Controller
         try {
             Mail::to($request->user()->email)->send(new ConfirmacionCotizacion($muestra));
         } catch (\Throwable $e) {
-            return back()->with('mensaje', 'No salió el correo de prueba: '.$e->getMessage());
+            // En rojo y en castellano.
+            //
+            // Antes salía en la misma barra azul que un acierto —el dueño la
+            // ha visto siempre significar «listo»— y con el mensaje crudo de
+            // Symfony en inglés: «Expected response code "250" but got code
+            // "535"». Se registra el detalle técnico para nosotros y a él se
+            // le dice qué pasó y a quién llamar.
+            \Illuminate\Support\Facades\Log::warning('Falló el correo de prueba', ['error' => $e->getMessage()]);
+
+            return back()->with('problema', 'No salió el correo de prueba. Revisa la configuración de correo del hosting, o pídenos que la miremos.');
         }
 
         return back()->with('mensaje', "Mandamos un correo de prueba a {$request->user()->email}.");

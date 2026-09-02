@@ -34,3 +34,7 @@
         Ir al inicio
     </a>
 @endsection
+
+@section('explicacion-panel')
+    <p>Tu cuenta no tiene acceso a esta sección. Si crees que deberías poder entrar, pídele a un administrador que revise tu rol.</p>
+@endsection

@@ -31,8 +31,19 @@
          1920 lo pinta a 625 px de alto, que es lo que él está acostumbrado a
          ver, y sin recortar ni deformar la imagen que el proveedor paga por
          publicar. --}}
+    {{-- A todo el ancho, pero sin pasar de lo que mide la imagen.
+         El cliente lo comparó con su web actual y tenía razón: allá el banner
+         mide 630 px de alto y aquí medía 442, porque el contenedor lo
+         encajonaba en 1.354 px. A todo ancho gana esa altura.
+
+         El tope de 1600 px es el tamaño real del archivo más grande que hay.
+         Sin él, en un monitor de 1920 —o en cualquier portátil retina— el
+         navegador estiraba esa imagen un 19 % y el banner salía blando: justo
+         lo primero que se ve, y lo que el proveedor paga por publicar. El día
+         que suban arte en más resolución, se añade el escalón a
+         `ImagenesWeb::ANCHOS_BANNER` y este tope sube con él. --}}
     @if ($banners)
-        <div class="pt-5">
+        <div class="mx-auto max-w-[1600px] pt-5">
             <x-banner-carrusel :banners="$banners" />
         </div>
     @endif

@@ -41,9 +41,13 @@ class SolicitudController extends Controller
     {
         $ok = $envio->despachar($solicitud->load('items'));
 
-        return back()->with('mensaje', $ok
-            ? "Reenviamos la solicitud {$solicitud->consecutivo}."
-            : 'No pudimos reenviarla. Revisa la configuración de correo.');
+        // Cada uno por su barra: el acierto en azul, el fallo en rojo. Que
+        // los dos se vieran igual es lo que hacía que un reenvío fallido
+        // pasara por bueno, justo en la pantalla que existe para que ninguna
+        // cotización se pierda callada.
+        return $ok
+            ? back()->with('mensaje', "Reenviamos la solicitud {$solicitud->consecutivo}.")
+            : back()->with('problema', "No pudimos reenviar la solicitud {$solicitud->consecutivo}. Revisa la configuración de correo, o pídenos que la miremos.");
     }
 
     public function exportar(Request $request): StreamedResponse

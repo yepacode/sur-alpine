@@ -29,9 +29,9 @@
         @else
             <p class="mt-1 text-sm text-tinta-500">
                 <span class="tabular-nums">{{ $totalItems }}</span>
-                {{ Str::plural('repuesto', $totalItems) }} para
+                {{ plural($totalItems, 'repuesto', 'repuestos') }} para
                 <span class="tabular-nums">{{ $porVehiculo->count() }}</span>
-                {{ Str::plural('vehículo', $porVehiculo->count()) }}.
+                {{ plural($porVehiculo->count(), 'vehículo', 'vehículos') }}.
                 Un asesor te contacta en horario de oficina para confirmarte disponibilidad.
             </p>
 

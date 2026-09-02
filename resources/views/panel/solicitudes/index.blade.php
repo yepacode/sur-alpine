@@ -8,7 +8,7 @@
             <h1 class="text-2xl font-bold tracking-tight">Solicitudes de cotización</h1>
             <p class="mt-1 text-sm text-tinta-500">
                 <span class="tabular-nums">{{ $solicitudes->total() }}</span>
-                {{ Str::plural('solicitud', $solicitudes->total()) }}
+                {{ plural($solicitudes->total(), 'solicitud', 'solicitudes') }}
                 @if ($sinEnviar > 0)
                     · <span class="font-semibold text-alerta-600">{{ $sinEnviar }} sin enviar</span>
                 @endif

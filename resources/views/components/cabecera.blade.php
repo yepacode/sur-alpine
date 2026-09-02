@@ -338,7 +338,10 @@
                 // pantalla no se mueve nada.
                 $accionCabecera = 'flex items-center gap-2.5 whitespace-nowrap p-[13px] -m-[13px] text-base font-bold text-tinta-900 transition hover:text-marca-700';
             @endphp
-            <div class="flex items-center justify-end gap-5 lg:gap-10 lg:pl-[60px]">
+            {{-- `gap-3` hasta `sm`: con los tres controles a 44 px de zona
+                 tocable, en una pantalla de 320 px la fila pedía 120 px y sólo
+                 había 118. Dos píxeles que arrastraban la página entera. --}}
+            <div class="flex items-center justify-end gap-2 sm:gap-5 lg:gap-10 lg:pl-[60px]">
                 <a href="{{ auth()->check() ? (auth()->user()->entraAlPanel() ? route('panel.tablero') : route('cuenta')) : route('acceso') }}"
                    class="{{ $accionCabecera }}"
                    {{-- El `aria-label` va SIEMPRE. Sin sesión este enlace lleva

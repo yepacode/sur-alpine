@@ -10,7 +10,12 @@
     Va con el layout completo a propósito: la cabecera, el teléfono y el pie son
     lo que distingue el sitio real del que lo copia.
 --}}
-@extends('layouts.app')
+{{-- Dentro del panel, con la cara del panel.
+     Un 404 en `/panel/categorias/5` le enseñaba al dueño la página pública de
+     su propia tienda: «Buscar mi repuesto» y «¿Necesitas una pieza? Llámanos
+     al (601) 366 0066». Leyendo «llámanos» en su propio panel de
+     administración. --}}
+@extends(request()->is('panel*') ? 'errors.layout-panel' : 'layouts.app')
 
 @section('robots', 'noindex, nofollow')
 

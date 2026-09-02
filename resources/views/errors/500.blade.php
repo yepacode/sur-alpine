@@ -22,3 +22,7 @@
         Ir al inicio
     </a>
 @endsection
+
+@section('explicacion-panel')
+    <p>Algo falló de nuestro lado. Ya quedó registrado y lo estamos mirando; si te urge, avísanos.</p>
+@endsection

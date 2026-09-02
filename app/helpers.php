@@ -127,7 +127,12 @@ if (! function_exists('documento_legal')) {
             if ($parrafo !== []) {
                 // Los saltos sueltos dentro de un parrafo se respetan: en un
                 // documento legal a veces separan incisos.
-                $html[] = '<p class="mt-3 leading-relaxed text-tinta-700">'
+                // `break-words`: un documento de habeas data lleva URLs y
+                // correos largos —«proteccion.datos.personales@…»— y sin esto
+                // una sola línea arrastraba la página entera en horizontal.
+                // Medido: 210 px de desborde en un teléfono con una URL de
+                // formulario normal.
+                $html[] = '<p class="mt-3 break-words leading-relaxed text-tinta-700">'
                     .implode('<br>', array_map('e', $parrafo)).'</p>';
                 $parrafo = [];
             }
@@ -138,7 +143,7 @@ if (! function_exists('documento_legal')) {
                 $html[] = '<ul class="mt-3 list-disc space-y-1 pl-6 text-tinta-700">';
 
                 foreach ($lista as $punto) {
-                    $html[] = '<li>'.e($punto).'</li>';
+                    $html[] = '<li class="break-words">'.e($punto).'</li>';
                 }
 
                 $html[] = '</ul>';
@@ -181,5 +186,24 @@ if (! function_exists('documento_legal')) {
 
         return implode("
 ", $html);
+    }
+}
+
+if (! function_exists('plural')) {
+    /**
+     * Singular o plural, en castellano, diciendo las dos formas.
+     *
+     * `Str::plural()` es el pluralizador de Laravel y pluraliza en INGLÉS. Con
+     * palabras que acaban en vocal acierta de casualidad —«repuesto» →
+     * «repuestos»— y por eso pasó inadvertido, pero en la primera línea de la
+     * pantalla más usada del panel se leía «3150 solicituds». Y con dos
+     * palabras sólo toca la última: «3 pieza agregadas», «5 vehículo nuevos».
+     *
+     * Aquí no se adivina nada: se escriben las dos formas. Es más largo de
+     * teclear y es la única manera de que no vuelva a salir un «solicituds».
+     */
+    function plural(int $cuantos, string $singular, string $plural): string
+    {
+        return $cuantos === 1 ? $singular : $plural;
     }
 }

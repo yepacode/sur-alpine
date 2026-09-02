@@ -177,17 +177,20 @@
                 <p class="mt-1.5 text-base text-tinta-500">
                     <span class="tabular-nums">@numero($productos->total())</span>
                     @if (is_string(request('q')) && request('q') !== '')
-                        {{ Str::plural('resultado', $productos->total()) }} para
+                        {{ plural($productos->total(), 'resultado', 'resultados') }} para
                         <span class="font-medium text-tinta-700">«{{ request('q') }}»</span>
                     @elseif ($vehiculoActivo ?? null)
-                        {{ Str::plural('repuesto', $productos->total()) }} que le sirven
+                        {{ plural($productos->total(), 'repuesto', 'repuestos') }} que le sirven
                     @else
-                        {{ Str::plural('repuesto', $productos->total()) }} en el catálogo
+                        {{ plural($productos->total(), 'repuesto', 'repuestos') }} en el catálogo
                     @endif
                 </p>
             </div>
 
-            <form method="get" class="flex items-center gap-2">
+            {{-- `min-w-0` y el select encogible: a 320 px el desplegable más el
+                 botón pedían más ancho del que hay y empujaban la fila entera,
+                 arrastrando la página de lado. --}}
+            <form method="get" class="flex min-w-0 items-center gap-2">
                 {{-- Sólo escalares: si alguien pide `?q[]=freno` el valor llega
                      como arreglo y `{{ }}` reventaría en `htmlspecialchars`, con un
                      500 en las tres URLs con más peso SEO del sitio. --}}
@@ -214,7 +217,7 @@
                         x-on:change="if (! conTeclado) $el.form.requestSubmit()"
                         x-on:keydown.enter.prevent="$el.form.requestSubmit()"
                         x-on:blur="if (conTeclado) $el.form.requestSubmit()"
-                        class="selector rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm">
+                        class="selector min-w-0 rounded-lg border border-tinta-300 bg-white px-2 py-2 text-sm sm:px-3">
                     <option value="a-z" @selected(request('orden', 'a-z') === 'a-z')>Nombre A-Z</option>
                     <option value="z-a" @selected(request('orden') === 'z-a')>Nombre Z-A</option>
                     <option value="recientes" @selected(request('orden') === 'recientes')>Más recientes</option>
@@ -256,7 +259,11 @@
             </aside>
 
 
-            <div>
+            {{-- `min-w-0`: un hijo de rejilla trae `min-width: auto`, así que
+                 no se encoge y el scroll propio de la fila de tipos de parte
+                 no servía de nada: en un teléfono arrastraba la página entera
+                 4.559 px de lado. --}}
+            <div class="min-w-0">
                 @if ($productos->isEmpty())
                     {{-- El vacío tiene que nombrar la causa real y dar la salida
                          que corresponde.
@@ -307,6 +314,45 @@
                         @endif
                     </div>
                 @else
+                    {{-- Los tipos de parte, en una fila sobre las piezas.
+                         Bajaron aquí desde la barra lateral porque el cliente
+                         la quiere quieta: doce categorías siempre iguales, sin
+                         desplegar nada. Pero dentro de Frenos hay veinte tipos
+                         —bandas, discos, pastillas, bomba— y son la única
+                         manera de acotar 2.877 piezas a las que uno busca; sin
+                         ellos habría que perderlos, y con ellos 287 páginas de
+                         aterrizaje se quedarían sin puerta de entrada.
+
+                         Aquí ocupan una línea, se desbordan en horizontal y no
+                         mueven nada de sitio. --}}
+                    @if ($categoria && $tiposParte->isNotEmpty())
+                        <div class="mb-5 flex snap-x gap-2 overflow-x-auto pb-2">
+                            <a href="{{ route('categoria', $categoria) }}"
+                               @class([
+                                   'shrink-0 snap-start rounded-full border px-4 py-2 text-sm transition',
+                                   'border-marca-700 bg-marca-700 font-semibold text-white' => ! $tipoParte,
+                                   'border-tinta-300 bg-white text-tinta-700 hover:border-marca-300' => (bool) $tipoParte,
+                               ])>
+                                Todo en {{ $categoria->nombre }}
+                            </a>
+
+                            @foreach ($tiposParte as $tipo)
+                                @continue((int) $tipo->productos_count === 0)
+                                <a href="{{ route('tipo-parte', [$categoria, $tipo]) }}"
+                                   @class([
+                                       'shrink-0 snap-start whitespace-nowrap rounded-full border px-4 py-2 text-sm transition',
+                                       'border-marca-700 bg-marca-700 font-semibold text-white' => $tipoParte?->id === $tipo->id,
+                                       'border-tinta-300 bg-white text-tinta-700 hover:border-marca-300' => $tipoParte?->id !== $tipo->id,
+                                   ])>
+                                    {{ $tipo->nombre }}
+                                    @if ($contarFiltros)
+                                        <span class="ml-1 tabular-nums text-xs opacity-70">@numero($tipo->productos_count)</span>
+                                    @endif
+                                </a>
+                            @endforeach
+                        </div>
+                    @endif
+
                     <ul class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                         @foreach ($productos as $producto)
                             {{-- La tarjeta entera es el enlace: en un celular

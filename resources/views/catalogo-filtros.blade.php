@@ -33,19 +33,19 @@
 
 <h2 class="mt-8 font-titulo text-xs font-bold uppercase tracking-[0.16em] text-tinta-500">{{ contenido('catalogo.filtro.parte', 'Filtrar por parte') }}</h2>
 
-{{-- Las categorías, SIEMPRE.
-     Antes, al entrar en una categoría la lista se reemplazaba por sus tipos de
-     parte y el único enlace hacia arriba era «← Todo en Frenos», que lleva a la
-     propia categoría en la que ya estás. Desde ahí no había forma de saltar a
-     otra: para pasar de Frenos a Suspensión tocaba volver al catálogo a mano.
-     Lo dijo el cliente y tiene razón.
+{{-- Las categorías, siempre las mismas y sin desplegar nada.
+     Lo pidió el cliente con estas palabras: «que elija frenos y muestre todo
+     al lado, todo lo relacionado con frenos, pero que se siga manteniendo
+     todas las categorías al lado».
 
-     Ahora la lista de las doce se queda fija, la activa se marca, y sus tipos
-     de parte se despliegan debajo de ella. Es un solo árbol: siempre se ve
-     dónde estás y a dónde puedes ir. --}}
+     Antes, al entrar en una categoría la lista se reemplazaba por sus tipos de
+     parte y no había forma de saltar a otra. La primera corrección colgó los
+     tipos debajo de la abierta, y eso era desplegar: la barra crecía a 1.200
+     px y el sitio dejaba de verse igual en cada categoría. Esto es lo que él
+     quiere: una lista quieta de doce, la abierta marcada, y las piezas al
+     lado. --}}
 <ul class="mt-3 space-y-1 text-sm">
     @foreach ($categorias as $cat)
-        @php $activa = $categoria?->id === $cat->id; @endphp
         <li>
             {{-- Sin piezas no es un enlace: decir «0» y dejarlo clicable manda
                  a alguien a una página vacía. --}}
@@ -59,41 +59,13 @@
                 <a href="{{ route('categoria', $cat) }}"
                    @class([
                        'flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-tinta-100',
-                       'bg-marca-50 font-semibold text-marca-700' => $activa,
+                       'bg-marca-50 font-semibold text-marca-700' => $categoria?->id === $cat->id,
                    ])>
                     <span>{{ $cat->nombre }}</span>
                     @if ($contarFiltros)
                         <span class="shrink-0 tabular-nums text-xs text-tinta-400">@numero($cat->productos_count)</span>
                     @endif
                 </a>
-            @endif
-
-            {{-- Los tipos de la categoría abierta, colgando de ella. --}}
-            @if ($activa && $tiposParte->isNotEmpty())
-                <ul class="mb-2 ml-3 mt-1 max-h-80 space-y-0.5 overflow-y-auto border-l border-tinta-200 pl-2 pr-1">
-                    @foreach ($tiposParte as $tipo)
-                        <li>
-                            @if ((int) $tipo->productos_count === 0)
-                                <span class="flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 text-tinta-400"
-                                      title="No manejamos esta pieza para el vehículo seleccionado">
-                                    <span>{{ $tipo->nombre }}</span>
-                                    <span class="shrink-0 text-xs">—</span>
-                                </span>
-                            @else
-                                <a href="{{ route('tipo-parte', [$cat, $tipo]) }}"
-                                   @class([
-                                       'flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-tinta-100',
-                                       'bg-marca-100 font-semibold text-marca-800' => $tipoParte?->id === $tipo->id,
-                                   ])>
-                                    <span>{{ $tipo->nombre }}</span>
-                                    @if ($contarFiltros)
-                                        <span class="shrink-0 tabular-nums text-xs text-tinta-400">@numero($tipo->productos_count)</span>
-                                    @endif
-                                </a>
-                            @endif
-                        </li>
-                    @endforeach
-                </ul>
             @endif
         </li>
     @endforeach
