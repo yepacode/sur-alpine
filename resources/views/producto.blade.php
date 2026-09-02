@@ -49,25 +49,25 @@
             ],
             'seller' => ['@type' => 'AutoPartsStore', '@id' => url('/').'#negocio'],
 
-            // Un `Product` sin `offers`, `review` ni `aggregateRating` sale
-            // como no elegible en Search Console: eran 29.272 avisos.
+            // NO lleva `offers`, y conviene dejar escrito por qué, porque
+            // la decisión se tomó dos veces y al revés.
             //
-            // Va SIN precio ni moneda, y hay que ser claro sobre lo que eso
-            // significa: la ficha NUNCA va a ser elegible para el resultado
-            // enriquecido con precio, porque este negocio decidió no publicar
-            // ninguno. Lo que se gana es que el nodo deja de estar incompleto
-            // y que Google entiende qué se hace con la pieza —se cotiza, no se
-            // compra en línea—. Inventar un precio para contentar al validador
-            // sería mentirle a quien busca, y el cliente lo prohibió
-            // expresamente. Ni siquiera aparece la palabra «COP».
-            'offers' => [
-                '@type' => 'Offer',
-                'url' => route('producto', $producto),
-                'availability' => 'https://schema.org/InStock',
-                'businessFunction' => 'http://purl.org/goodrelations/v1#Sell',
-                'areaServed' => ['@type' => 'Country', 'name' => 'Colombia'],
-                'seller' => ['@id' => url('/').'#negocio'],
-            ],
+            // Antes iba un `Offer` sin `price` para que el nodo no saliera
+            // «no elegible». Eso cambia un aviso por un ERROR: Google exige
+            // `price` y `priceCurrency` dentro de `offers`, así que eran
+            // 28.827 fichas en rojo permanente en Search Console, y el rojo de
+            // verdad —el día que lo haya— se pierde entre ellas.
+            //
+            // Y arrastraba dos afirmaciones que el negocio no puede sostener:
+            // `InStock` en las 28.827 piezas sin llevar control de existencias,
+            // y `businessFunction: Sell` en un sitio que no vende en línea.
+            //
+            // Sin precio esta ficha no va a ser elegible para el resultado
+            // enriquecido de ninguna manera —el cliente prohibió publicar
+            // precios—, así que el `Offer` no compraba nada y costaba caro.
+            // Lo que de verdad posiciona ya está puesto: `brand`, `category` y
+            // sobre todo `isAccessoryOrSparePartFor`, que es lo que conecta la
+            // pieza con el carro y responde a «radiador para un Rio 1500».
         ]);
     @endphp
     <script type="application/ld+json">{!! json_encode($ficha, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) !!}</script>

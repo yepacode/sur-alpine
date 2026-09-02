@@ -325,8 +325,8 @@
 
                     {{-- En escritorio va con el texto; en móvil, debajo del video. --}}
                     <p class="hidden text-base font-semibold text-black min-[769px]:block">
-                        <span aria-hidden="true">📍</span> {{ $contacto->direccion() }}, Barrio Restrepo.
-                        {{ $contacto->ciudad() }}, Colombia
+                        <span aria-hidden="true">📍</span> {{ $contacto->direccion() }}.
+                        {{ $contacto->ciudad() }}
                     </p>
 
                     <ul class="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-1 tabular-nums text-tinta-600">
@@ -371,8 +371,8 @@
 
                 {{-- La dirección, sólo en móvil y debajo del video. --}}
                 <p class="order-3 w-full text-center text-sm font-semibold text-black min-[769px]:hidden">
-                    <span aria-hidden="true">📍</span> {{ $contacto->direccion() }}, Barrio Restrepo.
-                    {{ $contacto->ciudad() }}, Colombia
+                    <span aria-hidden="true">📍</span> {{ $contacto->direccion() }}.
+                    {{ $contacto->ciudad() }}
                 </p>
 
                 {{-- El mapa llega cuando se pide, no antes: un iframe de Google

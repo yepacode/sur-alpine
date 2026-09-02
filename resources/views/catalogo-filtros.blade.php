@@ -31,7 +31,7 @@
     @endif
 </div>
 
-<h2 class="mt-8 font-titulo text-xs font-bold uppercase tracking-[0.16em] text-tinta-500">{{ contenido('catalogo.filtro.parte', 'Filtrar por parte') }}</h2>
+<h2 class="mt-8 font-titulo text-xs font-bold uppercase tracking-[0.16em] text-tinta-500">{{ contenido('catalogo.filtro.parte', 'Categorías') }}</h2>
 
 {{-- Las categorías, siempre las mismas y sin desplegar nada.
      Lo pidió el cliente con estas palabras: «que elija frenos y muestre todo
@@ -60,7 +60,8 @@
                    @class([
                        'flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-tinta-100',
                        'bg-marca-50 font-semibold text-marca-700' => $categoria?->id === $cat->id,
-                   ])>
+                   ])
+                   @if ($categoria?->id === $cat->id) aria-current="page" @endif>
                     <span>{{ $cat->nombre }}</span>
                     @if ($contarFiltros)
                         <span class="shrink-0 tabular-nums text-xs text-tinta-400">@numero($cat->productos_count)</span>

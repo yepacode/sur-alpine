@@ -83,13 +83,39 @@ class CanonicalDelCatalogoTest extends TestCase
      */
     public function test_el_ampersand_no_se_escapa_dos_veces(): void
     {
-        $html = $this->get('/repuestos?orden=z-a&page=2')->assertOk()->getContent();
+        // Antes este caso se probaba con `?orden=z-a&page=2`. Ya no sirve:
+        // `orden` salio de la lista de parametros que forman una direccion de
+        // verdad (ver el comentario de `catalogo.blade.php`), asi que ahora
+        // desaparece del canonical. Con `q` el canonical sigue llevando dos
+        // parametros y el `&` sigue estando, que es lo que esta prueba mira.
+        $html = $this->get('/repuestos?q=pieza&page=2')->assertOk()->getContent();
 
         $this->assertStringContainsString(
-            'rel="canonical" href="'.route('catalogo').'?orden=z-a&amp;page=2"',
+            'rel="canonical" href="'.route('catalogo').'?q=pieza&amp;page=2"',
             $html
         );
         $this->assertStringNotContainsString('&amp;amp;', $html);
+    }
+
+    /**
+     * Ordenar no crea una pagina nueva.
+     *
+     * `?orden=` entraba tal cual en el canonical, asi que `?orden=basura`
+     * respondia 200, `index,follow` y se declaraba a si misma la original:
+     * cualquiera podia sembrar `?orden=1`, `?orden=2`… y multiplicar el mismo
+     * listado sin limite. Y `?orden=a-z`, que es el valor por defecto del
+     * formulario, generaba un canonical distinto al de la URL limpia.
+     */
+    public function test_ordenar_no_fabrica_paginas_indexables(): void
+    {
+        foreach (['a-z', 'z-a', 'basura'] as $orden) {
+            $html = $this->get('/repuestos?orden='.$orden)->assertOk()->getContent();
+
+            $this->assertStringContainsString('content="noindex,follow"', $html,
+                "Con ?orden={$orden} el listado deberia ir noindex.");
+            $this->assertStringNotContainsString('orden='.$orden.'"', $html,
+                "El valor de ?orden={$orden} no puede acabar dentro del canonical.");
+        }
     }
 
     /** Lo mismo en el título, que es donde llevaba años sin verse. */

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class Producto extends Model
 {
@@ -95,19 +96,41 @@ class Producto extends Model
     /**
      * Sólo las fichas que mandan. Es el filtro del sitemap: publicar las dos
      * caras del duplicado es pedirle a Google que elija, y elige él.
+     *
+     * Ojo con el matiz que costó dos piezas: no basta con echar fuera todo el
+     * tipo de parte secundario. Los dos lados de un tipo repetido casi nunca
+     * traen el mismo inventario, y una pieza que sólo existe en el lado
+     * secundario NO tiene gemela: su ficha es la única que hay, se apunta a sí
+     * misma con su canonical —eso ya estaba bien— y dejarla fuera del sitemap
+     * la condena a no existir para nadie.
+     *
+     * Pasaba con «Retén Rueda Trasera ACCENT 1300 HYUNDAI» y su hermano de
+     * 1500: dos repuestos reales, con página viva, que ningún buscador iba a
+     * encontrar jamás. Así que la pregunta correcta no es «¿de qué tipo eres?»
+     * sino «¿existe tu gemela al otro lado?».
      */
     public function scopeCanonicos(Builder $query): Builder
     {
-        $secundarios = collect(TipoParte::principalesPorSlug());
+        $pares = TipoParte::paresSecundarioAPrincipal();
 
-        if ($secundarios->isEmpty()) {
+        if ($pares === []) {
             return $query;
         }
 
-        return $query->whereNotIn('tipo_parte_id', TipoParte::query()
-            ->whereIn('slug', $secundarios->keys())
-            ->whereNotIn('id', $secundarios->values())
-            ->pluck('id'));
+        return $query->where(function (Builder $q) use ($pares) {
+            $q->whereNotIn('tipo_parte_id', array_keys($pares));
+
+            foreach ($pares as $secundario => $principal) {
+                $q->orWhere(fn (Builder $lado) => $lado
+                    ->where('tipo_parte_id', $secundario)
+                    ->whereNotExists(fn ($sub) => $sub
+                        ->select(DB::raw(1))
+                        ->from('productos as gemela')
+                        ->where('gemela.tipo_parte_id', $principal)
+                        ->whereColumn('gemela.vehiculo_id', 'productos.vehiculo_id')
+                        ->whereColumn('gemela.nombre', 'productos.nombre')));
+            }
+        });
     }
 
     public function scopePublicados(Builder $query): Builder

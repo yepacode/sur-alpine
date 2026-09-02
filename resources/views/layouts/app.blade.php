@@ -40,8 +40,15 @@
     // el resultado era que TODOS los enlaces que un asesor manda por WhatsApp
     // llegaban pelados. La tarjeta ademas dice «sitio oficial», que es lo que
     // el cliente necesita frente a las copias que lo suplantan.
-    $imgBase = $seccion('og-imagen', url('/img/logo/og-sur-alpine.webp'));
-    $imgBaseEsLaNuestra = $imgBase === url('/img/logo/og-sur-alpine.webp');
+    //
+    // En JPG y no en WebP, aunque el resto del sitio sea WebP. WhatsApp y
+    // LinkedIn no pintan de forma fiable una miniatura WebP: la tarjeta llega
+    // igual de pelada que cuando no habia imagen. Y WhatsApp es justo el canal
+    // por el que este negocio manda los enlaces —el boton flotante del sitio
+    // es un `wa.me`—, asi que era el unico sitio donde el formato importaba
+    // mas que el peso. Son 63 KB y se piden una vez por enlace compartido.
+    $imgBase = $seccion('og-imagen', url('/img/logo/og-sur-alpine.jpg'));
+    $imgBaseEsLaNuestra = $imgBase === url('/img/logo/og-sur-alpine.jpg');
 
     $tituloFinal = $seo?->titulo ?: ($tituloBase.' · Importadora Sur Alpine');
     $descFinal = $seo?->descripcion ?: $descBase;

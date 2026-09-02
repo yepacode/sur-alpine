@@ -12,7 +12,7 @@
 > Distribuidora colombiana de repuestos y autopartes para vehículos livianos, con un único punto de atención en el Barrio Restrepo, Bogotá D.C., desde 1982. No venden por internet: el sitio es un catálogo por vehículo y el cliente pide cotización; un asesor humano responde por teléfono o WhatsApp.
 
 - {{ $anios }} años de operación (fundada en 1982)
-- Dirección: {{ $contacto->direccion() }}, Barrio Restrepo, {{ $contacto->ciudad() }}, Colombia
+- Dirección: {{ $contacto->direccion() }}, {{ $contacto->ciudad() }}
 - Teléfono PBX: {{ $contacto->pbx() }}
 - Celulares: {{ collect($contacto->celulares())->pluck('texto')->implode(' · ') }}
 - {{ $marcas }} marcas cubiertas, {{ number_format($referencias, 0, ',', '.') }} referencias en catálogo

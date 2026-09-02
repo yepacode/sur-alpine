@@ -290,8 +290,8 @@ class ConfiguracionPaginaController extends Controller
                 'textos' => [
                     ['clave' => 'catalogo.filtro.vehiculo', 'rotulo' => 'Rótulo «Tu vehículo»', 'tipo' => 'texto',
                      'valor' => 'Tu vehículo'],
-                    ['clave' => 'catalogo.filtro.parte', 'rotulo' => 'Rótulo «Filtrar por parte»', 'tipo' => 'texto',
-                     'valor' => 'Filtrar por parte'],
+                    ['clave' => 'catalogo.filtro.parte', 'rotulo' => 'Rótulo de la lista de categorías', 'tipo' => 'texto',
+                     'valor' => 'Categorías'],
                     ['clave' => 'catalogo.vacio.titulo', 'rotulo' => 'Sin resultados · título', 'tipo' => 'texto',
                      'valor' => 'No encontramos repuestos con esa búsqueda'],
                     ['clave' => 'catalogo.vacio.texto', 'rotulo' => 'Sin resultados · sugerencia', 'tipo' => 'parrafo',

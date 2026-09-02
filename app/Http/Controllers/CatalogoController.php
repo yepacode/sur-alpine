@@ -326,6 +326,26 @@ class CatalogoController extends Controller
             )
             : null;
 
+        // El numero de pagina, dentro del titulo y de la descripcion.
+        //
+        // Sin esto, las ~3.900 paginas de listado que tiene el catalogo
+        // —1.220 solo en `/repuestos`— salian TODAS con el mismo titulo y la
+        // misma descripcion. Cada una se declara original con su canonical y
+        // acto seguido se presenta como identica a las otras 1.219: Google se
+        // gasta el rastreo en distinguirlas en vez de en las 28.827 fichas,
+        // que son las que responden a «radiador rio 1500 kia».
+        //
+        // Va aqui y no en el `@section` de la vista porque la descripcion se
+        // arma con `$titulo` unas lineas mas arriba, y queremos el numero en
+        // las dos.
+        if (($pagina = $productos->currentPage()) > 1) {
+            $titulo .= ' (página '.$pagina.')';
+
+            if ($descripcion !== null) {
+                $descripcion = rtrim($descripcion, '.').'. Página '.$pagina.'.';
+            }
+        }
+
         return view('catalogo', [
             'titulo' => $titulo,
             'descripcion' => $descripcion,

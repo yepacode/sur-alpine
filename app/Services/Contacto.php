@@ -48,7 +48,15 @@ class Contacto
     }
 
     /**
-     * La calle, sin ciudad: el dato estructurado las pide por separado.
+     * La calle y el barrio, sin ciudad: el dato estructurado las pide aparte.
+     *
+     * El barrio va DENTRO de este valor y ya no clavado en las vistas. Estaba
+     * pegado detras en la portada y en «Contactenos», y en produccion salia
+     * «Av. Caracas 19-21 sur, Barrio Restrepo, Barrio Restrepo.»: quien lleno
+     * el campo del panel escribio la direccion entera, que es lo que cualquiera
+     * haria viendo una casilla que dice «Direccion». Mismo error que el de los
+     * textos: la pantalla que edita tiene que ensenar lo que se publica, sin
+     * anadidos invisibles.
      *
      * Es «19-15», no «19-21». El sitio de la empresa se contradice a sí mismo
      * —su meta descripción dice 19-21— pero los dos sitios donde el dato se ve
@@ -59,7 +67,7 @@ class Contacto
      */
     public function direccion(): string
     {
-        return (string) Configuracion::valor('direccion', 'Av. Caracas #19-15 sur');
+        return (string) Configuracion::valor('direccion', 'Av. Caracas #19-15 sur, Barrio Restrepo');
     }
 
     public function ciudad(): string

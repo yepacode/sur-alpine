@@ -17,8 +17,22 @@
     // cliente contrató el sitio.
     //
     // `robots.txt` bloquea `orden`, pero eso tapa UN NOMBRE, no el eje: no
-    // cubre `utm_*`, `gclid`, `fbclid` ni nada que a alguien se le ocurra.
-    $paramsBuenos = ['page', 'orden', 'q'];
+    // cubre `utm_*`, `gclid`, `fbclid` ni nada que a alguien se le ocurra. Y
+    // encima ese `robots.txt` ni siquiera se estaba sirviendo: en el servidor
+    // hay un archivo de Hostinger tapandolo.
+    //
+    // `orden` NO esta en la lista a proposito, y antes si lo estaba. Al estar,
+    // se colaba tal cual en el canonical: `?orden=basura` respondia 200,
+    // `index,follow` y se declaraba a si misma original. Era una fabrica de
+    // URLs indexables —cualquiera siembra `?orden=1`, `?orden=2`…— y ademas
+    // `?orden=a-z`, que es el valor por defecto del formulario, generaba un
+    // canonical distinto al de la URL limpia: un duplicado autoinfligido.
+    //
+    // Fuera de la lista, un listado ordenado cae solo en la rama de
+    // `$paramsRaros`: `noindex,follow`. Que es lo correcto —ordenar no crea
+    // una pagina nueva, ensena la misma mercancia en otro orden— sin cortarle
+    // a Google el camino hacia las fichas, que es lo que si importa.
+    $paramsBuenos = ['page', 'q'];
     $paramsRaros = array_diff(array_keys(request()->query()), $paramsBuenos);
 @endphp
 
@@ -326,13 +340,34 @@
                          Aquí ocupan una línea, se desbordan en horizontal y no
                          mueven nada de sitio. --}}
                     @if ($categoria && $tiposParte->isNotEmpty())
-                        <div class="mb-5 flex snap-x gap-2 overflow-x-auto pb-2">
+                        <div class="mb-5 flex snap-x gap-2 overflow-x-auto pb-2"
+                             x-data
+                             {{-- Trae la pastilla marcada a la vista.
+
+                                  En Caja de Cambios son 39 pastillas y en Motor
+                                  Externo 38: si entras a una del final del
+                                  alfabeto, la marcada queda fuera de pantalla a la
+                                  derecha y la pagina parece no tener nada elegido.
+
+                                  `scrollLeft` y no `scrollIntoView`: lo segundo
+                                  tambien desplaza la pagina en vertical y te deja
+                                  el listado a media altura.
+
+                                  Y la cuenta va con `getBoundingClientRect`, no con
+                                  `offsetLeft`. `offsetLeft` se mide contra el ancestro
+                                  POSICIONADO mas cercano, y aqui no hay ninguno: sale
+                                  medido contra `body`, o sea con el ancho del lateral
+                                  sumado dentro. La fila se iba 300 px de mas y la
+                                  pastilla marcada quedaba igual de fuera de pantalla,
+                                  solo que por el otro lado. --}}
+                             x-init="$nextTick(() => { const marcada = $el.querySelector('[aria-current]'); if (marcada) $el.scrollLeft += marcada.getBoundingClientRect().left - $el.getBoundingClientRect().left - 16 })">
                             <a href="{{ route('categoria', $categoria) }}"
                                @class([
-                                   'shrink-0 snap-start rounded-full border px-4 py-2 text-sm transition',
+                                   'shrink-0 snap-start whitespace-nowrap rounded-full border px-4 py-2 text-sm transition',
                                    'border-marca-700 bg-marca-700 font-semibold text-white' => ! $tipoParte,
                                    'border-tinta-300 bg-white text-tinta-700 hover:border-marca-300' => (bool) $tipoParte,
-                               ])>
+                               ])
+                               @if (! $tipoParte) aria-current="page" @endif>
                                 Todo en {{ $categoria->nombre }}
                             </a>
 
@@ -343,7 +378,8 @@
                                        'shrink-0 snap-start whitespace-nowrap rounded-full border px-4 py-2 text-sm transition',
                                        'border-marca-700 bg-marca-700 font-semibold text-white' => $tipoParte?->id === $tipo->id,
                                        'border-tinta-300 bg-white text-tinta-700 hover:border-marca-300' => $tipoParte?->id !== $tipo->id,
-                                   ])>
+                                   ])
+                                   @if ($tipoParte?->id === $tipo->id) aria-current="page" @endif>
                                     {{ $tipo->nombre }}
                                     @if ($contarFiltros)
                                         <span class="ml-1 tabular-nums text-xs opacity-70">@numero($tipo->productos_count)</span>

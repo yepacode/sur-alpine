@@ -187,7 +187,7 @@
             <h2 class="text-[1.75rem] font-bold text-tinta-900 sm:text-[33.6px]">Oficinas</h2>
             <p class="mx-auto mt-4 max-w-[541px] text-base leading-relaxed text-tinta-900">
                 Nuestras oficinas están ubicadas en la
-                <strong>{{ $contacto->direccion() }}</strong>, Barrio Restrepo,
+                <strong>{{ $contacto->direccion() }}</strong>,
                 {{ $contacto->ciudad() }}. {{ contenido('contacto.oficinas.nota', 'Parqueadero vigilado.') }}
             </p>
             <a href="{{ $contacto->mapaUrl() }}" target="_blank" rel="noopener"

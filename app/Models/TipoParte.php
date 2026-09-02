@@ -75,6 +75,31 @@ class TipoParte extends Model
         });
     }
 
+    /**
+     * Los tipos que NO mandan, cada uno apuntando al que sí.
+     *
+     * `[idSecundario => idPrincipal]`. Es lo que hace falta para preguntar,
+     * pieza por pieza, si una ficha tiene de verdad su gemela al otro lado —
+     * que no siempre la tiene: «Retén Rueda Trasera» vive en Dirección con 45
+     * piezas y en Suspensión con 38, y dos de las de Suspensión no existen en
+     * Dirección.
+     */
+    public static function paresSecundarioAPrincipal(): array
+    {
+        $principales = static::principalesPorSlug();
+
+        if ($principales === []) {
+            return [];
+        }
+
+        return static::query()
+            ->whereIn('slug', array_keys($principales))
+            ->whereNotIn('id', array_values($principales))
+            ->pluck('slug', 'id')
+            ->map(fn (string $slug) => $principales[$slug])
+            ->all();
+    }
+
     /** ¿Esta fila es la que manda para su slug? (Si el slug no se repite, sí.) */
     public function esPrincipal(): bool
     {

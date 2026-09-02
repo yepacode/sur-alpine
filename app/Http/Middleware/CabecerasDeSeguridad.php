@@ -40,6 +40,26 @@ class CabecerasDeSeguridad
             'X-Content-Type-Options' => 'nosniff',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
             'Permissions-Policy' => 'geolocation=(), camera=(), microphone=()',
+            // Un año de «a este dominio se entra por HTTPS y punto».
+            //
+            // Es la cabecera que más importa en ESTE negocio. A Sur Alpine la
+            // están suplantando; sin HSTS, la primera visita de quien teclea
+            // «suralpine.com» sin `https://` viaja en claro hasta la
+            // redirección, y en una red hostil —el wifi de un taller, de un
+            // centro comercial— ese salto se intercepta y se le sirve una
+            // copia. Con HSTS el navegador ni lo intenta: va cifrado desde el
+            // primer carácter.
+            //
+            // Sin `preload` a propósito: eso se pide una vez y sacarse de la
+            // lista tarda meses. Se añade cuando el dominio definitivo lleve
+            // tiempo sirviendo HTTPS sin sobresaltos, no antes.
+            //
+            // Sólo sobre HTTPS: por norma el navegador ignora esta cabecera si
+            // llega en claro, y mandarla en el `http://localhost` del taller no
+            // aporta nada. Mejor no enviarla que enviarla muerta.
+            ...($request->secure()
+                ? ['Strict-Transport-Security' => 'max-age=31536000; includeSubDomains']
+                : []),
         ] as $cabecera => $valor) {
             // `setIfNone`: si Apache ya la puso desde el `.htaccess`, manda la
             // suya. Aquí sólo se rellena el hueco.
