@@ -67,7 +67,7 @@ class ConfiguracionPaginaController extends Controller
                     ['clave' => 'inicio.h1', 'rotulo' => 'Título de la página para Google', 'tipo' => 'texto',
                      'valor' => 'Importadora Sur Alpine · Repuestos y autopartes en Bogotá'],
                     ['clave' => 'buscador.titulo', 'rotulo' => 'Rótulo', 'tipo' => 'texto',
-                     'valor' => 'BUSCA POR TU VEHÍCULO'],
+                     'valor' => 'Busca por tu vehículo'],
                     ['clave' => 'buscador.subtitulo', 'rotulo' => 'Frase de apoyo', 'tipo' => 'texto',
                      'valor' => 'y te mostramos sólo lo que le sirve'],
                     ['clave' => 'buscador.boton', 'rotulo' => 'Botón principal', 'tipo' => 'boton',
@@ -186,18 +186,18 @@ class ConfiguracionPaginaController extends Controller
                 'subtitulo' => 'La página «Mi cotización» y su acuse de recibo.',
                 'textos' => [
                     ['clave' => 'cotizacion.titulo', 'rotulo' => 'Título de la página', 'tipo' => 'texto',
-                     'valor' => 'Tu cotización'],
+                     'valor' => 'Mi cotización'],
                     ['clave' => 'cotizacion.boton', 'rotulo' => 'Botón enviar', 'tipo' => 'boton',
-                     'valor' => 'Enviar cotización'],
+                     'valor' => 'Enviar mi solicitud'],
                     ['clave' => 'cotizacion.gracias', 'rotulo' => 'Mensaje de gracias', 'tipo' => 'parrafo',
-                     'valor' => 'Gracias por escribirnos. Un asesor te llamará pronto.'],
+                     'valor' => 'Recibimos tu solicitud'],
                 ],
             ],
             'acceso' => [
                 'titulo' => 'Iniciar sesión / Registro',
                 'subtitulo' => 'Las dos páginas del área del cliente.',
                 'textos' => [
-                    ['clave' => 'acceso.entrar.boton', 'rotulo' => 'Botón entrar', 'tipo' => 'boton', 'valor' => 'Entrar'],
+                    ['clave' => 'acceso.entrar.boton', 'rotulo' => 'Botón entrar', 'tipo' => 'boton', 'valor' => 'Iniciar sesión'],
                     ['clave' => 'registro.crear.boton', 'rotulo' => 'Botón crear cuenta', 'tipo' => 'boton',
                      'valor' => 'Crear mi cuenta'],
                     ['clave' => 'acceso.imagen', 'rotulo' => 'Foto del costado', 'tipo' => 'imagen',
@@ -234,8 +234,24 @@ class ConfiguracionPaginaController extends Controller
                 'textos' => [
                     ['clave' => 'quienes.imagen', 'rotulo' => 'Foto de la cabecera', 'tipo' => 'imagen',
                      'anchos' => [1024, 1600], 'valor' => '/img/cabeceras/banner-quienes-somos'],
+                    // El mismo párrafo que pinta la vista, palabra por palabra.
+                    //
+                    // Declararlo VACÍO fue lo que hizo desaparecer la historia
+                    // de la empresa de «Quiénes somos»: el panel escribía esa
+                    // cadena vacía en la base y el sitio la respetaba.
+                    //
+                    // La vista intercala la dirección del panel; aquí va la de
+                    // ahora, porque esto sólo alimenta la casilla mientras
+                    // nadie edite. Lo que se publica lo sigue armando la vista.
                     ['clave' => 'quienes.texto', 'rotulo' => 'El párrafo de la empresa', 'tipo' => 'parrafo',
-                     'valor' => ''],
+                     'valor' => 'Importadora Sur Alpine es una compañía fundada en el año 1982 con sede en la '
+                        .app(\App\Services\Contacto::class)->direccion().'. En su metodología siempre está presente '
+                        .'trabajar con esfuerzo, dedicación y responsabilidad, y fue gracias a esto que la compañía '
+                        .'está en constante transformación e innovación en sus procesos. Siempre buscando el mejor '
+                        .'servicio y calidad para sus clientes, entendiendo y creando nuevas líneas de negocio; un '
+                        .'ejemplo es el servicio a domicilio, puesto que movilizarse en la ciudad es cada vez más '
+                        .'difícil y toma más tiempo. También expandiéndose a nivel nacional, llegando a diferentes '
+                        .'municipios con repuestos de alta calidad.'],
                     ['clave' => 'quienes.aviso.titulo', 'rotulo' => 'Aviso de sitios falsos · título', 'tipo' => 'texto',
                      'valor' => 'Cuidado con los sitios falsos'],
                     ['clave' => 'quienes.aviso.texto', 'rotulo' => 'Aviso de sitios falsos · texto', 'tipo' => 'parrafo',
@@ -407,7 +423,22 @@ class ConfiguracionPaginaController extends Controller
                     'grupo' => $s['titulo'],
                     'rotulo' => $t['rotulo'],
                     'tipo' => $t['tipo'],
-                    'valor' => $t['valor'],
+                    // `valor` nace en NULO, y es importante: significa «nadie ha
+                    // tocado esto, manda lo que pinta la vista».
+                    //
+                    // Antes se escribía aquí el texto declarado más abajo en
+                    // `secciones()`, y eso convertía esa declaración en el
+                    // contenido REAL del sitio en cuanto alguien abría la
+                    // pantalla por primera vez. Si no coincidía con el texto de
+                    // la vista —y cinco no coincidían— la web cambiaba sola sin
+                    // que el dueño tocara nada. Con `quienes.texto`, declarado
+                    // como cadena vacía, la historia de la empresa desaparecía
+                    // de «Quiénes somos».
+                    //
+                    // El texto declarado se guarda sólo en `valor_ejemplo`, que
+                    // es lo que la casilla del panel enseña mientras nadie
+                    // edite. Una sola fuente de verdad: la vista.
+                    'valor' => null,
                     'valor_ejemplo' => $t['valor'],
                     'created_at' => now(),
                     'updated_at' => now(),

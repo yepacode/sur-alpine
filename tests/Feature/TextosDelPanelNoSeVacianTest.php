@@ -33,11 +33,22 @@ class TextosDelPanelNoSeVacianTest extends TestCase
         // hace una persona que entra a mirar y pulsa Guardar.
         $html = $this->entrarComo($admin)->get(route('panel.pagina'))->assertOk()->getContent();
 
-        preg_match_all('/name="textos\[(\d+)\]"(?:[^>]*value="([^"]*)")?/', $html, $coincidencias, PREG_SET_ORDER);
-
         $textos = [];
-        foreach ($coincidencias as $c) {
-            $textos[$c[1]] = $c[2] ?? '';
+
+        // Los `input` traen su contenido en `value`...
+        preg_match_all('/<input[^>]*name="textos\[(\d+)\]"[^>]*value="([^"]*)"/', $html, $entradas, PREG_SET_ORDER);
+
+        foreach ($entradas as $e) {
+            $textos[$e[1]] = html_entity_decode($e[2], ENT_QUOTES, 'UTF-8');
+        }
+
+        // ...y los `textarea` entre sus etiquetas. Leer sólo `value` mandaba
+        // vacíos todos los párrafos, que es justo lo que esta prueba busca
+        // detectar: hay que enviar lo mismo que enviaría un navegador.
+        preg_match_all('/<textarea[^>]*name="textos\[(\d+)\]"[^>]*>(.*?)<\/textarea>/s', $html, $areas, PREG_SET_ORDER);
+
+        foreach ($areas as $a) {
+            $textos[$a[1]] = html_entity_decode($a[2], ENT_QUOTES, 'UTF-8');
         }
 
         $this->assertNotEmpty($textos, 'La pantalla no trae ningún campo de texto.');
@@ -47,22 +58,37 @@ class TextosDelPanelNoSeVacianTest extends TestCase
         Cache::flush();
     }
 
-    public function test_guardar_sin_tocar_nada_no_borra_los_textos(): void
+    /**
+     * La comprobación de fondo: el SITIO tiene que quedar byte a byte igual.
+     *
+     * Se compara el HTML antes y después, no lo que devuelve el helper con un
+     * valor por defecto inventado aquí: eso mediría la prueba, no la web.
+     */
+    public function test_guardar_sin_tocar_nada_deja_el_sitio_igual(): void
     {
-        // Se abre una vez para que existan las filas y la caché quede al día.
-        $this->entrarComo($this->usuario(Rol::Admin))->get(route('panel.pagina'))->assertOk();
-        Cache::flush();
+        $paginas = ['/', route('acceso'), route('quienes-somos'), route('cotizacion.ver')];
 
-        $antes = [
-            'acceso.entrar.boton' => contenido('acceso.entrar.boton', 'Entrar'),
-            'buscador.boton' => contenido('buscador.boton', 'Buscar'),
-        ];
+        $sinLoQueCambiaSolo = fn (string $html) => preg_replace(
+            ['/name="_token" value="[^"]*"/', '/<script[^>]*>.*?<\/script>/s'],
+            '',
+            $html
+        );
+
+        $antes = [];
+        foreach ($paginas as $url) {
+            $antes[$url] = $sinLoQueCambiaSolo($this->get($url)->assertOk()->getContent());
+        }
 
         $this->abrirYGuardar();
+        \Illuminate\Support\Facades\Auth::logout();
+        $this->flushSession();
 
-        foreach ($antes as $clave => $valor) {
-            $this->assertSame($valor, contenido($clave, 'DEFECTO'), "El texto «{$clave}» se perdió al guardar.");
-            $this->assertNotSame('', contenido($clave, 'DEFECTO'), "El texto «{$clave}» quedó en blanco.");
+        foreach ($paginas as $url) {
+            $this->assertSame(
+                $antes[$url],
+                $sinLoQueCambiaSolo($this->get($url)->assertOk()->getContent()),
+                "Guardar «Textos e imágenes» sin tocar nada cambió {$url}."
+            );
         }
     }
 
