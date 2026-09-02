@@ -33,63 +33,77 @@
 
 <h2 class="mt-8 font-titulo text-xs font-bold uppercase tracking-[0.16em] text-tinta-500">{{ contenido('catalogo.filtro.parte', 'Filtrar por parte') }}</h2>
 
-@if ($tiposParte->isNotEmpty())
-    <p class="mt-3 text-sm">
-        <a href="{{ route('categoria', $categoria) }}"
-           class="font-medium text-marca-700 hover:underline">← Todo en {{ $categoria->nombre }}</a>
+{{-- Las categorías, SIEMPRE.
+     Antes, al entrar en una categoría la lista se reemplazaba por sus tipos de
+     parte y el único enlace hacia arriba era «← Todo en Frenos», que lleva a la
+     propia categoría en la que ya estás. Desde ahí no había forma de saltar a
+     otra: para pasar de Frenos a Suspensión tocaba volver al catálogo a mano.
+     Lo dijo el cliente y tiene razón.
+
+     Ahora la lista de las doce se queda fija, la activa se marca, y sus tipos
+     de parte se despliegan debajo de ella. Es un solo árbol: siempre se ve
+     dónde estás y a dónde puedes ir. --}}
+<ul class="mt-3 space-y-1 text-sm">
+    @foreach ($categorias as $cat)
+        @php $activa = $categoria?->id === $cat->id; @endphp
+        <li>
+            {{-- Sin piezas no es un enlace: decir «0» y dejarlo clicable manda
+                 a alguien a una página vacía. --}}
+            @if ($contarFiltros && (int) $cat->productos_count === 0)
+                <span class="flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 text-tinta-400"
+                      title="No manejamos piezas de este sistema para el vehículo seleccionado">
+                    <span>{{ $cat->nombre }}</span>
+                    <span class="shrink-0 text-xs">—</span>
+                </span>
+            @else
+                <a href="{{ route('categoria', $cat) }}"
+                   @class([
+                       'flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-tinta-100',
+                       'bg-marca-50 font-semibold text-marca-700' => $activa,
+                   ])>
+                    <span>{{ $cat->nombre }}</span>
+                    @if ($contarFiltros)
+                        <span class="shrink-0 tabular-nums text-xs text-tinta-400">@numero($cat->productos_count)</span>
+                    @endif
+                </a>
+            @endif
+
+            {{-- Los tipos de la categoría abierta, colgando de ella. --}}
+            @if ($activa && $tiposParte->isNotEmpty())
+                <ul class="mb-2 ml-3 mt-1 max-h-80 space-y-0.5 overflow-y-auto border-l border-tinta-200 pl-2 pr-1">
+                    @foreach ($tiposParte as $tipo)
+                        <li>
+                            @if ((int) $tipo->productos_count === 0)
+                                <span class="flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 text-tinta-400"
+                                      title="No manejamos esta pieza para el vehículo seleccionado">
+                                    <span>{{ $tipo->nombre }}</span>
+                                    <span class="shrink-0 text-xs">—</span>
+                                </span>
+                            @else
+                                <a href="{{ route('tipo-parte', [$cat, $tipo]) }}"
+                                   @class([
+                                       'flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-tinta-100',
+                                       'bg-marca-100 font-semibold text-marca-800' => $tipoParte?->id === $tipo->id,
+                                   ])>
+                                    <span>{{ $tipo->nombre }}</span>
+                                    @if ($contarFiltros)
+                                        <span class="shrink-0 tabular-nums text-xs text-tinta-400">@numero($tipo->productos_count)</span>
+                                    @endif
+                                </a>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </li>
+    @endforeach
+</ul>
+
+{{-- La salida al catálogo entero, siempre a la vista. --}}
+@if ($categoria || $tipoParte)
+    <p class="mt-3 border-t border-tinta-200 pt-3 text-sm">
+        <a href="{{ route('catalogo') }}" class="font-medium text-marca-700 underline-offset-2 hover:underline">
+            ← Ver todos los repuestos
+        </a>
     </p>
-    <ul class="mt-2 max-h-[28rem] space-y-1 overflow-y-auto pr-2 text-sm">
-        @foreach ($tiposParte as $tipo)
-            <li>
-                {{-- Sin resultados no es un enlace: decir "0" y dejarlo clicable
-                     manda al usuario a una página vacía. --}}
-                @if ((int) $tipo->productos_count === 0)
-                    <span class="flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 text-tinta-400"
-                          title="No manejamos esta pieza para el vehículo seleccionado">
-                        <span>{{ $tipo->nombre }}</span>
-                        <span class="shrink-0 text-xs">—</span>
-                    </span>
-                @else
-                    <a href="{{ route('tipo-parte', [$categoria, $tipo]) }}"
-                       @class([
-                           'flex items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-tinta-100',
-                           'bg-marca-50 font-semibold text-marca-700' => $tipoParte?->id === $tipo->id,
-                       ])>
-                        <span>{{ $tipo->nombre }}</span>
-                        @if ($contarFiltros)
-                            <span class="shrink-0 tabular-nums text-xs text-tinta-400">@numero($tipo->productos_count)</span>
-                        @endif
-                    </a>
-                @endif
-            </li>
-        @endforeach
-    </ul>
-@else
-    <ul class="mt-3 space-y-1 text-sm">
-        @foreach ($categorias as $cat)
-            <li>
-                {{-- El mismo guardián que la lista de arriba, que
-                     aquí faltaba: con un vehículo puesto, «Transmisión 0»
-                     seguía siendo un enlace vivo hacia una página
-                     que dice «0 repuestos en el catálogo» —falso,
-                     el catálogo tiene 29.272— y cuya única salida
-                     volvía al mismo listado filtrado. --}}
-                @if ($contarFiltros && (int) $cat->productos_count === 0)
-                    <span class="flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 text-tinta-400"
-                          title="No manejamos piezas de este sistema para el vehículo seleccionado">
-                        <span>{{ $cat->nombre }}</span>
-                        <span class="shrink-0 text-xs">—</span>
-                    </span>
-                @else
-                    <a href="{{ route('categoria', $cat) }}"
-                       class="flex min-h-11 items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-tinta-100">
-                        <span>{{ $cat->nombre }}</span>
-                        @if ($contarFiltros)
-                            <span class="shrink-0 tabular-nums text-xs text-tinta-400">@numero($cat->productos_count)</span>
-                        @endif
-                    </a>
-                @endif
-            </li>
-        @endforeach
-    </ul>
 @endif

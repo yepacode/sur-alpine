@@ -32,7 +32,18 @@
         </div>
     </section>
 
+    {{-- El documento que el cliente escriba en el panel MANDA sobre el de
+         fábrica. Es un texto que redacta un abogado y que cambia sin
+         avisar: tenerlo clavado en el código obligaba a llamarnos para
+         cambiarle una coma. Si la caja del panel está vacía, se sigue
+         mostrando el de abajo, que es el que hay hoy. --}}
+    @php $cuerpoDelPanel = trim(contenido('politica.cuerpo', '')); @endphp
+
     <article class="mx-auto max-w-3xl px-4 py-14 prose prose-slate prose-headings:font-titulo prose-headings:text-tinta-900 prose-a:text-marca-700">
+        @if ($cuerpoDelPanel !== '')
+            {!! documento_legal($cuerpoDelPanel) !!}
+        @else
+
 
         <p class="lead">
             {{ $r['razon_social'] }} (NIT {{ $r['nit'] }}), en cumplimiento de la
@@ -119,5 +130,6 @@
             {{ $r['direccion'] }} — {{ $r['telefono'] }} —
             <a href="mailto:{{ $r['correo'] }}">{{ $r['correo'] }}</a>.
         </p>
+            @endif
     </article>
 @endsection

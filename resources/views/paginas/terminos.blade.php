@@ -44,7 +44,16 @@
     </section>
 
     <div class="contenedor px-[3vw] py-12">
+        {{-- El documento que el cliente escriba en el panel MANDA sobre el de
+             fábrica. Es un texto que redacta un abogado y que cambia sin
+             avisar: tenerlo clavado en el código obligaba a llamarnos para
+             cambiarle una coma. Vacío, se sigue mostrando el de abajo. --}}
+        @php $cuerpoDelPanel = trim(contenido('terminos.cuerpo', '')); @endphp
+
         <div class="mx-auto max-w-3xl space-y-5 text-base leading-relaxed text-tinta-700">
+            @if ($cuerpoDelPanel !== '')
+                {!! documento_legal($cuerpoDelPanel) !!}
+            @else
             <p>INDUSTRIA COLOMBIANA DE AUTOPARTES S.</p>
             <p>A. (En adelante “SURALPINE”) ha abierto este sitio www.suralpine.com en Internet (En adelante el “Sitio”) para el acceso y la utilización de diversos servicios y contenidos (En adelante el “contenido”) puestos a disposición de los usuarios del Sitio (En adelante “Usuarios”) por SURALPINE o por terceros usuarios del Sitio y/o terceros proveedores de servicios y contenidos (en adelante, los “Servicios”).</p>
             <p>El derecho para utilizar este Sitio y su contenido está garantizado si usted acepta cumplir los Términos y Condiciones de Uso (en adelante, los “Términos y Condiciones”) e igualmente todos los avisos, reglamentos de uso e instrucciones puestos en conocimiento del Usuario por el Sitio, que completan lo previsto en estos Términos y Condiciones en cuanto no se opongan a ellas.</p>
@@ -93,6 +102,7 @@
             <p>Estos Términos y Condiciones de Uso se rigen por las leyes colombianas y el Usuario renuncia de forma expresa a cualquier otro fuero, se someten al de los Juzgados y Tribunales de la ciudad de Medellín. Todas las disputas que resulten del presente Contrato se someterán exclusivamente a la jurisdicción de los Tribunales Superiores del Estado Colombiano (según se permita por ley) y cada parte acuerda no impugnar la jurisdicción personal de dichos tribunales. Sin perjuicio de lo indicado anteriormente, SURALPINE tendrá derecho a interponer y comenzar cualquier acción legal o equitativa o procedimiento ante cualquier tribunal competente que no sea Colombiano para obtener medidas cautelares o cualquier otra medida en el caso de que, en opinión de SURALPINE, dicha acción sea necesaria o deseable.</p>
             <p>Ninguna acción de SURALPINE, que no sea una renuncia o modificación expresa por escrito, puede ser interpretada como una renuncia o modificación de cualquiera de los presentes Términos y Condiciones de Uso, o Política de Privacidad. En el caso de que cualquier cláusula de los presentes Términos y Condiciones de Uso o Política de Privacidad no fuera aplicable, esto no afectará, donde sea posible, cualquier otra cláusula y cada una permanecerá plenamente vigente y con efecto.</p>
             <p>El Usuario acepta que no existe ninguna relación de colaboración empresarial, asociación, vínculo laboral o de mediación con SURALPINE como resultado del uso de su portal y de los demás servicios asociados</p>
+            @endif
         </div>
 
         <p class="mx-auto mt-10 max-w-3xl text-sm text-tinta-500">

@@ -118,15 +118,49 @@
                                                     </p>
                                                 </div>
                                             </div>
-                                        @elseif ($fila->tipo === 'parrafo')
+                                        @else
+                                        @php
+                                            // Lo que se VE en la web, no lo que hay guardado.
+                                            //
+                                            // Un texto que nadie ha tocado tiene `valor = null`: la web
+                                            // muestra el de fábrica y esta casilla salía VACÍA. Al pulsar
+                                            // Guardar, esa casilla vacía se guardaba como «borrado a
+                                            // propósito» y el texto desaparecía del sitio. O sea que
+                                            // abrir esta pantalla y guardar sin tocar nada vaciaba de
+                                            // golpe todos los textos nunca editados. Pasó de verdad: se
+                                            // quedaron sin rótulo el botón de «Iniciar sesión» y el de
+                                            // BUSCAR del selector de vehículo, entre otros.
+                                            //
+                                            // Con el valor efectivo dentro, lo que se ve aquí es lo que
+                                            // hay en la web, guardar sin tocar nada no cambia nada, y
+                                            // vaciar una casilla vuelve a significar lo que debe:
+                                            // «quiero que esto no salga».
+                                            $enPantalla = $fila->valor ?? $fila->valor_ejemplo;
+                                        @endphp
+
+                                            @if ($fila->tipo === 'documento')
+                                                {{-- Un documento entero, no un rótulo: caja grande y sin
+                                                     el tope de 200 caracteres. Se pega el texto del
+                                                     abogado tal cual. --}}
+                                                <textarea id="t-{{ $fila->id }}" name="textos[{{ $fila->id }}]"
+                                                          rows="18"
+                                                          class="w-full rounded-lg border border-tinta-300 px-3 py-2 font-mono text-xs leading-relaxed">{{ $enPantalla }}</textarea>
+                                                <p class="mt-1 text-xs text-tinta-500">
+                                                    Una línea en blanco separa párrafos. Una línea que empiece con
+                                                    <code class="rounded bg-tinta-100 px-1">##</code> es un subtítulo,
+                                                    y una que empiece con <code class="rounded bg-tinta-100 px-1">-</code>
+                                                    es un punto de lista. Si lo dejas vacío, se muestra el texto que trae el sitio.
+                                                </p>
+                                            @elseif ($fila->tipo === 'parrafo')
                                             <textarea id="t-{{ $fila->id }}" name="textos[{{ $fila->id }}]"
                                                       rows="2" maxlength="500"
-                                                      class="w-full rounded-lg border border-tinta-300 px-3 py-2 text-sm">{{ $fila->valor }}</textarea>
+                                                      class="w-full rounded-lg border border-tinta-300 px-3 py-2 text-sm">{{ $enPantalla }}</textarea>
                                         @else
                                             <input id="t-{{ $fila->id }}" type="text"
                                                    name="textos[{{ $fila->id }}]"
-                                                   value="{{ $fila->valor }}" maxlength="200"
+                                                   value="{{ $enPantalla }}" maxlength="200"
                                                    class="w-full rounded-lg border border-tinta-300 px-3 py-2 text-sm">
+                                            @endif
                                         @endif
                                     </div>
                                 </div>

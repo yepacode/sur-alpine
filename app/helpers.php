@@ -97,3 +97,89 @@ if (! function_exists('version_habeas')) {
         return $delPanel !== '' ? $delPanel : (string) config('habeas.version');
     }
 }
+
+if (! function_exists('documento_legal')) {
+    /**
+     * Un documento legal escrito desde el panel, convertido a HTML seguro.
+     *
+     * La política de datos y los términos son textos que redacta un abogado y
+     * que cambian sin avisar. Estaban clavados en el blade: para tocarles una
+     * coma había que llamarnos. El cliente lo pidió y tiene razón.
+     *
+     * NO se acepta HTML: se escapa todo y después se reconstruye una
+     * estructura mínima, la que un documento legal necesita de verdad.
+     *
+     *   · una línea que empieza con `## ` es un subtítulo;
+     *   · una línea en blanco separa párrafos;
+     *   · una línea que empieza con `- ` es un punto de lista.
+     *
+     * Escapar primero y dar forma después es lo que impide que alguien —o algo
+     * pegado desde un Word— meta un `<script>` en una página pública.
+     */
+    function documento_legal(string $texto): string
+    {
+        $lineas = preg_split('/\R/', trim($texto));
+        $html = [];
+        $parrafo = [];
+        $lista = [];
+
+        $volcarParrafo = function () use (&$html, &$parrafo) {
+            if ($parrafo !== []) {
+                // Los saltos sueltos dentro de un parrafo se respetan: en un
+                // documento legal a veces separan incisos.
+                $html[] = '<p class="mt-3 leading-relaxed text-tinta-700">'
+                    .implode('<br>', array_map('e', $parrafo)).'</p>';
+                $parrafo = [];
+            }
+        };
+
+        $volcarLista = function () use (&$html, &$lista) {
+            if ($lista !== []) {
+                $html[] = '<ul class="mt-3 list-disc space-y-1 pl-6 text-tinta-700">';
+
+                foreach ($lista as $punto) {
+                    $html[] = '<li>'.e($punto).'</li>';
+                }
+
+                $html[] = '</ul>';
+                $lista = [];
+            }
+        };
+
+        foreach ($lineas as $linea) {
+            $linea = trim($linea);
+
+            if ($linea === '') {
+                $volcarParrafo();
+                $volcarLista();
+
+                continue;
+            }
+
+            if (str_starts_with($linea, '## ')) {
+                $volcarParrafo();
+                $volcarLista();
+                $html[] = '<h2 class="mt-8 font-titulo text-lg font-bold text-tinta-900">'
+                    .e(mb_substr($linea, 3)).'</h2>';
+
+                continue;
+            }
+
+            if (str_starts_with($linea, '- ')) {
+                $volcarParrafo();
+                $lista[] = mb_substr($linea, 2);
+
+                continue;
+            }
+
+            $volcarLista();
+            $parrafo[] = $linea;
+        }
+
+        $volcarParrafo();
+        $volcarLista();
+
+        return implode("
+", $html);
+    }
+}

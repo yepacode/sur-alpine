@@ -23,8 +23,16 @@
          en su sitio. El hero oscuro que había aquí se retiró a pedido suyo: sus
          clientes reconocen la página actual y un cambio fuerte les hace dudar de
          si están en la oficial. --}}
+    {{-- A todo el ancho de la ventana, no dentro del contenedor.
+         El cliente lo comparó con su web actual y tenía razón: allá el banner
+         mide 630 px de alto y aquí medía 442. La causa no es el arte —sus
+         archivos son 2560x853, la misma proporción que los nuestros— sino que
+         el contenedor lo encajonaba en 1.354 px. A todo ancho, una pantalla de
+         1920 lo pinta a 625 px de alto, que es lo que él está acostumbrado a
+         ver, y sin recortar ni deformar la imagen que el proveedor paga por
+         publicar. --}}
     @if ($banners)
-        <div class="contenedor pt-5">
+        <div class="pt-5">
             <x-banner-carrusel :banners="$banners" />
         </div>
     @endif

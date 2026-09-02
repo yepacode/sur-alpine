@@ -300,22 +300,29 @@ class ConfiguracionPaginaController extends Controller
                 // legal que redacta el abogado, y una caja de texto invita a
                 // retocarlo de a pedazos. Lo que sí cambia cada vez que lo
                 // reemplazan es la versión y desde cuándo rige.
-                'subtitulo' => 'El cuerpo lo redacta el abogado; aquí van la versión y la fecha. '
+                'subtitulo' => 'El documento completo, la versión y la fecha. '
                     .'Subir la versión hace que todo el mundo vuelva a aceptar la política.',
                 'textos' => [
                     ['clave' => 'politica.version', 'rotulo' => 'Versión del documento', 'tipo' => 'texto',
                      'valor' => (string) config('habeas.version')],
                     ['clave' => 'politica.vigencia', 'rotulo' => 'Vigente desde (aaaa-mm-dd)', 'tipo' => 'texto',
                      'valor' => (string) config('habeas.vigente_desde')],
+                    // El cuerpo, editable. Estaba clavado en el código: para
+                    // cambiarle una coma a un documento que redacta un abogado
+                    // había que llamarnos. Vacío, se usa el texto de fábrica.
+                    ['clave' => 'politica.cuerpo', 'rotulo' => 'Texto completo de la política', 'tipo' => 'documento',
+                     'valor' => ''],
                 ],
                 'seo' => ['ruta' => 'politica-datos', 'etiqueta' => 'Política de tratamiento de datos'],
             ],
             'terminos' => [
                 'titulo' => 'Términos y condiciones',
-                'subtitulo' => 'La otra página legal del pie. El cuerpo lo redacta el abogado.',
+                'subtitulo' => 'La otra página legal del pie, con su documento completo.',
                 'textos' => [
                     ['clave' => 'terminos.vigencia', 'rotulo' => 'Última actualización (aaaa-mm-dd)', 'tipo' => 'texto',
                      'valor' => (string) config('habeas.vigente_desde')],
+                    ['clave' => 'terminos.cuerpo', 'rotulo' => 'Texto completo de los términos', 'tipo' => 'documento',
+                     'valor' => ''],
                 ],
                 'seo' => ['ruta' => 'terminos', 'etiqueta' => 'Términos y condiciones'],
             ],
