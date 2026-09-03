@@ -36,7 +36,10 @@
 
     <section class="relative overflow-hidden bg-marca-800">
         <div class="contenedor px-[3vw] py-14 sm:py-16">
-            <p class="text-xs font-bold uppercase tracking-[0.18em] text-marca-200">Legales</p>
+            @php $antetitulo = contenido('terminos.antetitulo', 'Legales'); @endphp
+            @if ($antetitulo !== '')
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-marca-200">{{ $antetitulo }}</p>
+            @endif
             <h1 class="mt-3 max-w-3xl text-[1.85rem] font-extrabold leading-[1.1] text-white sm:text-[2.5rem]">
                 Términos y condiciones de uso
             </h1>

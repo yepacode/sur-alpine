@@ -21,7 +21,10 @@
     <section class="relative overflow-hidden bg-tinta-900">
         <div class="absolute inset-0 bg-gradient-to-br from-marca-900 via-tinta-900 to-noche" aria-hidden="true"></div>
         <div class="relative mx-auto max-w-3xl px-4 py-14 sm:py-20">
-            <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-marca-300">Habeas Data</p>
+            @php $antetitulo = contenido('politica.antetitulo', 'Habeas Data'); @endphp
+            @if ($antetitulo !== '')
+                <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-marca-300">{{ $antetitulo }}</p>
+            @endif
             <h1 class="mt-3 text-[1.85rem] font-extrabold leading-[1.05] text-white text-balance sm:text-[2.75rem]">
                 Política de tratamiento<br>
                 <span class="text-marca-300">de datos personales</span>

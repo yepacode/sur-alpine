@@ -151,6 +151,30 @@
 @endpush
 
 @section('contenido')
+    {{-- Pide el carro nada mas entrar, si nadie lo eligio todavia.
+
+         Peticion expresa del cliente: «que pida para que carro esta cotizando
+         al momento de buscar un repuesto o entrar a una categoria».
+
+         Se abre el modal automaticamente, no se bloquea la pagina. Google
+         nunca rellena un modal —el catalogo tiene que seguir indexable— y un
+         enlace compartido por WhatsApp de una ficha tiene que abrir. La
+         persona puede cerrar el modal y ver el catalogo entero; pero le
+         llega la pregunta apenas aterriza.
+
+         El «una vez por sesion» se guarda en `localStorage`, NO en la sesion
+         de PHP. La sesion se guarda en la respuesta, asi que la PRIMERA
+         peticion ya sale marcada como «ya se pregunto» y el modal no salta
+         nunca por primera vez. Con `localStorage` el estado vive donde tiene
+         que vivir: en el navegador de esa persona. --}}
+    @if (! ($vehiculoActivo ?? null))
+        <div x-data
+             x-init="if (! localStorage.getItem('pregunta-carro-mostrada')) {
+                         localStorage.setItem('pregunta-carro-mostrada', '1');
+                         setTimeout(() => $dispatch('abrir-buscador'), 300);
+                     }"></div>
+    @endif
+
     <div class="contenedor py-8">
 
         <nav aria-label="Migas de pan" class="mb-6 text-sm text-tinta-500">

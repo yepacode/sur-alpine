@@ -18,7 +18,7 @@
         </form>
     @else
         <p class="text-sm text-tinta-600">
-            Elige tu carro y te mostramos sólo las piezas que le sirven.
+            {{ contenido('catalogo.pide_vehiculo', 'Elige tu carro y te mostramos sólo las piezas que le sirven.') }}
         </p>
         {{-- Abre el buscador aquí mismo, sin sacar a nadie de donde está.
              Antes llevaba a la portada: quien estaba mirando frenos perdía la

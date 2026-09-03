@@ -128,8 +128,14 @@ class ConfiguracionPaginaController extends Controller
                      'valor' => 'Registrar ahora'],
                     ['clave' => 'servicios.historial.boton_dentro', 'rotulo' => 'Botón (con sesión)', 'tipo' => 'boton',
                      'valor' => 'Ver mi historial'],
-                    ['clave' => 'servicios.historial.imagen', 'rotulo' => 'Foto de la tarjeta', 'tipo' => 'imagen',
+                    ['clave' => 'servicios.historial.imagen', 'rotulo' => 'Foto de la tarjeta roja', 'tipo' => 'imagen',
                      'anchos' => [520, 900], 'valor' => '/img/promo/senor'],
+                    // El medio de la tarjeta azul: acepta VIDEO (mp4/webm/mov) o FOTO. Sin nada,
+                    // sigue el `envios.mp4` del sitio de siempre.
+                    ['clave' => 'servicios.envios.medio', 'rotulo' => 'Video o foto de «Envíos a ciudades y municipios»', 'tipo' => 'imagen',
+                     'valor' => '/video/envios.mp4'],
+                    ['clave' => 'servicios.envios.alt', 'rotulo' => 'Descripción alternativa (para lectores de pantalla)', 'tipo' => 'texto',
+                     'valor' => 'Envíos a ciudades y municipios del país'],
                 ],
             ],
             'ubicacion' => [
@@ -292,6 +298,8 @@ class ConfiguracionPaginaController extends Controller
                      'valor' => 'Tu vehículo'],
                     ['clave' => 'catalogo.filtro.parte', 'rotulo' => 'Rótulo de la lista de categorías', 'tipo' => 'texto',
                      'valor' => 'Categorías'],
+                    ['clave' => 'catalogo.pide_vehiculo', 'rotulo' => 'Frase «elige tu carro» del lateral y del modal', 'tipo' => 'texto',
+                     'valor' => 'Elige tu carro y te mostramos sólo las piezas que le sirven.'],
                     ['clave' => 'catalogo.vacio.titulo', 'rotulo' => 'Sin resultados · título', 'tipo' => 'texto',
                      'valor' => 'No encontramos repuestos con esa búsqueda'],
                     ['clave' => 'catalogo.vacio.texto', 'rotulo' => 'Sin resultados · sugerencia', 'tipo' => 'parrafo',
@@ -319,6 +327,8 @@ class ConfiguracionPaginaController extends Controller
                 'subtitulo' => 'El documento completo, la versión y la fecha. '
                     .'Subir la versión hace que todo el mundo vuelva a aceptar la política.',
                 'textos' => [
+                    ['clave' => 'politica.antetitulo', 'rotulo' => 'Rótulo pequeño encima del título', 'tipo' => 'texto',
+                     'valor' => 'Habeas Data'],
                     ['clave' => 'politica.version', 'rotulo' => 'Versión del documento', 'tipo' => 'texto',
                      'valor' => (string) config('habeas.version')],
                     ['clave' => 'politica.vigencia', 'rotulo' => 'Vigente desde (aaaa-mm-dd)', 'tipo' => 'texto',
@@ -335,6 +345,8 @@ class ConfiguracionPaginaController extends Controller
                 'titulo' => 'Términos y condiciones',
                 'subtitulo' => 'La otra página legal del pie, con su documento completo.',
                 'textos' => [
+                    ['clave' => 'terminos.antetitulo', 'rotulo' => 'Rótulo pequeño encima del título', 'tipo' => 'texto',
+                     'valor' => 'Legales'],
                     ['clave' => 'terminos.vigencia', 'rotulo' => 'Última actualización (aaaa-mm-dd)', 'tipo' => 'texto',
                      'valor' => (string) config('habeas.vigente_desde')],
                     ['clave' => 'terminos.cuerpo', 'rotulo' => 'Texto completo de los términos', 'tipo' => 'documento',

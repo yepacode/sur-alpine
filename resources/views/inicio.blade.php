@@ -169,7 +169,16 @@
             {{-- Historial de mantenimientos --}}
             <div class="flex min-w-[300px] flex-1 basis-[45%]">
                 <div class="flex w-full min-h-[211px] flex-col overflow-hidden rounded-[10px] bg-alerta-500 text-white sm:flex-row">
-                    <div class="min-h-[180px] shrink-0 bg-[image:var(--foto-servicios)]" style="--foto-servicios: url('{{ imagen_contenido('servicios.historial.imagen', '/img/promo/senor') }}-520.webp') bg-contain bg-bottom bg-no-repeat sm:min-h-[211px] sm:basis-[40%]"></div>
+                    {{-- La foto quedaba INVISIBLE.
+
+                         Cuatro clases de Tailwind se colaron dentro del `style`
+                         del div: `bg-contain`, `bg-bottom`, `bg-no-repeat` y
+                         `sm:basis-[40%]`. Un atributo `style` es CSS puro, no
+                         Tailwind, asi que la propiedad `background-image` que
+                         alli se construia era invalida y el navegador la
+                         tiraba. La foto existia (200) y no se veia. --}}
+                    <div class="min-h-[180px] shrink-0 bg-contain bg-bottom bg-no-repeat sm:min-h-[211px] sm:basis-[40%]"
+                         style="background-image: url('{{ imagen_contenido('servicios.historial.imagen', '/img/promo/senor') }}-520.webp')"></div>
 
                     <div class="flex flex-1 flex-col justify-center p-6 sm:p-8">
                         <h3 class="text-2xl font-extrabold uppercase leading-[1.2] sm:text-[2rem]">
@@ -198,14 +207,25 @@
                 </div>
             </div>
 
-            {{-- Envíos a ciudades y municipios --}}
+            {{-- Envios a ciudades y municipios: video o foto, lo que suba el dueno.
+
+                 El campo del panel acepta las dos cosas. Si sube una foto, se pinta;
+                 si sube un video, se reproduce en bucle sin sonido; si no sube nada,
+                 vuelve al `envios.mp4` de siempre. --}}
             <div class="flex min-w-[300px] flex-1 basis-[45%]">
-                {{-- `muted` no es decorativo: sin él el navegador bloquea el
-                     autoplay y la tarjeta queda en negro. Y sin `controls`,
-                     porque no hay nada que escuchar ni que pausar. --}}
-                <video src="/video/envios.mp4" autoplay muted loop playsinline preload="metadata"
-                       aria-label="Envíos a ciudades y municipios del país"
-                       class="min-h-[211px] w-full rounded-[10px] bg-white object-cover"></video>
+                @php $envios = imagen_contenido('servicios.envios.medio', '/video/envios.mp4'); @endphp
+                @if (preg_match('/\.(mp4|webm|mov)$/i', $envios))
+                    {{-- `muted` no es decorativo: sin el, el navegador bloquea el
+                         autoplay y la tarjeta queda en negro. Y sin `controls`,
+                         porque no hay nada que escuchar ni que pausar. --}}
+                    <video src="{{ $envios }}" autoplay muted loop playsinline preload="metadata"
+                           aria-label="{{ contenido('servicios.envios.alt', 'Envíos a ciudades y municipios del país') }}"
+                           class="min-h-[211px] w-full rounded-[10px] bg-white object-cover"></video>
+                @else
+                    <img src="{{ $envios }}"
+                         alt="{{ contenido('servicios.envios.alt', 'Envíos a ciudades y municipios del país') }}"
+                         class="min-h-[211px] w-full rounded-[10px] bg-white object-cover">
+                @endif
             </div>
         </div>
     </section>
