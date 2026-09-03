@@ -110,6 +110,7 @@
             </div>
 
             <input type="hidden" name="vehiculo_id" :value="vehiculoId">
+            <input type="hidden" name="anio" :value="anio">
 
             {{-- El botón de arranque. Rojo de marca y a la misma altura que los
                  campos, para que la fila se lea como una sola pieza.

@@ -9,7 +9,7 @@
 <h2 class="font-titulo text-xs font-bold uppercase tracking-[0.16em] text-tinta-500">{{ contenido('catalogo.filtro.vehiculo', 'Tu vehículo') }}</h2>
 <div class="mt-3 rounded-2xl border border-tinta-200 bg-white p-5">
     @if ($vehiculoActivo ?? null)
-        <p class="text-sm font-semibold">{{ $vehiculoActivo->nombre_completo }}</p>
+        <p class="text-sm font-semibold">{{ $vehiculoActivo->nombreParaVisitante($vehiculoActivoAnio ?? null) }}</p>
         <form method="post" action="{{ route('vehiculo.olvidar') }}" class="mt-2">
             @csrf
             <button type="submit" class="text-sm font-medium text-marca-700 underline-offset-2 hover:underline">

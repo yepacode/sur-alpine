@@ -247,7 +247,7 @@
             <x-titulo-seccion :texto="contenido('inicio.destacados.titulo', 'Productos Destacados')" />
 
             @if ($vehiculoActivo ?? null)
-                <p class="mt-3 text-center text-tinta-500">para tu {{ $vehiculoActivo->nombre_completo }}</p>
+                <p class="mt-3 text-center text-tinta-500">para tu {{ $vehiculoActivo->nombreParaVisitante($vehiculoActivoAnio ?? null) }}</p>
             @endif
 
             <div class="contenedor mt-8 flex items-center justify-center gap-4 px-5">

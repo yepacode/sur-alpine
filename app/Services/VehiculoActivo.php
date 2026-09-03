@@ -14,6 +14,9 @@ class VehiculoActivo
 {
     private const LLAVE = 'vehiculo_activo';
 
+    /** Ano especifico que la persona eligio, si lo eligio. */
+    private const LLAVE_ANIO = 'vehiculo_activo_anio';
+
     /**
      * La memoria cuelga de la petición, no del servicio. Guardarla en el
      * servicio lo haría devolver un vehículo viejo si el contenedor sobrevive
@@ -26,6 +29,12 @@ class VehiculoActivo
      * que ya no existe. Devolverlo crudo dejaría el catálogo en cero sin que
      * nadie entienda por qué.
      */
+    public function anio(): ?int
+    {
+        $peticion = request();
+        return $peticion->hasSession() ? $peticion->session()->get(self::LLAVE_ANIO) : null;
+    }
+
     public function id(): ?int
     {
         return $this->get()?->id;
@@ -53,15 +62,20 @@ class VehiculoActivo
         return $vehiculo;
     }
 
-    public function guardar(Vehiculo $vehiculo): void
+    public function guardar(Vehiculo $vehiculo, ?int $anio = null): void
     {
         request()->session()->put(self::LLAVE, $vehiculo->id);
+        if ($anio !== null && $anio >= $vehiculo->anio_inicio && $anio <= $vehiculo->anio_fin) {
+            request()->session()->put(self::LLAVE_ANIO, $anio);
+        } else {
+            request()->session()->forget(self::LLAVE_ANIO);
+        }
         request()->attributes->set(self::MEMORIA, $vehiculo);
     }
 
     public function olvidar(): void
     {
-        request()->session()->forget(self::LLAVE);
+        request()->session()->forget([self::LLAVE, self::LLAVE_ANIO]);
         request()->attributes->set(self::MEMORIA, null);
     }
 

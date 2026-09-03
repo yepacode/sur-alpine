@@ -209,7 +209,7 @@
                      página contradecía el resultado, y «en el catálogo» hacía
                      pensar que Sur Alpine sólo tiene 184 piezas. --}}
                 <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">
-                    {{ $titulo }}@if ($vehiculoActivo ?? null) <span class="text-tinta-500">para tu {{ $vehiculoActivo->nombre_completo }}</span>@endif
+                    {{ $titulo }}@if ($vehiculoActivo ?? null) <span class="text-tinta-500">para tu {{ $vehiculoActivo->nombreParaVisitante($vehiculoActivoAnio ?? null) }}</span>@endif
                 </h1>
                 <p class="mt-1.5 text-base text-tinta-500">
                     <span class="tabular-nums">@numero($productos->total())</span>
@@ -282,7 +282,7 @@
                     <summary class="flex cursor-pointer items-center justify-between gap-2 rounded-xl border border-tinta-200 bg-white px-4 py-3 text-sm font-semibold text-tinta-800 marker:hidden [&::-webkit-details-marker]:hidden">
                         Filtrar
                         <span class="text-xs font-normal text-tinta-500">
-                            {{ $vehiculoActivo?->nombre_completo ?? ($tipoParte?->nombre ?? $categoria?->nombre ?? 'todo el catálogo') }}
+                            {{ $vehiculoActivo?->nombreParaVisitante($vehiculoActivoAnio ?? null) ?? ($tipoParte?->nombre ?? $categoria?->nombre ?? 'todo el catálogo') }}
                         </span>
                     </summary>
                     <div class="pt-4">
@@ -311,7 +311,7 @@
                     <div class="rounded-2xl border border-dashed border-tinta-300 bg-white p-10 text-center sm:p-12" data-revelar>
                         @if ($vehiculoActivo ?? null)
                             <p class="text-lg font-semibold">
-                                Para tu {{ $vehiculoActivo->nombre_completo }} no manejamos
+                                Para tu {{ $vehiculoActivo->nombreParaVisitante($vehiculoActivoAnio ?? null) }} no manejamos
                                 {{ $tipoParte?->nombre ?? $categoria?->nombre ?? 'esas piezas' }}
                             </p>
                             <p class="mt-2 text-sm text-tinta-500">

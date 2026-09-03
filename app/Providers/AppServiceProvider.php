@@ -77,7 +77,9 @@ class AppServiceProvider extends ServiceProvider
         // contacto van por el mismo camino: los edita el administrador desde el
         // panel y tienen que reflejarse en cabecera, pie y fichas por igual.
         View::composer('*', function ($view) {
-            $view->with('vehiculoActivo', app(VehiculoActivo::class)->get());
+            $activo = app(VehiculoActivo::class);
+            $view->with('vehiculoActivo', $activo->get());
+            $view->with('vehiculoActivoAnio', $activo->anio());
             $view->with('itemsCotizacion', app(Cotizador::class)->totalItems());
             $view->with('contacto', app(Contacto::class));
         });

@@ -30,9 +30,15 @@ class VehiculoController extends Controller
     {
         $datos = $request->validate([
             'vehiculo_id' => ['required', 'integer', 'exists:vehiculos,id'],
+            'anio' => ['nullable', 'integer', 'min:1970', 'max:2100'],
         ]);
 
-        $activo->guardar(Vehiculo::findOrFail($datos['vehiculo_id']));
+        // Guardamos tambien el ano exacto que eligio la persona, para poder
+        // decir «para tu FIAT 128 1500 (1976)» en vez de «(1976-1982)». Al
+        // cliente le daba miedo pensar que se le mostraban piezas de otros
+        // anos; el rango es el rango del vehiculo en la base, no una lista de
+        // anos que se filtran.
+        $activo->guardar(Vehiculo::findOrFail($datos['vehiculo_id']), $datos['anio'] ?? null);
 
         // Redirige al catálogo filtrado por el vehículo activo: el buscador
         // vive en la portada y con `back()` volvía justo ahí, así que el

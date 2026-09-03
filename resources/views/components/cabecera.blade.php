@@ -274,7 +274,7 @@
                         <path d="M18 6.5v7M14.5 10h7" stroke-linecap="round"/>
                     </svg>
                     <span class="max-w-44 truncate">
-                        {{ $vehiculoActivo->nombre_completo ?? contenido('menu.vehiculo', 'Agregar vehículo') }}
+                        {{ $vehiculoActivo?->nombreParaVisitante($vehiculoActivoAnio ?? null) ?? contenido('menu.vehiculo', 'Agregar vehículo') }}
                     </span>
                 </button>
             </div>
@@ -440,7 +440,7 @@
         <nav class="contenedor px-2 py-3" aria-label="Menú móvil">
             <button type="button" @click="abrirVehiculo()"
                     class="flex w-full items-center gap-2 rounded px-4 py-2.5 text-left text-base font-bold text-tinta-900 hover:bg-tinta-100">
-                {{ $vehiculoActivo->nombre_completo ?? contenido('menu.vehiculo', 'Agregar vehículo') }}
+                {{ $vehiculoActivo?->nombreParaVisitante($vehiculoActivoAnio ?? null) ?? contenido('menu.vehiculo', 'Agregar vehículo') }}
             </button>
             <a href="{{ route('catalogo') }}" class="block rounded px-4 py-2.5 text-base font-bold text-tinta-900 hover:bg-tinta-100">
                 {{ contenido('menu.catalogo', 'Productos') }}
@@ -484,7 +484,7 @@
         <div class="border-t border-tinta-200 bg-marca-50">
             <div class="contenedor flex items-center gap-x-3 px-2 py-1.5 text-sm">
                 <p class="min-w-0 truncate text-marca-900">
-                    <span class="hidden sm:inline">{{ contenido('cabecera.viendo_repuestos_de', 'Viendo repuestos de') }} </span><strong>{{ $vehiculoActivo->nombre_completo }}</strong>
+                    <span class="hidden sm:inline">{{ contenido('cabecera.viendo_repuestos_de', 'Viendo repuestos de') }} </span><strong>{{ $vehiculoActivo->nombreParaVisitante($vehiculoActivoAnio ?? null) }}</strong>
                 </p>
                 <form method="post" action="{{ route('vehiculo.olvidar') }}" class="ml-auto shrink-0">
                     @csrf
