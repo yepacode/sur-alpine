@@ -7,6 +7,7 @@ use App\Models\CotizacionItem;
 use App\Models\Producto;
 use App\Models\Vehiculo;
 use App\Services\Cotizador;
+use App\Services\VehiculoActivo;
 use App\Services\EnviarSolicitud;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +29,26 @@ class CotizacionController extends Controller
         // Una pieza despublicada no puede meterse al carrito: llegaría al correo
         // del equipo como una solicitud imposible.
         abort_unless($producto->publicado, 404);
+
+        // Y sin carro elegido no se agrega. Peticion literal del cliente y
+        // repetida dos veces: si o si al filtro. El rastreador tiene el mismo
+        // trato que un humano aqui —esto no es SEO, es logica de negocio— y
+        // si un cliente entra desde WhatsApp la cotizacion se le abre pero
+        // solo puede agregar cuando dice que carro tiene.
+        //
+        // Respondemos 409 (conflict) con `requiereVehiculo` para que el JS
+        // del boton dispare el modal obligatorio; y `back()` con un flag para
+        // el fallback sin JS.
+        if (app(VehiculoActivo::class)->id() === null) {
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'requiereVehiculo' => true,
+                    'mensaje' => 'Antes de agregar dinos qué carro es. Así solo te ofrecemos las piezas que le sirven.',
+                ], 409);
+            }
+
+            return back()->with('exige-vehiculo', true);
+        }
 
         $cantidad = (int) $request->input('cantidad', 1);
 

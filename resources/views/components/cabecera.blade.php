@@ -39,6 +39,19 @@
             productos: false,
             menu: false,
             vehiculo: false,
+            // `obligatorio` = «no se puede cerrar sin elegir carro».
+            //
+            // Peticion literal del cliente y repetida dos veces: al entrar al
+            // catalogo o a una ficha, o al tocar «agregar a mi cotizacion» sin
+            // vehiculo, el modal se abre y el sitio queda bloqueado hasta que
+            // haya carro. Sin X, sin Escape, sin clic-fuera. La unica salida
+            // es elegir carro o irse a otra seccion desde el menu.
+            //
+            // Los rastreadores (Googlebot, Bingbot, WhatsApp) NO pasan por
+            // aqui —la exclusion se hace del lado del servidor, en las vistas
+            // que disparan `abrir-buscador-obligatorio`—, asi que Google
+            // sigue indexando el catalogo.
+            obligatorio: false,
 
             abrirVehiculo() {
                 this.productos = this.menu = false;
@@ -103,8 +116,16 @@
             },
 
             cerrarVehiculo() {
+                // Si el modal esta en modo obligatorio, no cerrar.
+                // El sitio queda bloqueado hasta que elijan carro.
+                if (this.obligatorio) return;
                 this.vehiculo = false;
                 this.$nextTick(() => this.$refs.abreVehiculo?.focus());
+            },
+
+            abrirObligatorio() {
+                this.obligatorio = true;
+                this.abrirVehiculo();
             },
 
             /*
@@ -155,8 +176,10 @@
         x-effect="document.body.classList.toggle('overflow-hidden', vehiculo);
                   document.querySelectorAll('main, footer').forEach((e) => e.toggleAttribute('inert', vehiculo))"
         {{-- Cualquier parte de la página puede pedir el buscador: la barra
-             lateral del catálogo lo hace con `$dispatch('abrir-buscador')`. --}}
+             lateral del catálogo lo hace con `$dispatch('abrir-buscador')`.
+             `abrir-buscador-obligatorio` lo abre en modo bloqueado. --}}
         @abrir-buscador.window="abrirVehiculo()"
+        @abrir-buscador-obligatorio.window="abrirObligatorio()"
         @keydown.escape.window="productos = false; menu = false; if (vehiculo) cerrarVehiculo()">
 
     {{-- ─── Barra azul ─────────────────────────────────────────────────── --}}
@@ -494,7 +517,8 @@
              x-transition:leave="transition duration-200 ease-in"
              x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
              @click="cerrarVehiculo()" aria-hidden="true"
-             class="fixed inset-0 bg-black/[0.92] backdrop-blur-[4px]"></div>
+             class="fixed inset-0 bg-black/[0.92] backdrop-blur-[4px]"
+             :class="obligatorio ? 'cursor-not-allowed' : ''"></div>
 
         {{-- La tarjeta entra con una curva de salida larga —`0.16, 1, 0.3, 1`—:
              arranca rápido y frena despacio, que es lo que se lee como algo que
@@ -514,11 +538,23 @@
              class="relative my-auto w-full max-w-3xl drop-shadow-[0_30px_60px_rgba(0,0,0,0.6)]">
 
             <button type="button" @click="cerrarVehiculo()" aria-label="Cerrar el buscador"
+                    x-show="! obligatorio"
                     class="absolute -top-11 right-0 grid size-9 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 sm:-right-11 sm:top-0">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="size-5" aria-hidden="true">
                     <path d="m6 6 12 12M18 6 6 18" stroke-linecap="round"/>
                 </svg>
             </button>
+
+            {{-- Alerta cuando es obligatorio: le explica al visitante por que
+                 esta atrapado y que hacer para salir. --}}
+            <div x-show="obligatorio" x-cloak class="mb-3 flex items-start gap-3 rounded-t-lg bg-alerta-500 px-5 py-4 text-white">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="size-6 shrink-0" aria-hidden="true">
+                    <path d="M12 9v4m0 4h.01M4.93 19h14.14a2 2 0 0 0 1.75-2.99l-7.07-12.02a2 2 0 0 0-3.5 0L3.18 16.01A2 2 0 0 0 4.93 19Z" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <p class="text-sm font-medium leading-tight">
+                    {{ contenido('vehiculo.obligatorio_alerta', 'Para ver los repuestos o pedir tu cotización, primero dinos tu vehículo. Sólo así te mostramos las piezas que le sirven.') }}
+                </p>
+            </div>
 
             {{-- `prefijo="modal"`: en la portada este componente ya está pintado
                  una vez, y sin esto los cuatro `id` saldrían repetidos. El

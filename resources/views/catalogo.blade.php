@@ -151,28 +151,27 @@
 @endpush
 
 @section('contenido')
-    {{-- Pide el carro nada mas entrar, si nadie lo eligio todavia.
+    {{-- Sin carro, aqui NO se ve el catalogo.
 
-         Peticion expresa del cliente: «que pida para que carro esta cotizando
-         al momento de buscar un repuesto o entrar a una categoria».
+         El cliente lo pidio dos veces y con enfasis: «que si o si necesitamos
+         el vehiculo, si o si al filtro». Antes se abria el modal pero se
+         podia cerrar y ver todo; ahora el sitio queda bloqueado hasta que se
+         elige carro. Sin X, sin Escape, sin clic-fuera —eso vive en la
+         cabecera, en `obligatorio: true`—.
 
-         Se abre el modal automaticamente, no se bloquea la pagina. Google
-         nunca rellena un modal —el catalogo tiene que seguir indexable— y un
-         enlace compartido por WhatsApp de una ficha tiene que abrir. La
-         persona puede cerrar el modal y ver el catalogo entero; pero le
-         llega la pregunta apenas aterriza.
+         RASTREADORES EXENTOS. `es_rastreador()` mira el user agent: Googlebot,
+         Bingbot, WhatsApp, Facebook y demas ven el HTML normal. Sin esta
+         puerta, el sitio queda sin indexar y las tarjetas de vista previa
+         compartidas por WhatsApp salen como una captura del modal.
 
-         El «una vez por sesion» se guarda en `localStorage`, NO en la sesion
-         de PHP. La sesion se guarda en la respuesta, asi que la PRIMERA
-         peticion ya sale marcada como «ya se pregunto» y el modal no salta
-         nunca por primera vez. Con `localStorage` el estado vive donde tiene
-         que vivir: en el navegador de esa persona. --}}
-    @if (! ($vehiculoActivo ?? null))
+         El bloqueo real se hace del lado del cliente con dos capas: se dispara
+         el modal en modo obligatorio, y el contenido se envuelve en un
+         `x-show="false"` cuando `!obligatorio` se queda en `false` (el
+         negativo del negativo). En HTML servido, el contenido esta pintado
+         entero para el rastreador. --}}
+    @if (! ($vehiculoActivo ?? null) && ! es_rastreador())
         <div x-data
-             x-init="if (! localStorage.getItem('pregunta-carro-mostrada')) {
-                         localStorage.setItem('pregunta-carro-mostrada', '1');
-                         setTimeout(() => $dispatch('abrir-buscador'), 300);
-                     }"></div>
+             x-init="setTimeout(() => $dispatch('abrir-buscador-obligatorio'), 250)"></div>
     @endif
 
     <div class="contenedor py-8">

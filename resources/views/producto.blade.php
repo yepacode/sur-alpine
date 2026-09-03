@@ -98,6 +98,17 @@
 @endpush
 
 @section('contenido')
+    {{-- Sin carro, la ficha no se puede ver.
+
+         Misma regla que el catalogo: el cliente lo pide asi. El modal
+         obligatorio se abre y no cierra hasta elegir vehiculo. Rastreadores
+         exentos para que Google, WhatsApp y Facebook sigan leyendo la ficha
+         como siempre. --}}
+    @if (! ($vehiculoActivo ?? null) && ! es_rastreador())
+        <div x-data
+             x-init="setTimeout(() => $dispatch('abrir-buscador-obligatorio'), 250)"></div>
+    @endif
+
     <div class="contenedor py-8">
 
         <nav aria-label="Migas de pan" class="mb-6 text-sm text-tinta-500">

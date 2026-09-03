@@ -91,6 +91,7 @@ class CoberturaPendienteTest extends TestCase
     /** Poner cero borra la línea: es cómo se quita algo sin buscar el botón. */
     public function test_cantidad_cero_quita_la_linea(): void
     {
+        session()->put('vehiculo_activo', $this->producto->vehiculo_id);
         $this->post(route('cotizacion.agregar', $this->producto), ['cantidad' => 3]);
         $this->assertSame(3, app(Cotizador::class)->totalItems());
 
@@ -119,6 +120,7 @@ class CoberturaPendienteTest extends TestCase
     #[DataProvider('cantidadesImposibles')]
     public function test_una_cantidad_imposible_se_rechaza_sin_tocar_el_carrito(mixed $cantidad): void
     {
+        session()->put('vehiculo_activo', $this->producto->vehiculo_id);
         $this->post(route('cotizacion.agregar', $this->producto));
 
         $this->post(route('cotizacion.actualizar', $this->producto), ['cantidad' => $cantidad])
@@ -129,6 +131,7 @@ class CoberturaPendienteTest extends TestCase
 
     public function test_vaciar_deja_el_carrito_en_cero(): void
     {
+        session()->put('vehiculo_activo', $this->producto->vehiculo_id);
         $this->post(route('cotizacion.agregar', $this->producto), ['cantidad' => 4]);
 
         $this->post(route('cotizacion.vaciar'))->assertRedirect();

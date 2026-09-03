@@ -44,6 +44,7 @@ class MensajesEnEspanolTest extends TestCase
         ]);
 
         $this->entrarComo($usuario);
+        session()->put('vehiculo_activo', $producto->vehiculo_id);
         $this->post(route('cotizacion.agregar', $producto));
 
         $this->post(route('cotizacion.enviar'), ['nombre' => 'Ana'])

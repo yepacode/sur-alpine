@@ -370,6 +370,8 @@ class ConfiguracionPaginaController extends Controller
                 'titulo' => 'Modal para elegir vehiculo',
                 'subtitulo' => 'Los mensajes de la ventana que pregunta cual es tu carro.',
                 'textos' => [
+                    ['clave' => 'vehiculo.obligatorio_alerta', 'rotulo' => 'Alerta cuando el filtro del vehículo es obligatorio', 'tipo' => 'parrafo',
+                     'valor' => 'Para ver los repuestos o pedir tu cotización, primero dinos tu vehículo. Sólo así te mostramos las piezas que le sirven.'],
                     ['clave' => 'buscador.cargando', 'rotulo' => 'Cargando la lista de vehículos…', 'tipo' => 'texto',
                      'valor' => 'Cargando la lista de vehículos…'],
                     ['clave' => 'buscador.error_carga', 'rotulo' => 'No pudimos cargar la lista de vehículos.', 'tipo' => 'texto',

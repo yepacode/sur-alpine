@@ -172,6 +172,13 @@ Alpine.data('agregarACotizacion', () => ({
                 body: new FormData(formulario),
             });
 
+            // 409 = falta elegir vehiculo. El backend lo devuelve para que aqui
+            // se dispare el modal obligatorio en vez de agregar.
+            if (respuesta.status === 409) {
+                window.dispatchEvent(new CustomEvent('abrir-buscador-obligatorio'));
+                return;
+            }
+
             if (!respuesta.ok) throw new Error(respuesta.status);
 
             const datos = await respuesta.json();

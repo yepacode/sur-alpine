@@ -207,3 +207,41 @@ if (! function_exists('plural')) {
         return $cuantos === 1 ? $singular : $plural;
     }
 }
+
+if (! function_exists('es_rastreador')) {
+    /**
+     * ¿La peticion viene de un rastreador (Googlebot, Bingbot, WhatsApp…)?
+     *
+     * Se usa para relajar reglas que a una persona la fastidiarian pero a
+     * Google le harian mal. El caso concreto: obligar a elegir vehiculo antes
+     * de ver el catalogo. Sin esto, Googlebot ve un modal en vez del listado y
+     * cuando llegue el momento del dominio real el sitio queda sin indexar.
+     *
+     * No es antifraude —un humano con `curl -A Googlebot` pasa igual—; es
+     * sensibilidad. La lista es la de agentes que decimos «respetamos» en
+     * `robots.txt`, mas los generadores de vista previa de mensajes (WhatsApp,
+     * Facebook, Slack) para que las tarjetas compartidas no salgan como una
+     * captura del modal.
+     */
+    function es_rastreador(?string $userAgent = null): bool
+    {
+        $ua = strtolower($userAgent ?? request()->userAgent() ?? '');
+
+        if ($ua === '') {
+            return false;
+        }
+
+        foreach ([
+            'bot', 'crawler', 'crawl', 'spider', 'slurp',
+            'facebookexternalhit', 'whatsapp', 'twitterbot', 'linkedinbot',
+            'slackbot', 'discordbot', 'telegrambot', 'skypeuripreview',
+            'yandex', 'baidu', 'duckduckgo',
+        ] as $marca) {
+            if (str_contains($ua, $marca)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

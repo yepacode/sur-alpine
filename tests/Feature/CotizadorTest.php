@@ -78,6 +78,12 @@ class CotizadorTest extends TestCase
 
     private function agregar(Producto $producto, int $cantidad = 1): void
     {
+        // La sesion elige el vehiculo del producto antes de agregar. Nueva
+        // regla del cliente: sin carro no se puede agregar. Los tests reflejan
+        // la conducta real; el que quiera comprobar «bloquea sin vehiculo»
+        // usa un test aparte.
+        session()->put('vehiculo_activo', $producto->vehiculo_id);
+
         $this->post(route('cotizacion.agregar', $producto), ['cantidad' => $cantidad]);
     }
 
@@ -227,6 +233,8 @@ class CotizadorTest extends TestCase
      */
     public function test_agregar_sin_recargar_responde_el_total_en_json(): void
     {
+        session()->put('vehiculo_activo', $this->filtroAveo->vehiculo_id);
+
         $this->postJson(route('cotizacion.agregar', $this->filtroAveo), ['cantidad' => 2])
             ->assertOk()
             ->assertJson(['total' => 2])
@@ -272,6 +280,8 @@ class CotizadorTest extends TestCase
     /** Sin JavaScript el mismo botón tiene que seguir funcionando a la antigua. */
     public function test_agregar_sin_javascript_sigue_redirigiendo(): void
     {
+        session()->put('vehiculo_activo', $this->filtroAveo->vehiculo_id);
+
         $this->from(route('inicio'))
             ->post(route('cotizacion.agregar', $this->filtroAveo))
             ->assertRedirect(route('inicio'))
