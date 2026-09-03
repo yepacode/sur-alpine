@@ -200,7 +200,7 @@
                                  acceso donde no se puede crear cuenta. --}}
                             <a href="{{ route('mantenimientos') }}"
                                class="mt-6 w-fit rounded-[5px] bg-white px-6 py-3 font-bold text-alerta-500 transition hover:scale-105">
-                                Cómo funciona
+                                {{ contenido('servicios.historial.boton_como', 'Cómo funciona') }}
                             </a>
                         @endif
                     </div>
@@ -289,8 +289,8 @@
                                     <button type="submit" :disabled="enviando"
                                             class="w-full px-2 py-2.5 text-xs font-semibold text-white transition md:text-sm"
                                             :class="listo ? 'bg-marca-700' : 'bg-alerta-500 hover:bg-alerta-600'">
-                                        <span x-show="!listo">Cotizar</span>
-                                        <span x-show="listo" x-cloak>Agregado ✓</span>
+                                        <span x-show="!listo">{{ contenido('destacados.boton_cotizar', 'Cotizar') }}</span>
+                                        <span x-show="listo" x-cloak>{{ contenido('destacados.boton_agregado', 'Agregado ✓') }}</span>
                                     </button>
                                 </form>
                             </div>
@@ -332,7 +332,7 @@
                     <img src="{{ $mapa }}-440.webp"
                          srcset="{{ $mapa }}-220.webp 220w, {{ $mapa }}-440.webp 440w"
                          sizes="220px" width="440" height="330" loading="lazy" decoding="async"
-                         alt="Mapa de la ubicación de Importadora Sur Alpine en el barrio Restrepo"
+                         alt="{{ contenido('ubicacion.mapa_alt', 'Mapa de la ubicación de Importadora Sur Alpine en el barrio Restrepo') }}"
                          class="mx-auto mb-2 block w-[220px] rounded-lg shadow-[0_2px_6px_rgba(0,0,0,0.15)]">
 
                     <h2 class="my-2 text-[28px] font-extrabold text-marca-700">
@@ -383,9 +383,9 @@
                     <video x-data="videoAlEntrar" muted loop playsinline preload="none"
                            poster="{{ imagen_contenido('ubicacion.mapa', '/img/mapa/mapa-restrepo') }}-440.webp"
                            class="block w-full rounded-[10px] bg-tinta-900"
-                           aria-label="Video del local de Importadora Sur Alpine en el Restrepo">
+                           aria-label="{{ contenido('ubicacion.video_aria', 'Video del local de Importadora Sur Alpine en el Restrepo') }}">
                         <source src="/video/local-restrepo.mp4" type="video/mp4">
-                        Tu navegador no soporta video. <a href="/video/local-restrepo.mp4">Descárgalo aquí</a>.
+                        {!! contenido('ubicacion.video_alterno', 'Tu navegador no soporta video. <a href="/video/local-restrepo.mp4">Descárgalo aquí</a>.') !!}
                     </video>
                 </div>
 
@@ -399,7 +399,7 @@
                      cargado de entrada son 700 KB y cookies de terceros para
                      quien nunca lo iba a mirar. --}}
                 <div x-show="mapa" x-cloak x-ref="marco" class="order-4 w-full">
-                    <iframe title="Mapa de Importadora Sur Alpine"
+                    <iframe title="{{ contenido('ubicacion.mapa_titulo', 'Mapa de Importadora Sur Alpine') }}"
                             src="https://www.google.com/maps?q={{ rawurlencode($contacto->direccionCompleta().', Colombia') }}&output=embed"
                             loading="lazy" referrerpolicy="no-referrer-when-downgrade"
                             class="h-72 w-full rounded-[10px] border-0"></iframe>

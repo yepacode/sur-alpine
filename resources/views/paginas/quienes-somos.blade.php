@@ -95,7 +95,7 @@
                 {{ contenido('quienes.aviso.titulo', 'Cuidado con los sitios falsos') }}
             </p>
             <p class="mt-3 text-base leading-relaxed text-tinta-700">
-                Este es el <strong>único sitio web oficial</strong> de Importadora Sur Alpine.
+                Este es el <strong>{{ contenido('quienes.enfasis_oficial', 'único sitio web oficial') }}</strong> de Importadora Sur Alpine.
                 {{ contenido('quienes.aviso.texto', 'Circulan páginas que usan nuestro nombre y nuestras fotos. Si tienes dudas, llámanos directamente:') }}
             </p>
             <a href="tel:{{ $contacto->pbxTel() }}"

@@ -9,21 +9,21 @@
 @section('contenido')
     <div class="mx-auto max-w-5xl px-4 py-8">
 
-        <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">Tu solicitud</p>
+        <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">{{ contenido('cotizacion.antetitulo', 'Tu solicitud') }}</p>
         <h1 class="mt-1.5 text-[1.75rem] font-extrabold sm:text-4xl">
             {{ contenido('cotizacion.titulo', 'Mi cotización') }}
         </h1>
 
         @if ($porVehiculo->isEmpty())
             <div class="mt-8 rounded-2xl border border-dashed border-tinta-300 bg-white p-12 text-center">
-                <p class="text-lg font-semibold">Todavía no has agregado repuestos</p>
+                <p class="text-lg font-semibold">{{ contenido('cotizacion.vacia_titulo', 'Todavía no has agregado repuestos') }}</p>
                 <p class="mx-auto mt-2 max-w-md text-sm text-tinta-500">
                     Busca las piezas que necesitas y agrégalas. Puedes pedir para varios carros
                     en una misma solicitud.
                 </p>
                 <a href="{{ route('catalogo') }}"
                    class="mt-6 inline-block rounded-lg bg-marca-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-marca-800">
-                    Ver el catálogo
+                    {{ contenido('cotizacion.vacia_boton', 'Ver el catálogo') }}
                 </a>
             </div>
         @else
@@ -32,7 +32,7 @@
                 {{ plural($totalItems, 'repuesto', 'repuestos') }} para
                 <span class="tabular-nums">{{ $porVehiculo->count() }}</span>
                 {{ plural($porVehiculo->count(), 'vehículo', 'vehículos') }}.
-                Un asesor te contacta en horario de oficina para confirmarte disponibilidad.
+                {{ contenido('cotizacion.antesala_texto', 'Un asesor te contacta en horario de oficina para confirmarte disponibilidad.') }}
             </p>
 
             <div class="mt-8 space-y-6">
@@ -56,7 +56,7 @@
                                   onsubmit="return confirm('¿Quitar los {{ $items->sum('cantidad') }} repuestos de {{ addslashes($nombreVehiculo) }}? El resto de tu cotización se queda.')">
                                 @csrf
                                 <button type="submit" class="text-sm font-medium text-tinta-500 underline-offset-2 hover:text-alerta-600 hover:underline">
-                                    Quitar este vehículo
+                                    {{ contenido('cotizacion.quitar_vehiculo', 'Quitar este vehículo') }}
                                 </button>
                             </form>
                         </header>
@@ -114,13 +114,13 @@
 
             <div class="mt-6 flex flex-wrap items-center gap-4">
                 <a href="{{ route('catalogo') }}" class="text-sm font-medium text-marca-700 underline-offset-2 hover:underline">
-                    ← Seguir agregando repuestos
+                    {{ contenido('cotizacion.seguir_agregando', '← Seguir agregando repuestos') }}
                 </a>
                 <form method="post" action="{{ route('cotizacion.vaciar') }}" class="ml-auto"
                       onsubmit="return confirm('¿Vaciar la cotización entera? Se van los {{ $totalItems }} repuestos y no se puede deshacer.')">
                     @csrf
                     <button type="submit" class="text-sm text-tinta-500 underline-offset-2 hover:text-alerta-600 hover:underline">
-                        Vaciar todo
+                        {{ contenido('cotizacion.vaciar_todo', 'Vaciar todo') }}
                     </button>
                 </form>
             </div>
@@ -130,7 +130,7 @@
                 @guest
                     {{-- Sin sesión no se envía. Lo importante de esta tarjeta es
                          la última línea: quien teme perder lo que armó, se va. --}}
-                    <h2 class="text-lg font-bold tracking-tight">Para enviarla, entra a tu cuenta</h2>
+                    <h2 class="text-lg font-bold tracking-tight">{{ contenido('cotizacion.entrar_titulo', 'Para enviarla, entra a tu cuenta') }}</h2>
                     <p class="mt-2 max-w-prose text-sm text-tinta-600">
                         Así tu solicitud queda guardada a tu nombre, no tienes que volver a
                         escribir tus datos, y puedes seguirle la pista desde «Mi cuenta».
@@ -139,11 +139,11 @@
                     <div class="mt-5 flex flex-wrap gap-3">
                         <a href="{{ route('acceso') }}"
                            class="con-luz rounded-lg bg-alerta-500 px-6 py-3 font-semibold text-white transition hover:bg-alerta-600">
-                            Iniciar sesión
+                            {{ contenido('cotizacion.iniciar_sesion', 'Iniciar sesión') }}
                         </a>
                         <a href="{{ route('registro') }}"
                            class="rounded-lg border-2 border-marca-700 px-6 py-3 font-semibold text-marca-700 transition hover:bg-marca-50">
-                            Crear una cuenta
+                            {{ contenido('cotizacion.crear_cuenta', 'Crear una cuenta') }}
                         </a>
                     </div>
 
@@ -154,12 +154,12 @@
                          pantallas lejos de la lista que acababa de armar, y
                          tenía que volver a encontrar un ícono de 18 px. --}}
                     <p class="mt-4 text-sm text-tinta-500">
-                        Los repuestos que ya agregaste te esperan aquí: al entrar vuelves a esta página.
+                        {{ contenido('cotizacion.entrar_texto', 'Los repuestos que ya agregaste te esperan aquí: al entrar vuelves a esta página.') }}
                     </p>
                 @else
-                <h2 class="text-lg font-bold tracking-tight">¿A quién llamamos?</h2>
+                <h2 class="text-lg font-bold tracking-tight">{{ contenido('cotizacion.datos_titulo', '¿A quién llamamos?') }}</h2>
                 <p class="mt-1 text-sm text-tinta-500">
-                    Un asesor te contacta en horario de oficina para atender tu solicitud.
+                    {{ contenido('cotizacion.datos_texto', 'Un asesor te contacta en horario de oficina para atender tu solicitud.') }}
                 </p>
 
                 {{-- El aviso se enfoca solo al cargar.
@@ -171,7 +171,7 @@
                 @if ($errors->any())
                     <div role="alert" tabindex="-1" x-data x-init="$el.focus(); $el.scrollIntoView({ block: 'center' })"
                          class="mt-4 rounded-lg border border-alerta-500 bg-alerta-500/5 p-4 text-sm text-alerta-700">
-                        <p class="font-semibold">Revisa estos datos:</p>
+                        <p class="font-semibold">{{ contenido('cotizacion.revisa_datos', 'Revisa estos datos:') }}</p>
                         <ul class="mt-1 list-disc pl-5">
                             @foreach ($errors->all() as $error)
                                 <li>{{ $error }}</li>
@@ -212,7 +212,7 @@
                         @error('nombre') <p id="nombre-error" class="mt-1 text-sm font-medium text-alerta-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label for="apellidos" class="text-sm font-medium">Apellidos</label>
+                        <label for="apellidos" class="text-sm font-medium">{{ contenido('cotizacion.apellidos', 'Apellidos') }}</label>
                         <input id="apellidos" name="apellidos" value="{{ old('apellidos', $susApellidos) }}" autocomplete="family-name" class="{{ $claseCampo }}">
                     </div>
                     <div>
@@ -230,9 +230,9 @@
                         @error('email') <p id="email-error" class="mt-1 text-sm font-medium text-alerta-600">{{ $message }}</p> @enderror
                     </div>
                     <div class="sm:col-span-2">
-                        <label for="notas" class="text-sm font-medium">Comentarios</label>
+                        <label for="notas" class="text-sm font-medium">{{ contenido('cotizacion.comentarios', 'Comentarios') }}</label>
                         <textarea id="notas" name="notas" rows="3" class="{{ $claseCampo }}"
-                                  placeholder="Referencias, marca preferida, urgencia…">{{ old('notas') }}</textarea>
+                                  placeholder="{{ contenido('cotizacion.comentarios_placeholder', 'Referencias, marca preferida, urgencia…') }}">{{ old('notas') }}</textarea>
                     </div>
 
                     <div class="sm:col-span-2">

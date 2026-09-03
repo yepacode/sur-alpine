@@ -8,7 +8,7 @@
 
 @section('contenido')
     <div class="mx-auto max-w-2xl px-4 py-20 text-center">
-        <p class="text-sm font-semibold uppercase tracking-widest text-marca-600">Listo</p>
+        <p class="text-sm font-semibold uppercase tracking-widest text-marca-600">{{ contenido('enviada.antetitulo', 'Listo') }}</p>
         <h1 class="mt-3 text-3xl font-bold tracking-tight text-balance">
             {{ contenido('cotizacion.gracias', 'Recibimos tu solicitud') }}
         </h1>
@@ -32,7 +32,7 @@
             <p class="mt-3 text-tinta-600">
                 Queda guardada en
                 <a href="{{ route('cuenta.cotizaciones') }}"
-                   class="font-semibold text-marca-700 underline-offset-2 hover:underline">mis cotizaciones</a>,
+                   class="font-semibold text-marca-700 underline-offset-2 hover:underline">{{ contenido('enviada.enlace_mis_cotizaciones', 'mis cotizaciones') }}</a>,
                 por si después quieres volver a pedir lo mismo.
             </p>
         @endauth
@@ -40,7 +40,7 @@
         <div class="mt-10 flex flex-wrap justify-center gap-3">
             <a href="{{ route('catalogo') }}"
                class="rounded-lg bg-marca-700 px-6 py-3 font-semibold text-white hover:bg-marca-800">
-                Seguir viendo repuestos
+                {{ contenido('enviada.seguir_viendo', 'Seguir viendo repuestos') }}
             </a>
             <a href="tel:{{ $contacto->pbxTel() }}"
                class="rounded-lg border border-tinta-300 px-6 py-3 font-semibold text-tinta-700 hover:bg-tinta-100">

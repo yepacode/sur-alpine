@@ -48,7 +48,7 @@
             {{-- Mientras no exista el registro, la salida honesta es el teléfono:
                  el equipo ya lleva estos historiales a mano. --}}
             <div class="mt-10 rounded-xl border border-tinta-200 bg-white p-6">
-                <p class="font-semibold">Todavía no está abierto el registro en línea</p>
+                <p class="font-semibold">{{ contenido('mantenimientos.aviso', 'Todavía no está abierto el registro en línea') }}</p>
                 <p class="mt-2 text-sm text-tinta-600">
                     Estamos terminándolo. Mientras tanto, llámanos y un asesor te lleva el
                     control de los mantenimientos de tu carro.

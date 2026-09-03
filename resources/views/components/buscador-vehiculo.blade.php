@@ -141,12 +141,12 @@
         </p>
 
         <p x-show="cargando" x-cloak role="status" aria-live="polite" class="mt-3 text-sm text-tinta-500">
-            Cargando la lista de vehículos…
+            {{ contenido('buscador.cargando', 'Cargando la lista de vehículos…') }}
         </p>
 
         <div x-show="error" x-cloak role="status" aria-live="polite"
              class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-alerta-500/5 px-4 py-3 text-sm ring-1 ring-alerta-500/20">
-            <span class="font-medium text-alerta-700">No pudimos cargar la lista de vehículos.</span>
+            <span class="font-medium text-alerta-700">{{ contenido('buscador.error_carga', 'No pudimos cargar la lista de vehículos.') }}</span>
             <button type="button" @click="cargar()"
                     class="rounded-lg border border-alerta-500/30 px-3 py-1.5 font-semibold text-alerta-700 transition hover:bg-alerta-500/10">
                 Reintentar

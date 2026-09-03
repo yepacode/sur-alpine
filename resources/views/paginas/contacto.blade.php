@@ -53,13 +53,13 @@
         <section class="{{ $conBanda }}">
             {{-- La banda clara detrás del titular es la suya: separa el
                  encabezado del formulario sin necesidad de una línea. --}}
-            <h2 class="{{ $titular }} border-b border-tinta-100 bg-marca-50/60 px-6 py-4 sm:px-8">Información de contacto</h2>
+            <h2 class="{{ $titular }} border-b border-tinta-100 bg-marca-50/60 px-6 py-4 sm:px-8">{{ contenido('contacto.form.titulo', 'Información de contacto') }}</h2>
             <div class="p-6 sm:p-8">
 
             @if (session('mensaje_enviado'))
                 <p role="status"
                    class="rounded-lg border-l-4 border-emerald-500 bg-emerald-50 px-5 py-4 text-base text-emerald-900">
-                    <strong>Listo, recibimos tu mensaje.</strong>
+                    <strong>{{ contenido('contacto.form.exito', 'Listo, recibimos tu mensaje.') }}</strong>
                     Te respondemos al correo que nos dejaste. Si es urgente, llámanos al
                     <a href="tel:{{ $contacto->pbxTel() }}" class="font-semibold underline underline-offset-2">{{ $contacto->pbx() }}</a>.
                 </p>
@@ -96,7 +96,7 @@
                     <div>
                         <label for="nombre" class="{{ $rotulo }}">Su nombre <span class="text-alerta-500" aria-hidden="true">*</span></label>
                         <input id="nombre" name="nombre" type="text" required maxlength="120"
-                               autocomplete="name" placeholder="Nombre Apellido"
+                               autocomplete="name" placeholder="{{ contenido('contacto.form.nombre_placeholder', 'Nombre Apellido') }}"
                                value="{{ old('nombre', auth()->user()?->name) }}"
                                @error('nombre') aria-invalid="true" aria-describedby="nombre-error" @enderror
                                class="{{ $campo }} @error('nombre') border-alerta-500 @enderror">
@@ -106,7 +106,7 @@
                     <div>
                         <label for="email" class="{{ $rotulo }}">Correo electrónico <span class="text-alerta-500" aria-hidden="true">*</span></label>
                         <input id="email" name="email" type="email" required maxlength="190"
-                               autocomplete="email" placeholder="ejemplo@mail.com"
+                               autocomplete="email" placeholder="{{ contenido('contacto.form.correo_placeholder', 'ejemplo@mail.com') }}"
                                value="{{ old('email', auth()->user()?->email) }}"
                                @error('email') aria-invalid="true" aria-describedby="email-error" @enderror
                                class="{{ $campo }} @error('email') border-alerta-500 @enderror">
@@ -116,7 +116,7 @@
                     <div>
                         <label for="mensaje" class="{{ $rotulo }}">Sugerencia o comentario <span class="text-alerta-500" aria-hidden="true">*</span></label>
                         <textarea id="mensaje" name="mensaje" rows="5" required minlength="10" maxlength="3000"
-                                  placeholder="Escribe tu sugerencia..."
+                                  placeholder="{{ contenido('contacto.form.mensaje_placeholder', 'Escribe tu sugerencia...') }}"
                                   @error('mensaje') aria-invalid="true" aria-describedby="mensaje-error" @enderror
                                   class="{{ str_replace('h-10 ', '', $campo) }} py-2.5 leading-relaxed @error('mensaje') border-alerta-500 @enderror">{{ old('mensaje') }}</textarea>
                         @error('mensaje') <p id="mensaje-error" class="mt-1.5 text-sm font-medium text-alerta-600">{{ $message }}</p> @enderror
@@ -130,7 +130,7 @@
 
                     <button type="submit"
                             class="con-luz h-[46px] w-[174px] rounded-md bg-marca-600 text-sm font-bold text-white transition hover:bg-marca-700">
-                        Enviar
+                        {{ contenido('contacto.form.boton', 'Enviar') }}
                     </button>
 
                     <p class="text-sm text-tinta-500">
@@ -144,7 +144,7 @@
 
         {{-- ─── 2 · Teléfonos y horarios ───────────────────────────────── --}}
         <section class="{{ $tarjeta }}">
-            <h2 class="{{ $titular }}">Número de contacto</h2>
+            <h2 class="{{ $titular }}">{{ contenido('contacto.numeros_titulo', 'Número de contacto') }}</h2>
             <ul class="mt-5 flex flex-wrap justify-center gap-x-2 gap-y-1 text-base tabular-nums text-tinta-900">
                 <li>
                     PBX: <a href="tel:{{ $contacto->pbxTel() }}" class="hover:text-marca-700 hover:underline">{{ $contacto->pbx() }}</a>
@@ -170,7 +170,7 @@
                 </p>
             @endif
 
-            <h2 class="{{ $titular }} mt-10">Horarios de atención</h2>
+            <h2 class="{{ $titular }} mt-10">{{ contenido('contacto.horarios_titulo', 'Horarios de atención') }}</h2>
             <ul class="mt-5 space-y-1 text-center text-base text-tinta-900">
                 {{-- El texto por defecto se arma con el MISMO rango que alimenta
                      la ficha de Google, para que no puedan contradecirse. Si el
@@ -184,7 +184,7 @@
 
         {{-- ─── 3 · Oficinas. Fuera de tarjeta, como en su página. ─────── --}}
         <section class="text-center">
-            <h2 class="text-[1.75rem] font-bold text-tinta-900 sm:text-[33.6px]">Oficinas</h2>
+            <h2 class="text-[1.75rem] font-bold text-tinta-900 sm:text-[33.6px]">{{ contenido('contacto.oficinas_titulo', 'Oficinas') }}</h2>
             <p class="mx-auto mt-4 max-w-[541px] text-base leading-relaxed text-tinta-900">
                 Nuestras oficinas están ubicadas en la
                 <strong>{{ $contacto->direccion() }}</strong>,
@@ -197,19 +197,19 @@
         </section>
 
         {{-- ─── 4 · La foto del local y el mapa, lado a lado. ──────────── --}}
-        <section class="{{ $tarjeta }}" aria-label="El local y su ubicación">
+        <section class="{{ $tarjeta }}" aria-label="{{ contenido('contacto.local_aria', 'El local y su ubicación') }}">
             <div class="grid gap-6 md:grid-cols-[518fr_347fr]">
                 @php $fotoLocal = imagen_contenido('contacto.local', '/img/fotos/local-contactenos'); @endphp
                 <img src="{{ $fotoLocal }}-1040.webp"
                      srcset="{{ $fotoLocal }}-520.webp 520w, {{ $fotoLocal }}-1040.webp 1040w"
                      sizes="(min-width: 768px) 518px, 90vw"
                      width="1040" height="780" loading="lazy" decoding="async"
-                     alt="Fachada de Importadora Sur Alpine en el barrio Restrepo"
+                     alt="{{ contenido('contacto.local_alt', 'Fachada de Importadora Sur Alpine en el barrio Restrepo') }}"
                      class="h-[260px] w-full rounded-lg object-cover md:h-[370px]">
 
                 {{-- El mapa es perezoso: un iframe de Google son unos 700 KB y
                      cookies de terceros para quien quizá nunca baje hasta aquí. --}}
-                <iframe title="Ubicación de Importadora Sur Alpine en el mapa"
+                <iframe title="{{ contenido('contacto.mapa_titulo', 'Ubicación de Importadora Sur Alpine en el mapa') }}"
                         src="https://www.google.com/maps?q={{ rawurlencode($contacto->direccionCompleta().', Colombia') }}&output=embed&z=16"
                         loading="lazy" referrerpolicy="no-referrer-when-downgrade"
                         class="h-[260px] w-full rounded-lg border-0 md:h-[370px]"></iframe>

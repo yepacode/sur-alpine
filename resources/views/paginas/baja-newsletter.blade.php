@@ -12,7 +12,7 @@
 @section('contenido')
     <section class="grow">
         <div class="mx-auto max-w-xl px-[3vw] py-20 text-center">
-            <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">Newsletter</p>
+            <p class="font-titulo text-xs font-bold uppercase tracking-[0.18em] text-alerta-600">{{ contenido('baja.antetitulo', 'Newsletter') }}</p>
             <h1 class="mt-2 text-[2rem] font-bold leading-tight text-tinta-900 sm:text-[2.5rem]">
                 Listo, te sacamos de la lista
             </h1>

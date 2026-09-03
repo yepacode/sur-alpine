@@ -93,15 +93,15 @@
          class="fixed inset-x-0 bottom-0 z-50 border-t border-tinta-200 bg-white px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.12)]">
         <div class="contenedor flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
             <p class="min-w-0 flex-1 text-sm leading-snug text-tinta-700">
-                <span id="cookies-titulo" class="font-semibold text-tinta-900">Sólo cookies necesarias:</span>
-                las que te dejan entrar y no perder tu cotización. Nada de publicidad ni seguimiento.
+                <span id="cookies-titulo" class="font-semibold text-tinta-900">{{ contenido('cookies.titulo', 'Sólo cookies necesarias:') }}</span>
+                {{ contenido('cookies.mensaje', 'las que te dejan entrar y no perder tu cotización. Nada de publicidad ni seguimiento.') }}
                 <a href="{{ route('politica-datos') }}"
-                   class="font-semibold text-marca-700 underline-offset-2 hover:underline">Ver la política</a>.
+                   class="font-semibold text-marca-700 underline-offset-2 hover:underline">{{ contenido('cookies.ver_politica', 'Ver la política') }}</a>.
             </p>
 
             <button type="button" @click="aceptarCookies()"
                     class="shrink-0 rounded-lg bg-marca-700 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-marca-800">
-                Entendido
+                {{ contenido('cookies.aceptar', 'Entendido') }}
             </button>
         </div>
     </div>
@@ -146,7 +146,7 @@
                 <p class="pr-4 text-tinta-800">Hola 👋<br>¿En qué podemos ayudarte?</p>
                 <a href="{{ $whatsapp }}" target="_blank" rel="noopener"
                    class="mt-1.5 inline-block font-semibold text-[#0f6e63] underline-offset-2 hover:underline">
-                    Abrir chat
+                    {{ contenido('whatsapp.boton_abrir', 'Abrir chat') }}
                 </a>
 
                 <button type="button" @click="cerrarGlobo()" aria-label="Cerrar el mensaje"

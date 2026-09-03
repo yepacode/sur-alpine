@@ -102,14 +102,14 @@
                  terminan invitando a llamar. Aquí el teléfono se puede tocar. --}}
             <aside class="mt-12 rounded-2xl bg-marca-50 p-6 ring-1 ring-marca-100">
                 <p class="text-marca-900">
-                    <strong>¿Necesitas el repuesto?</strong>
+                    <strong>{{ contenido('nota.cta_titulo', '¿Necesitas el repuesto?') }}</strong>
                     Busca por tu vehículo y arma tu solicitud; un asesor te contacta para
                     confirmarte disponibilidad.
                 </p>
                 <div class="mt-4 flex flex-wrap gap-3">
                     <a href="{{ route('inicio') }}#buscador"
                        class="rounded-lg bg-alerta-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-alerta-600">
-                        Buscar por mi vehículo
+                        {{ contenido('nota.cta_boton', 'Buscar por mi vehículo') }}
                     </a>
                     <a href="tel:{{ $contacto->pbxTel() }}"
                        class="rounded-lg border border-marca-300 px-5 py-2.5 text-sm font-semibold text-marca-800 transition hover:bg-white">

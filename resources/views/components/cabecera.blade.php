@@ -191,7 +191,7 @@
             {{-- «Contáctenos: PBX… / Cel…», alternando cada 2,8 s. --}}
             <p class="flex min-w-0 flex-1 items-baseline gap-2 py-2 text-white xl:w-2/3 xl:flex-none"
                x-data="telefonosRotando(@js($lineasContacto))">
-                <span class="hidden shrink-0 text-base font-bold sm:inline">Contáctenos:</span>
+                <span class="hidden shrink-0 text-base font-bold sm:inline">{{ contenido('cabecera.contactenos', 'Contáctenos:') }}</span>
 
                 <a :href="'tel:' + telefono"
                    class="caer min-w-0 truncate text-base font-bold tabular-nums underline-offset-4 hover:underline"
@@ -203,7 +203,7 @@
 
                 {{-- El mismo dato, quieto y completo, para lectores de pantalla. --}}
                 <span class="sr-only">
-                    Contáctenos:
+                    {{ contenido('cabecera.contactenos', 'Contáctenos:') }}
                     @foreach ($lineasContacto as $linea)
                         <a href="tel:{{ $linea['tel'] }}">{{ $linea['texto'] }}</a>
                     @endforeach
@@ -269,7 +269,7 @@
                          no la cerraba. Con el patrón de `combobox` se puede
                          recorrer con las flechas y elegir con Enter. --}}
                     <label for="buscar" class="sr-only">Buscar repuesto o referencia</label>
-                    <input id="buscar" type="search" name="q" placeholder="Buscar..." autocomplete="off"
+                    <input id="buscar" type="search" name="q" placeholder="{{ contenido('cabecera.buscador.placeholder', 'Buscar...') }}" autocomplete="off"
                            value="{{ is_string(request('q')) ? request('q') : '' }}"
                            role="combobox" aria-autocomplete="list" aria-controls="sugerencias-buscador"
                            :aria-expanded="abierto"
@@ -405,7 +405,7 @@
                 </a>
             @endforeach
             <a href="{{ route('catalogo') }}" class="rounded px-2 py-2 text-base font-bold text-marca-700 hover:underline">
-                Ver todo el catálogo →
+                {{ contenido('cabecera.ver_todo', 'Ver todo el catálogo →') }}
             </a>
         </div>
     </div>
@@ -461,11 +461,11 @@
         <div class="border-t border-tinta-200 bg-marca-50">
             <div class="contenedor flex items-center gap-x-3 px-2 py-1.5 text-sm">
                 <p class="min-w-0 truncate text-marca-900">
-                    <span class="hidden sm:inline">Viendo repuestos de </span><strong>{{ $vehiculoActivo->nombre_completo }}</strong>
+                    <span class="hidden sm:inline">{{ contenido('cabecera.viendo_repuestos_de', 'Viendo repuestos de') }} </span><strong>{{ $vehiculoActivo->nombre_completo }}</strong>
                 </p>
                 <form method="post" action="{{ route('vehiculo.olvidar') }}" class="ml-auto shrink-0">
                     @csrf
-                    <button type="submit" class="font-semibold text-marca-700 underline-offset-2 hover:underline">Quitar mi carro</button>
+                    <button type="submit" class="font-semibold text-marca-700 underline-offset-2 hover:underline">{{ contenido('cabecera.quitar_carro', 'Quitar mi carro') }}</button>
                 </form>
             </div>
         </div>

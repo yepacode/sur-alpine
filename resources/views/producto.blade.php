@@ -150,7 +150,7 @@
                          class="w-20 shrink-0 opacity-60 md:w-40">
                     <p class="text-sm text-tinta-400 md:text-center">
                         Foto no disponible todavía.<br>
-                        <span class="text-tinta-500">Escríbenos y te la enviamos.</span>
+                        <span class="text-tinta-500">{{ contenido('producto.sin_foto_texto', 'Escríbenos y te la enviamos.') }}</span>
                     </p>
                 </div>
             @endif
@@ -163,23 +163,22 @@
 
                 <dl class="mt-6 divide-y divide-tinta-200 border-y border-tinta-200 text-sm">
                     <div class="flex justify-between gap-4 py-3">
-                        <dt class="text-tinta-500">Vehículo</dt>
+                        <dt class="text-tinta-500">{{ contenido('producto.etiqueta_vehiculo', 'Vehículo') }}</dt>
                         <dd class="text-right font-medium">{{ $producto->vehiculo->nombre_completo }}</dd>
                     </div>
                     <div class="flex justify-between gap-4 py-3">
-                        <dt class="text-tinta-500">Tipo de parte</dt>
+                        <dt class="text-tinta-500">{{ contenido('producto.etiqueta_tipo', 'Tipo de parte') }}</dt>
                         <dd class="text-right font-medium">{{ $producto->tipoParte->nombre }}</dd>
                     </div>
                     <div class="flex justify-between gap-4 py-3">
-                        <dt class="text-tinta-500">Referencia</dt>
+                        <dt class="text-tinta-500">{{ contenido('producto.etiqueta_referencia', 'Referencia') }}</dt>
                         <dd class="text-right font-medium">{{ $producto->referencia ?: 'Consúltala con el asesor' }}</dd>
                     </div>
                 </dl>
 
                 <div class="mt-7 rounded-2xl bg-marca-50 p-6 ring-1 ring-marca-100">
                     <p class="text-sm text-marca-900">
-                        <strong>Arma tu solicitud</strong> con los repuestos que necesitas y un asesor
-                        te contacta para confirmarte disponibilidad.
+                        {!! contenido('producto.invitacion_html', '<strong>Arma tu solicitud</strong> con los repuestos que necesitas y un asesor te contacta para confirmarte disponibilidad.') !!}
                     </p>
 
                     {{-- El producto va en la ruta. No hay forma de que este botón
@@ -196,7 +195,7 @@
                           class="mt-4 flex flex-wrap items-end gap-3">
                         @csrf
                         <div>
-                            <label for="cantidad" class="text-xs font-medium text-marca-900">Cantidad</label>
+                            <label for="cantidad" class="text-xs font-medium text-marca-900">{{ contenido('producto.cantidad', 'Cantidad') }}</label>
                             <input id="cantidad" type="number" name="cantidad" value="1" min="1" max="99"
                                    inputmode="numeric"
                                    class="mt-1 w-24 rounded-lg border border-marca-200 bg-white px-3 py-2.5 text-center text-sm tabular-nums">
@@ -204,8 +203,8 @@
                         <button type="submit" :disabled="enviando"
                                 class="con-luz flex-1 rounded-xl px-5 py-3.5 font-titulo text-sm font-bold uppercase tracking-[0.06em] text-white shadow-lg shadow-alerta-500/25 transition"
                                 :class="listo ? 'bg-marca-700' : 'bg-alerta-500 hover:bg-alerta-600'">
-                            <span x-show="!listo">Agregar a mi cotización</span>
-                            <span x-show="listo" x-cloak>Agregado ✓ · sigue buscando</span>
+                            <span x-show="!listo">{{ contenido('producto.boton_agregar', 'Agregar a mi cotización') }}</span>
+                            <span x-show="listo" x-cloak>{{ contenido('producto.boton_agregado', 'Agregado ✓ · sigue buscando') }}</span>
                         </button>
                     </form>
 
@@ -218,8 +217,8 @@
                        @cotizacion-actualizada.window="dentro = true"
                        x-show="dentro" @if (! $enCotizacion) x-cloak @endif
                        class="mt-3 text-center text-sm text-marca-800">
-                        Ya está en tu solicitud.
-                        <a href="{{ route('cotizacion.ver') }}" class="font-semibold underline underline-offset-2">Ver mi cotización</a>
+                        {{ contenido('producto.ya_esta', 'Ya está en tu solicitud.') }}
+                        <a href="{{ route('cotizacion.ver') }}" class="font-semibold underline underline-offset-2">{{ contenido('producto.ver_cotizacion', 'Ver mi cotización') }}</a>
                     </p>
                 </div>
             </div>

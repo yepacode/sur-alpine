@@ -241,7 +241,7 @@
                         <input type="hidden" name="{{ $campo }}" value="{{ $valor }}">
                     @endif
                 @endforeach
-                <label for="orden" class="text-sm text-tinta-500">Ordenar</label>
+                <label for="orden" class="text-sm text-tinta-500">{{ contenido('catalogo.orden_etiqueta', 'Ordenar') }}</label>
                 {{-- Con el ratón se aplica solo; con el teclado, no.
                      `onchange="submit()"` recargaba la página en CADA opción por
                      la que pasaba alguien moviéndose con las flechas: nunca
@@ -261,7 +261,7 @@
                     <option value="recientes" @selected(request('orden') === 'recientes')>Más recientes</option>
                 </select>
                 <button type="submit" class="rounded-lg border border-tinta-300 bg-white px-3 py-2 text-sm font-medium text-tinta-700 hover:bg-tinta-50">
-                    Aplicar
+                    {{ contenido('catalogo.orden_aplicar', 'Aplicar') }}
                 </button>
             </form>
         </div>
@@ -330,7 +330,7 @@
                                     @csrf
                                     <button type="submit"
                                             class="rounded-lg bg-marca-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-marca-800">
-                                        Quitar el filtro de mi carro
+                                        {{ contenido('catalogo.vacio.quitar_filtro', 'Quitar el filtro de mi carro') }}
                                     </button>
                                 </form>
                                 <a href="tel:{{ $contacto->pbxTel() }}"
@@ -347,7 +347,7 @@
                             </p>
                             <a href="{{ route('catalogo') }}"
                                class="mt-6 inline-block rounded-lg bg-marca-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-marca-800">
-                                Ver todo el catálogo
+                                {{ contenido('catalogo.vacio.ver_todo', 'Ver todo el catálogo') }}
                             </a>
                         @endif
                     </div>

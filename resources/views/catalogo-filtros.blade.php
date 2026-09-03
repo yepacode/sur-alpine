@@ -13,7 +13,7 @@
         <form method="post" action="{{ route('vehiculo.olvidar') }}" class="mt-2">
             @csrf
             <button type="submit" class="text-sm font-medium text-marca-700 underline-offset-2 hover:underline">
-                Quitar filtro
+                {{ contenido('catalogo.filtro.quitar', 'Quitar filtro') }}
             </button>
         </form>
     @else
@@ -26,7 +26,7 @@
              exactamente esto. --}}
         <button type="button" x-data @click="$dispatch('abrir-buscador')"
                 class="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-marca-700 underline-offset-2 hover:underline">
-            Elegir vehículo
+            {{ contenido('catalogo.filtro.elegir_vehiculo', 'Elegir vehículo') }}
         </button>
     @endif
 </div>
@@ -76,7 +76,7 @@
 @if ($categoria || $tipoParte)
     <p class="mt-3 border-t border-tinta-200 pt-3 text-sm">
         <a href="{{ route('catalogo') }}" class="font-medium text-marca-700 underline-offset-2 hover:underline">
-            ← Ver todos los repuestos
+            {{ contenido('catalogo.filtro.ver_todos', '← Ver todos los repuestos') }}
         </a>
     </p>
 @endif
