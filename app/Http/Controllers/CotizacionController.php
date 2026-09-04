@@ -52,7 +52,7 @@ class CotizacionController extends Controller
 
         $cantidad = (int) $request->input('cantidad', 1);
 
-        $cupo = $this->cotizador->agregar($producto, max(1, $cantidad));
+        $cupo = $this->cotizador->agregar($producto, max(1, $cantidad), app(VehiculoActivo::class)->anio());
 
         $mensaje = $cupo
             ? "Agregamos «{$producto->nombre}» a tu cotización."
@@ -232,7 +232,7 @@ class CotizacionController extends Controller
                     // pieza del catálogo, el tablero tiene que seguir sabiendo
                     // qué se pidió.
                     'tipo_parte_nombre' => $item->producto->tipoParte?->nombre,
-                    'vehiculo_nombre' => $item->producto->vehiculo->nombre_completo,
+                    'vehiculo_nombre' => $item->producto->vehiculo->nombreParaVisitante($item->anio_elegido ?? null),
                     'cantidad' => $item->cantidad,
                 ])->all()
             );

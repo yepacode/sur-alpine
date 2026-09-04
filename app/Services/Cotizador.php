@@ -32,7 +32,7 @@ class Cotizador
      * el cliente veía el mensaje de éxito, el contador no se movía, y no había
      * forma de entender por qué.
      */
-    public function agregar(Producto $producto, int $cantidad = 1): bool
+    public function agregar(Producto $producto, int $cantidad = 1, ?int $anio = null): bool
     {
         $items = $this->crudos();
 
@@ -42,10 +42,19 @@ class Cotizador
 
         $actual = $items[$producto->id]['c'] ?? 0;
 
-        $items[$producto->id] = [
-            'v' => $producto->vehiculo_id,
-            'c' => min($actual + $cantidad, self::MAXIMO_CANTIDAD),
-        ];
+        // `a` = ano que la persona eligio en el selector cuando agrego la
+        // pieza. Se conserva para que la vista del carrito y el correo digan
+        // «(1994)» y no «(1986-1998)», que era la queja del cliente. Solo se
+        // acepta si cae dentro del rango del vehiculo; fuera de eso, se queda
+        // en null y el nombre cae al rango, que es el fallback correcto.
+        $itemNuevo = ['v' => $producto->vehiculo_id, 'c' => min($actual + $cantidad, self::MAXIMO_CANTIDAD)];
+        if ($anio !== null && $anio >= $producto->vehiculo->anio_inicio && $anio <= $producto->vehiculo->anio_fin) {
+            $itemNuevo['a'] = $anio;
+        } elseif (isset($items[$producto->id]['a'])) {
+            $itemNuevo['a'] = $items[$producto->id]['a'];
+        }
+
+        $items[$producto->id] = $itemNuevo;
 
         $this->guardar($items);
 
@@ -136,6 +145,10 @@ class Cotizador
             ->map(fn (array $item, int $id) => (object) [
                 'producto' => $productos[$id],
                 'cantidad' => $item['c'],
+                // El ano que la persona eligio en el selector cuando agrego
+                // esta pieza. Puede ser null para items agregados antes de
+                // este cambio o para agregados desde una sesion sin ano.
+                'anio_elegido' => $item['a'] ?? null,
             ])
             ->values()
             ->sortBy(fn ($i) => $i->producto->nombre)
@@ -151,7 +164,7 @@ class Cotizador
     public function porVehiculo(): Collection
     {
         return $this->items()
-            ->groupBy(fn ($item) => $item->producto->vehiculo->nombre_completo)
+            ->groupBy(fn ($item) => $item->producto->vehiculo->nombreParaVisitante($item->anio_elegido ?? null))
             ->sortKeys();
     }
 

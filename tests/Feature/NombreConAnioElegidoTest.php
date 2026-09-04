@@ -10,6 +10,7 @@ use App\Models\TipoParte;
 use App\Models\Vehiculo;
 use App\Services\VehiculoActivo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 /**
@@ -138,5 +139,28 @@ class NombreConAnioElegidoTest extends TestCase
         ])->assertRedirect(route('catalogo'));
 
         $this->assertSame(1978, app(VehiculoActivo::class)->anio());
+    }
+
+    /**
+     * El bloque «Mi cotizacion» agrupaba por `nombre_completo` (con rango).
+     *
+     * Captura del cliente: eligio 1994 para un MAZDA 323 1300 CARB, la cabecera
+     * decia «(1994)» y adentro el bloque de la cotizacion decia «(1986-1998)».
+     * Confusion garantizada. Ahora se agrupa por el nombre CON el ano que la
+     * persona eligio al agregar cada pieza.
+     */
+    public function test_el_carrito_agrupa_por_vehiculo_con_el_anio(): void
+    {
+        $this->post(route('vehiculo.guardar'), [
+            'vehiculo_id' => $this->fiat->id,
+            'anio' => 1978,
+        ]);
+
+        $this->post(route('cotizacion.agregar', $this->pieza), ['cantidad' => 1]);
+
+        $this->get('/mi-cotizacion')
+            ->assertOk()
+            ->assertSee('FIAT 128 1500 (1978)')
+            ->assertDontSee('FIAT 128 1500 (1976-1982)');
     }
 }
