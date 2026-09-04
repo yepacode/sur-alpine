@@ -427,20 +427,24 @@
                                     <h3 class="mt-1.5 font-titulo text-lg font-bold leading-snug text-tinta-900 group-hover:text-marca-700">
                                         {{ $producto->nombre }}
                                     </h3>
-                                    {{-- Con un carro puesto esta línea repite lo que
-                                         ya dice el nombre —«Aceite AVEO 1400
-                                         CHEVROLET» encima de «CHEVROLET AVEO 1400
-                                         2006-2009»— y en un teléfono empuja hacia
-                                         abajo la palabra que de verdad distingue.
-                                         Con el filtro puesto sólo quedan los años. --}}
-                                    <p class="mt-2 text-sm text-tinta-500">
-                                        @unless ($vehiculoActivo ?? null)
+                                    {{-- Con un carro puesto esta linea repite lo que
+                                         ya dice el nombre; sin carro, muestra el
+                                         vehiculo al que pertenece la pieza.
+
+                                         Peticion del cliente el 4-sep: quitar el
+                                         rango de anios. Le confundia ver «1996-2007»
+                                         debajo de piezas de un carro donde acababa
+                                         de elegir un ano concreto —el rango es el
+                                         del vehiculo en la base, no una promesa de
+                                         cobertura—. Ya salio en la cabecera y en el
+                                         h1 con el ano elegido; aqui ya no aporta. --}}
+                                    @unless ($vehiculoActivo ?? null)
+                                        <p class="mt-2 text-sm text-tinta-500">
                                             {{ $producto->vehiculo->modelo->marca->nombre }}
                                             {{ $producto->vehiculo->modelo->nombre }}
                                             {{ $producto->vehiculo->cilindraje }}
-                                        @endunless
-                                        <span class="cifra">{{ $producto->vehiculo->anio_inicio }}-{{ $producto->vehiculo->anio_fin }}</span>
-                                    </p>
+                                        </p>
+                                    @endunless
                                     <span class="mt-5 inline-flex items-center gap-1.5 self-start rounded-xl bg-alerta-500 px-4 py-2.5 font-titulo text-xs font-bold uppercase tracking-[0.06em] text-white transition group-hover:bg-alerta-600">
                                         Ver y cotizar
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" class="size-3.5 transition group-hover:translate-x-0.5" aria-hidden="true">
