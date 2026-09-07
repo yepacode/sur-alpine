@@ -298,6 +298,14 @@ Route::prefix('panel')->name('panel.')->middleware(['auth', 'rol:admin'])->group
         Route::post('/notas/{nota}/borrar', 'borrar')->name('notas.borrar');
     });
 
+    // Destacados de la portada: elegir a mano cuales salen y en que orden.
+    Route::controller(\App\Http\Controllers\Panel\DestacadoController::class)->group(function () {
+        Route::get('/destacados', 'index')->name('destacados');
+        Route::post('/destacados', 'agregar')->name('destacados.agregar');
+        Route::post('/destacados/orden', 'orden')->name('destacados.orden');
+        Route::post('/destacados/{producto}/quitar', 'quitar')->name('destacados.quitar');
+    });
+
     // La bandeja de «Contáctenos». Se puede marcar como atendido y
     // reenviar el correo si no salió la primera vez.
     Route::get('/mensajes', [\App\Http\Controllers\Panel\MensajeController::class, 'index'])->name('mensajes');

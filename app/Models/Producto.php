@@ -20,7 +20,7 @@ class Producto extends Model
 
     protected $fillable = [
         'vehiculo_id', 'tipo_parte_id', 'nombre', 'slug',
-        'referencia', 'imagen', 'descripcion', 'publicado',
+        'referencia', 'imagen', 'descripcion', 'publicado', 'destacado_orden',
     ];
 
     protected function casts(): array

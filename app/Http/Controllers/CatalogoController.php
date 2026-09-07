@@ -99,16 +99,40 @@ class CatalogoController extends Controller
         $vehiculo = $this->vehiculoActivo->get();
 
         return Cache::remember(
-            'inicio.destacados.'.ImportadorCatalogo::version().'.'.($vehiculo?->id ?? ''),
+            'inicio.destacados.'.ImportadorCatalogo::version().'.'.(Cache::get('destacados.version', 1)).'.'.($vehiculo?->id ?? ''),
             600,
-            fn () => Producto::publicados()
-                ->with(['vehiculo.modelo.marca', 'tipoParte.categoria'])
-                ->withCount('itemsCotizados as veces_cotizado')
-                ->when($vehiculo, fn ($q) => $q->where('vehiculo_id', $vehiculo->id))
-                ->orderByDesc('veces_cotizado')
-                ->orderBy('id')
-                ->limit(10)
-                ->get()
+            function () use ($vehiculo) {
+                // Los que el equipo marco a mano en el panel, en su orden.
+                // Con vehiculo elegido tambien se filtra, para que quien busca
+                // repuestos para un Rio no vea el destacado del ALTO —aunque
+                // eso puede vaciar el carrusel, y el fallback lo cubre.
+                $aMano = Producto::publicados()
+                    ->with(['vehiculo.modelo.marca', 'tipoParte.categoria'])
+                    ->whereNotNull('destacado_orden')
+                    ->when($vehiculo, fn ($q) => $q->where('vehiculo_id', $vehiculo->id))
+                    ->orderBy('destacado_orden')
+                    ->orderBy('id')
+                    ->limit(10)
+                    ->get();
+
+                if ($aMano->isNotEmpty()) {
+                    return $aMano;
+                }
+
+                // Sin destacados manuales, o sin ninguno que sirva a este
+                // carro, cae al automatico de siempre: por veces cotizado.
+                // Asi el carrusel nunca sale vacio y el cliente no queda
+                // obligado a rellenar diez fichas antes de estrenar la
+                // funcion.
+                return Producto::publicados()
+                    ->with(['vehiculo.modelo.marca', 'tipoParte.categoria'])
+                    ->withCount('itemsCotizados as veces_cotizado')
+                    ->when($vehiculo, fn ($q) => $q->where('vehiculo_id', $vehiculo->id))
+                    ->orderByDesc('veces_cotizado')
+                    ->orderBy('id')
+                    ->limit(10)
+                    ->get();
+            }
         );
     }
 

@@ -19,6 +19,7 @@
         ['ruta' => 'panel.mensajes', 'texto' => 'Mensajes'],
         ['ruta' => 'panel.catalogo', 'texto' => 'Catálogo'],
         ['ruta' => 'panel.pagina', 'texto' => 'Textos e imágenes'],
+        ['ruta' => 'panel.destacados', 'texto' => 'Destacados'],
         ['ruta' => 'panel.banners', 'texto' => 'Campañas'],
         ['ruta' => 'panel.categorias', 'texto' => 'Categorías'],
         ['ruta' => 'panel.notas', 'texto' => 'Noticias'],
