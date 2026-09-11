@@ -298,6 +298,11 @@ Route::prefix('panel')->name('panel.')->middleware(['auth', 'rol:admin'])->group
         Route::post('/notas/{nota}/borrar', 'borrar')->name('notas.borrar');
     });
 
+    // Diagnostico de sistema de archivos: pantalla oculta que
+    // reporta permisos y symlinks para hostings sin SSH.
+    Route::get('/diagnostico', [\App\Http\Controllers\Panel\DiagnosticoController::class, 'index'])
+        ->name('diagnostico');
+
     // Destacados de la portada: elegir a mano cuales salen y en que orden.
     Route::controller(\App\Http\Controllers\Panel\DestacadoController::class)->group(function () {
         Route::get('/destacados', 'index')->name('destacados');
